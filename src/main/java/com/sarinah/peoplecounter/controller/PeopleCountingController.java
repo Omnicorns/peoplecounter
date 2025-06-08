@@ -39,4 +39,10 @@ public class PeopleCountingController {
 
         return ResponseEntity.ok(hasil);
     }
+
+    @GetMapping("/check")
+    public String health() {
+        return "Success";
+    }
+
 }
