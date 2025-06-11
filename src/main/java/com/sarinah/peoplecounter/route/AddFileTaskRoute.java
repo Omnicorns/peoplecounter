@@ -36,7 +36,7 @@ public class AddFileTaskRoute extends RouteBuilder {
 
         from( "file:/mnt/inbound"
                 + "?delete=false"
-                + "&move=/mnt/processed/${date:now:yyyyMMdd}/${file:name}"
+                + "&move=/mnt/inbound/processed/${date:now:yyyyMMdd}/${file:name}"
                 + "&delay=0")
                 .routeId("add-file-task-route")
                 .log("Menerima file: ${header.CamelFileName}")
