@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 
 
@@ -24,20 +26,25 @@ public class PeopleCountingService {
     }
     @SneakyThrows
     public PeopleCountResponse execute(PeopleCountRequest input){
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        Date countDate = sdf.parse(input.getDate());
+        LocalDate localDate = LocalDate.parse(input.getDate());        // ISO yyyy-MM-dd
+        Date countDate = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
         BigDecimal avg = new BigDecimal(input.getAvg());
+        BigDecimal inCount = new BigDecimal(input.getIn());
+        BigDecimal outCount = new BigDecimal(input.getOut());
+
         java.util.Date utilDate = input.getDateInbound();
-        java.sql.Timestamp dateInbound = new java.sql.Timestamp(utilDate.getTime());
+        Timestamp dateInbound = new Timestamp(utilDate.getTime());
+
         PeopleCount peopleCount = new PeopleCount();
         peopleCount.setDay(input.getDay());
         peopleCount.setName(input.getName());
-        peopleCount.setInCount(new BigDecimal(input.getIn()));
         peopleCount.setCountDate(countDate);
-        peopleCount.setOutCount(new BigDecimal(input.getOut()));
+        peopleCount.setInCount(inCount);
+        peopleCount.setOutCount(outCount);
         peopleCount.setDateInbound(dateInbound);
         peopleCount.setAvgCount(avg);
         peopleCount.setFilename(input.getFilename());
+
         peopleCountRepository.save(peopleCount);
         return  new PeopleCountResponse();
 

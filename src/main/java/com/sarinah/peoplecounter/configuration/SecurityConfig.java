@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -14,19 +16,20 @@ public class SecurityConfig {
     private String apiKey;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        ApiKeyAuthFilter filter = new ApiKeyAuthFilter(apiKey);
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        ApiKeyAuthFilter apiKeyFilter = new ApiKeyAuthFilter(apiKey);
 
-        http
+        return http
                 .securityMatcher("/**")
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+                .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .build();
     }
+
 
 }
