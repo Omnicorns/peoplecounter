@@ -14,9 +14,15 @@ public class MapPeopleCountingResponseService {
                 .day(entity.getDay())
                 .date(new SimpleDateFormat("dd/MM/yyyy").format(entity.getCountDate()))
                 .name(entity.getName())
-                .in(entity.getInCount().toString())
-                .out(entity.getOutCount().toString())
-                .avg(entity.getAvgCount().toString())
+                .in(entity.getInCount()
+                        .stripTrailingZeros()
+                        .toPlainString())
+                .out(entity.getOutCount()
+                        .stripTrailingZeros()
+                        .toPlainString())
+                .avg(entity.getAvgCount()
+                        .stripTrailingZeros()
+                        .toPlainString())
                 .build();
     }
 }
