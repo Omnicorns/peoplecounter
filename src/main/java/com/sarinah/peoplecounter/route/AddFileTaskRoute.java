@@ -16,14 +16,6 @@ public class AddFileTaskRoute extends RouteBuilder {
     AddTaskFileProcessor addTaskFileProcessor;
 
 
-    private static final String ERROR_DIR = "file:/mnt/error";
-    private static final String INBOUND_DIR = "/mnt/inbound";
-    private static final String OUTBOUND_DIR = "file:/mnt/outbound";
-    private static final String PROCESSED_DIR = "/mnt/inbound/processed";
-
-
-
-
     @Override
     public void configure() throws Exception {
         log.info("AddFileTaskRoute is running...");
@@ -31,21 +23,27 @@ public class AddFileTaskRoute extends RouteBuilder {
         onException(Exception.class)
                 .handled(true)
                 .log(LoggingLevel.ERROR,
-                        ">> ERROR saat memproses file ${header.CamelFileName} pada ${date:now:yyyy-MM-dd HH:mm:ss}, error: ${exception.message}")
-                .to(ERROR_DIR);
+                        ">> ERROR saat memproses file ${header.CamelFileName} pada ${date:now:yyyy-MM-dd HH:mm:ss}, error: ${exception.message}");
+
 
         from( "file:/mnt/inbound"
                 + "?delete=false"
                 + "&move=/mnt/inbound/processed/${date:now:yyyyMMdd}/${file:name}"
-                + "&delay=0")
+                + "&delay=0"
+                + "&moveFailed=/mnt/error/${date:now:yyyyMMdd}/${file:name}")
                 .routeId("add-file-task-route")
                 .log("Menerima file: ${header.CamelFileName}")
-                .filter(header(Exchange.FILE_NAME).endsWith(".csv"))
+                .process(exchange -> {
+                    String fn = exchange.getIn().getHeader(Exchange.FILE_NAME, String.class);
+                    if (fn == null || !fn.toLowerCase().endsWith(".csv")) {
+                        throw new IllegalArgumentException("File bukan CSV!");
+                    }
+                })
                 .log("File valid, memproses: ${header.CamelFileName}")
                 .to("file:/mnt/outbound")
                 .process(addTaskFileProcessor)
                 .log("File berhasil diproses: ${header.CamelFileName}")
-                .end(); ;
+                .end();
 
         log.info("AddFileTaskRoute selesai dijalankan.");
     }
