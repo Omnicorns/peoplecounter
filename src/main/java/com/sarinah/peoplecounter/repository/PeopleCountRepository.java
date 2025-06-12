@@ -4,7 +4,9 @@ import com.sarinah.peoplecounter.entity.PeopleCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
 
 import java.util.Date;
 
@@ -21,5 +23,14 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
             Date startDate,
             Date endDate,
             Pageable pageable
+    );
+    @Query("""
+      select case when count(p) > 0 then true else false end
+      from PeopleCount p
+      where p.countDate = :date  AND p.name = :name
+    """)
+    boolean existsByCountDateAndName(
+            Date date,
+            String name
     );
 }

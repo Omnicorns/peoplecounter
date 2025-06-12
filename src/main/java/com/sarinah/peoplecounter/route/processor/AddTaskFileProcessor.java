@@ -1,5 +1,6 @@
 package com.sarinah.peoplecounter.route.processor;
 
+import com.sarinah.peoplecounter.repository.PeopleCountRepository;
 import com.sarinah.peoplecounter.request.PeopleCountRequest;
 import com.sarinah.peoplecounter.service.PeopleCountingService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,19 +12,21 @@ import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-
-import static java.util.stream.Collectors.toList;
 
 @Component
 @Slf4j
 public class AddTaskFileProcessor implements Processor {
     @Autowired
     PeopleCountingService peopleCountingService;
+    @Autowired
+    PeopleCountRepository peopleCountRepository;
 
     private static final Pattern DATA_LINE = Pattern.compile("^\\d{2}\\.\\d{2}\\.\\d{2}\\b.*");
 
@@ -57,19 +60,12 @@ public class AddTaskFileProcessor implements Processor {
         List<String> dataLines = Arrays.stream(body.split("\\R"))
                 .map(String::trim)
                 .filter(line -> !line.isBlank())
-                .collect(toList());
+                .filter(line -> DATA_LINE.matcher(line).matches())
+                .collect(Collectors.toList());
+
 
         if (dataLines.isEmpty()) {
             throw new IllegalArgumentException("No data in file: " + filename);
-        }
-        List<String> badLines =dataLines.stream()
-                .filter(line -> !DATA_LINE.matcher(line).matches())
-                .toList();
-
-        if (!badLines.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Malformed lines in " + filename
-            );
         }
 
 
@@ -98,6 +94,20 @@ public class AddTaskFileProcessor implements Processor {
                     }
 
                     String fullDayName = dow.getDisplayName(TextStyle.FULL, new Locale("id"));
+
+                    Date date = Date.from(countDate
+                            .atStartOfDay(ZoneId.systemDefault())  // awal hari di zona sistem
+                            .toInstant());
+
+                    String name = cols[1].trim();
+                    if (name.isBlank()) {
+                        throw new IllegalArgumentException("Empty name in file: " + filename);
+                    }
+
+                    if (peopleCountRepository.existsByCountDateAndName(date,name)) {
+                        log.info("Data sudah ada (tanggal: {}, skip insert.", countDate);
+                        continue;
+                    }
 
                     // 4) isi request
                     PeopleCountRequest req = new PeopleCountRequest();

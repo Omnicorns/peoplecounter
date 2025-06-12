@@ -24,8 +24,6 @@ public class AddFileTaskRoute extends RouteBuilder {
                 .handled(true)
                 .log(LoggingLevel.ERROR,
                         ">> ERROR saat memproses file ${header.CamelFileName} pada ${date:now:yyyy-MM-dd HH:mm:ss}, error: ${exception.message}");
-
-
         from( "file:/mnt/inbound"
                 + "?delete=false"
                 + "&move=/mnt/inbound/processed/${date:now:yyyyMMdd}/${file:name}"
