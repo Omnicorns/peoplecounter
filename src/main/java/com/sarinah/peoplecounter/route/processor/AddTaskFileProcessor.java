@@ -15,7 +15,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+
+import static java.util.stream.Collectors.toList;
 
 @Component
 @Slf4j
@@ -49,15 +51,26 @@ public class AddTaskFileProcessor implements Processor {
 
 
         if (body == null || body.isBlank()) {
-            log.warn("Empty or null message received from file: {}", filename);
-            return;
+            throw new IllegalArgumentException("Empty file: " + filename);
         }
 
         List<String> dataLines = Arrays.stream(body.split("\\R"))
                 .map(String::trim)
                 .filter(line -> !line.isBlank())
-                .filter(line -> DATA_LINE.matcher(line).matches())
-                .collect(Collectors.toList());
+                .collect(toList());
+
+        if (dataLines.isEmpty()) {
+            throw new IllegalArgumentException("No data in file: " + filename);
+        }
+        List<String> badLines =dataLines.stream()
+                .filter(line -> !DATA_LINE.matcher(line).matches())
+                .toList();
+
+        if (!badLines.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Malformed lines in " + filename
+            );
+        }
 
 
         List<List<String>> batches = ListUtils.partition(dataLines, BATCH_SIZE);
