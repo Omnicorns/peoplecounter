@@ -88,7 +88,7 @@ public class AddTaskFileProcessor implements Processor {
 
                     // 4) isi request
                     PeopleCountRequest req = new PeopleCountRequest();
-                    req.setDay(dayAbbr);                  // simpan "Sen"
+                    req.setDay(fullDayName);                  // simpan "Sen"
                     req.setDate(countDate.toString());    // simpan "2025-06-02"
                     req.setName(cols[1].trim());
                     req.setIn(cols[2].trim());
