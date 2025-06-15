@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PeopleCountResponse {
     private String day;
-    private String date;
+    private String countDate;
     private String name;
     private String in;
     private String out;

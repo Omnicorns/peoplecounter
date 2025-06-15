@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 
 import java.util.Date;
+import java.util.Optional;
 
 @Repository
 public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
@@ -33,4 +34,49 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
             Date date,
             String name
     );
+    Optional<PeopleCount> findByCountDateAndName(Date countDate, String name);
+
+    @Query(
+            value = """
+        SELECT * FROM people_count
+        WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+        ORDER BY count_date DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM people_count
+        WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+        """,
+            nativeQuery = true
+    )
+    Page<PeopleCount> findByCountDateBetweenNative(
+             Date startDate,
+             Date endDate,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+        SELECT * FROM people_count
+        WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))
+          AND DATE(count_date) BETWEEN :startDate AND :endDate
+        ORDER BY count_date DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM people_count
+        WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))
+          AND DATE(count_date) BETWEEN :startDate AND :endDate
+        """,
+            nativeQuery = true
+    )
+    Page<PeopleCount> findByNameAndDateNative(
+            String name,
+            Date startDate,
+            Date endDate,
+            Pageable pageable
+    );
+
+
+
+
+
 }

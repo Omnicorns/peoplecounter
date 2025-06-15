@@ -46,7 +46,7 @@ public class PeopleCountingService {
         peopleCount.setFilename(input.getFilename());
 
         peopleCountRepository.save(peopleCount);
-        return  new PeopleCountResponse();
+        return new PeopleCountResponse();
 
 
     }

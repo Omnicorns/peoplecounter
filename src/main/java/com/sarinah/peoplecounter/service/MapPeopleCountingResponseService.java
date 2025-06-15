@@ -12,7 +12,7 @@ public class MapPeopleCountingResponseService {
     public static PeopleCountResponse fromEntity(PeopleCount entity) {
         return PeopleCountResponse.builder()
                 .day(entity.getDay())
-                .date(new SimpleDateFormat("dd/MM/yyyy").format(entity.getCountDate()))
+                .countDate(new SimpleDateFormat("dd/MM/yyyy").format(entity.getCountDate()))
                 .name(entity.getName())
                 .in(entity.getInCount()
                         .stripTrailingZeros()

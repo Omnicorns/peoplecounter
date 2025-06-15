@@ -1,5 +1,6 @@
 package com.sarinah.peoplecounter.route.processor;
 
+import com.sarinah.peoplecounter.entity.PeopleCount;
 import com.sarinah.peoplecounter.repository.PeopleCountRepository;
 import com.sarinah.peoplecounter.request.PeopleCountRequest;
 import com.sarinah.peoplecounter.service.PeopleCountingService;
@@ -10,6 +11,8 @@ import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -28,7 +31,7 @@ public class AddTaskFileProcessor implements Processor {
     @Autowired
     PeopleCountRepository peopleCountRepository;
 
-    private static final Pattern DATA_LINE = Pattern.compile("^\\d{2}\\.\\d{2}\\.\\d{2}\\b.*");
+    private static final Pattern DATA_LINE = Pattern.compile("^[^;]+;[^;]+;\\d{4}-\\d{2}-\\d{2}_\\d{2}:\\d{2};.*");
 
     // ukuran batch per partition
     private static final int BATCH_SIZE = 10_000;
@@ -67,64 +70,98 @@ public class AddTaskFileProcessor implements Processor {
         if (dataLines.isEmpty()) {
             throw new IllegalArgumentException("No data in file: " + filename);
         }
+        Map<String, IntSummaryStatistics> inStats = new HashMap<>();
+        Map<String, IntSummaryStatistics> outStats = new HashMap<>();
+        Map<String, IntSummaryStatistics> avgStats = new HashMap<>();
 
-
-        List<List<String>> batches = ListUtils.partition(dataLines, BATCH_SIZE);
-
-        for (List<String> batch : batches) {
-            log.info("Processing batch of {} lines from file {}", batch.size(), filename);
-            for (String line : batch) {
-                try {
-                    String[] cols = line.split(";");
-                    if (cols.length < 6) { /* skip malformed */ }
-
-
-                    String[] parts = cols[0].trim().split("\\s+", 2);
-                    String datePart = parts[0];           // "02.06.25"
-                    String dayAbbr  = parts.length>1?parts[1]:"";
-
-
-                    LocalDate countDate = LocalDate.parse(datePart, DTF);
-
-
-                    DayOfWeek dow = countDate.getDayOfWeek();
-                    if (IND_DAY_MAP.containsKey(dayAbbr)
-                            && IND_DAY_MAP.get(dayAbbr) != dow) {
-                        log.warn("Day‐of‐week mismatch: '{}' != {}", dayAbbr, dow);
-                    }
-
-                    String fullDayName = dow.getDisplayName(TextStyle.FULL, new Locale("id"));
-
-                    Date date = Date.from(countDate
-                            .atStartOfDay(ZoneId.systemDefault())  // awal hari di zona sistem
-                            .toInstant());
-
-                    String name = cols[1].trim();
-                    if (name.isBlank()) {
-                        throw new IllegalArgumentException("Empty name in file: " + filename);
-                    }
-
-                    if (peopleCountRepository.existsByCountDateAndName(date,name)) {
-                        log.info("Data sudah ada (tanggal: {}, skip insert.", countDate);
-                        continue;
-                    }
-
-                    // 4) isi request
-                    PeopleCountRequest req = new PeopleCountRequest();
-                    req.setDay(fullDayName);                  // simpan "Sen"
-                    req.setDate(countDate.toString());    // simpan "2025-06-02"
-                    req.setName(cols[1].trim());
-                    req.setIn(cols[2].trim());
-                    req.setOut(cols[3].trim());
-                    req.setAvg(cols[4].trim());
-                    req.setDateInbound(new Date());
-                    req.setFilename(filename);
-
-                    peopleCountingService.execute(req);
-                } catch (Exception e) {
-                    log.error("Error processing data line in {}: {}", filename, line, e);
+        for (String line : dataLines) {
+            try {
+                String[] cols = line.split(";");
+                if (cols.length < 7) {
+                    log.warn("Skip malformed line: {}", line);
+                    continue;
                 }
+
+                String location = cols[1].trim(); // SARINAH BLDNG
+                String dateTimeRaw = cols[2].trim(); // 2025-06-13_00:10
+                String[] dateTimeParts = dateTimeRaw.split("_");
+                if (dateTimeParts.length < 1) continue;
+
+                String dateOnly = dateTimeParts[0]; // "2025-06-13"
+                LocalDate countDate = LocalDate.parse(dateOnly);
+
+                int in = safeParseInt(cols[3]);
+                int out = safeParseInt(cols[4]);
+                int avg = (in + out) / 2;
+
+                String key = location + "#" + countDate;
+
+                inStats.computeIfAbsent(key, k -> new IntSummaryStatistics()).accept(in);
+                outStats.computeIfAbsent(key, k -> new IntSummaryStatistics()).accept(out);
+                avgStats.computeIfAbsent(key, k -> new IntSummaryStatistics()).accept(avg);
+
+            } catch (Exception e) {
+                log.error("Error parsing line '{}': {}", line, e.getMessage());
             }
+        }
+
+        for (String key : inStats.keySet()) {
+            String[] parts = key.split("#");
+            String location = parts[0];
+            LocalDate date = LocalDate.parse(parts[1]);
+            Date javaDate = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+            String fullDay = date.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("id"));
+
+            BigDecimal totalIn = BigDecimal.valueOf(inStats.get(key).getSum());
+            BigDecimal totalOut = BigDecimal.valueOf(outStats.get(key).getSum());
+            BigDecimal totalAvg = BigDecimal.valueOf(avgStats.get(key).getSum());
+
+            Optional<PeopleCount> existing = peopleCountRepository.findByCountDateAndName(javaDate, location);
+
+            if (existing.isPresent()) {
+                // 🔄 UPDATE
+                PeopleCount entity = existing.get();
+                entity.setInCount(totalIn);
+                entity.setOutCount(totalOut);
+                entity.setAvgCount(totalAvg);
+                entity.setDay(fullDay);
+                entity.setDateInbound(new Timestamp(System.currentTimeMillis()));
+
+                entity.setFilename(filename);
+                peopleCountRepository.save(entity);
+                log.info("✅ UPDATED: {} - {} (in={}, out={}, avg={})", date, location, totalIn, totalOut, totalAvg);
+            } else {
+                // ➕ INSERT
+                PeopleCount entity = new PeopleCount();
+                entity.setCountDate(javaDate);
+                entity.setName(location);
+                entity.setDay(fullDay);
+                entity.setInCount(totalIn);
+                entity.setOutCount(totalOut);
+                entity.setAvgCount(totalAvg);
+                entity.setDateInbound(new Timestamp(System.currentTimeMillis()));
+                entity.setFilename(filename);
+                peopleCountRepository.save(entity);
+                log.info("✅ INSERTED: {} - {} (in={}, out={}, avg={})", date, location, totalIn, totalOut, totalAvg);
+            }
+
+            }
+        }
+
+    private String normalizeNumber(String input) {
+        input = input.trim();
+        return (input.equals("-") || input.isBlank()) ? "0" : input;
+    }
+
+    private int safeParseInt(String val) {
+        if (val == null) return 0;
+        val = val.trim();
+        if (val.equals("-") || val.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 

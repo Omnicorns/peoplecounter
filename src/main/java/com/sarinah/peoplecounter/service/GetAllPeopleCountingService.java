@@ -28,7 +28,7 @@ public class GetAllPeopleCountingService {
 
 
     public Page<PeopleCountResponse> search (String name, Date startDate, Date endDate, int pageIndex, int pageSize) {
-        Pageable pageReq = PageRequest.of(pageIndex, pageSize, Sort.by("countDate").descending());
+        Pageable pageReq = PageRequest.of(pageIndex, pageSize);
 
 
         boolean hasName  = name      != null && !name.isBlank();
@@ -37,12 +37,12 @@ public class GetAllPeopleCountingService {
         Page<PeopleCount> result;
         if (hasName && hasDates) {
             // nama + tanggal
-            result = peopleCountRepository.findByNameContainingIgnoreCaseAndCountDateBetween(
+            result = peopleCountRepository.findByNameAndDateNative(
                     name, startDate, endDate, pageReq);
         }
         else if (hasDates) {
             // hanya tanggal
-            result = peopleCountRepository.findByCountDateBetween(startDate, endDate, pageReq);
+            result = peopleCountRepository.findByCountDateBetweenNative(startDate, endDate, pageReq);
         }
         else if (hasName) {
             // hanya nama
