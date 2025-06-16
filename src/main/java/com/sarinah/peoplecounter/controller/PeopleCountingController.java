@@ -1,10 +1,8 @@
 package com.sarinah.peoplecounter.controller;
 
-import com.sarinah.peoplecounter.entity.PeopleCount;
-import com.sarinah.peoplecounter.response.PeopleCountResponse;
+
 import com.sarinah.peoplecounter.service.GetAllPeopleCountingService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/people-counts")

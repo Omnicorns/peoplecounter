@@ -14,26 +14,8 @@ import java.util.Optional;
 @Repository
 public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
     Page<PeopleCount> findByNameContainingIgnoreCase(String name, Pageable pageable);
-    Page<PeopleCount> findByNameContainingIgnoreCaseAndCountDateBetween(
-            String name,
-            Date   startDate,
-            Date   endDate,
-            Pageable pageable
-    );
-    Page<PeopleCount> findByCountDateBetween(
-            Date startDate,
-            Date endDate,
-            Pageable pageable
-    );
-    @Query("""
-      select case when count(p) > 0 then true else false end
-      from PeopleCount p
-      where p.countDate = :date  AND p.name = :name
-    """)
-    boolean existsByCountDateAndName(
-            Date date,
-            String name
-    );
+
+
     Optional<PeopleCount> findByCountDateAndName(Date countDate, String name);
 
     @Query(
@@ -74,9 +56,5 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
             Date endDate,
             Pageable pageable
     );
-
-
-
-
 
 }

@@ -25,10 +25,10 @@ public class GetAllPeopleCountingService {
         this.mapPeopleCountingResponseService = mapPeopleCountingResponseService;
     }
 
-
-
     public Page<PeopleCountResponse> search (String name, Date startDate, Date endDate, int pageIndex, int pageSize) {
         Pageable pageReq = PageRequest.of(pageIndex, pageSize);
+        Pageable pageReqAll = PageRequest.of(pageIndex, pageSize, Sort.by("countDate").descending());
+
 
 
         boolean hasName  = name      != null && !name.isBlank();
@@ -46,11 +46,11 @@ public class GetAllPeopleCountingService {
         }
         else if (hasName) {
             // hanya nama
-            result = peopleCountRepository.findByNameContainingIgnoreCase(name, pageReq);
+            result = peopleCountRepository.findByNameContainingIgnoreCase(name, pageReqAll);
         }
         else {
             // paging tanpa filter
-            result = peopleCountRepository.findAll(pageReq);
+            result = peopleCountRepository.findAll(pageReqAll);
         }
 
         return result.map(MapPeopleCountingResponseService::fromEntity);
