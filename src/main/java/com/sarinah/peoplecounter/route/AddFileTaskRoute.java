@@ -6,7 +6,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +16,7 @@ public class AddFileTaskRoute extends RouteBuilder {
 
 
     @Override
-    public void configure() throws Exception {
+    public void configure()  {
         log.info("AddFileTaskRoute is running...");
 
         onException(Exception.class)

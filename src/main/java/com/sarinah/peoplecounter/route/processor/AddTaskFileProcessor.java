@@ -2,51 +2,30 @@ package com.sarinah.peoplecounter.route.processor;
 
 import com.sarinah.peoplecounter.entity.PeopleCount;
 import com.sarinah.peoplecounter.repository.PeopleCountRepository;
-import com.sarinah.peoplecounter.request.PeopleCountRequest;
-import com.sarinah.peoplecounter.service.PeopleCountingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.commons.collections4.ListUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 
 @Component
 @Slf4j
 public class AddTaskFileProcessor implements Processor {
-    @Autowired
-    PeopleCountingService peopleCountingService;
+
     @Autowired
     PeopleCountRepository peopleCountRepository;
 
     private static final Pattern DATA_LINE = Pattern.compile("^[^;]+;[^;]+;\\d{4}-\\d{2}-\\d{2}_\\d{2}:\\d{2};.*");
-
-    // ukuran batch per partition
-    private static final int BATCH_SIZE = 10_000;
-
-    private static final DateTimeFormatter DTF =
-            DateTimeFormatter.ofPattern("dd.MM.yy");
-    private static final Map<String,DayOfWeek> IND_DAY_MAP = Map.of(
-            "Sen", DayOfWeek.MONDAY,
-            "Sel", DayOfWeek.TUESDAY,
-            "Rab", DayOfWeek.WEDNESDAY,
-            "Kam", DayOfWeek.THURSDAY,
-            "Jum", DayOfWeek.FRIDAY,
-            "Sab", DayOfWeek.SATURDAY,
-            "Min", DayOfWeek.SUNDAY
-    );
 
 
 
@@ -64,7 +43,7 @@ public class AddTaskFileProcessor implements Processor {
                 .map(String::trim)
                 .filter(line -> !line.isBlank())
                 .filter(line -> DATA_LINE.matcher(line).matches())
-                .collect(Collectors.toList());
+                .toList();
 
 
         if (dataLines.isEmpty()) {
@@ -108,6 +87,7 @@ public class AddTaskFileProcessor implements Processor {
         for (String key : inStats.keySet()) {
             String[] parts = key.split("#");
             String location = parts[0];
+            location = location.replace("BLDNG", "BUILDING");
             LocalDate date = LocalDate.parse(parts[1]);
             Date javaDate = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
@@ -120,7 +100,6 @@ public class AddTaskFileProcessor implements Processor {
             Optional<PeopleCount> existing = peopleCountRepository.findByCountDateAndName(javaDate, location);
 
             if (existing.isPresent()) {
-                // 🔄 UPDATE
                 PeopleCount entity = existing.get();
                 entity.setInCount(totalIn);
                 entity.setOutCount(totalOut);
@@ -149,10 +128,7 @@ public class AddTaskFileProcessor implements Processor {
             }
         }
 
-    private String normalizeNumber(String input) {
-        input = input.trim();
-        return (input.equals("-") || input.isBlank()) ? "0" : input;
-    }
+
 
     private int safeParseInt(String val) {
         if (val == null) return 0;
