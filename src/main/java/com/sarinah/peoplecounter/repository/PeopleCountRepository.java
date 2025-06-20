@@ -24,7 +24,7 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
         WHERE DATE(count_date) BETWEEN :startDate AND :endDate
         AND (
               :inboundFlag = false
-               OR date_inbound >= NOW() - INTERVAL '7 days'
+               OR date_inbound >= CURRENT_DATE
                )
         ORDER BY count_date DESC
         """,
@@ -33,7 +33,7 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
         WHERE DATE(count_date) BETWEEN :startDate AND :endDate
          AND (
               :inboundFlag = false
-               OR date_inbound >= NOW() - INTERVAL '7 days'
+               OR date_inbound >= CURRENT_DATE
               )
         """,
             nativeQuery = true
