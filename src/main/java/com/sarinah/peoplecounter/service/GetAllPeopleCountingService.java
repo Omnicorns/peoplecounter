@@ -25,11 +25,9 @@ public class GetAllPeopleCountingService {
         this.mapPeopleCountingResponseService = mapPeopleCountingResponseService;
     }
 
-    public Page<PeopleCountResponse> search (String name, Date startDate, Date endDate, int pageIndex, int pageSize) {
+    public Page<PeopleCountResponse> search (String name, boolean inboundFlag, Date startDate, Date endDate, int pageIndex, int pageSize) {
         Pageable pageReq = PageRequest.of(pageIndex, pageSize);
         Pageable pageReqAll = PageRequest.of(pageIndex, pageSize, Sort.by("countDate").descending());
-
-
 
         boolean hasName  = name      != null && !name.isBlank();
         boolean hasDates = startDate != null && endDate != null;
@@ -42,7 +40,7 @@ public class GetAllPeopleCountingService {
         }
         else if (hasDates) {
             // hanya tanggal
-            result = peopleCountRepository.findByCountDateBetweenNative(startDate, endDate, pageReq);
+            result = peopleCountRepository.findByCountDateBetweenNative(startDate, endDate, inboundFlag, pageReq);
         }
         else if (hasName) {
             // hanya nama

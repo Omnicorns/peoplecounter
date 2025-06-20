@@ -22,17 +22,26 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
             value = """
         SELECT * FROM people_count
         WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+        AND (
+              :inboundFlag = false
+               OR date_inbound >= NOW() - INTERVAL '7 days'
+               )
         ORDER BY count_date DESC
         """,
             countQuery = """
         SELECT COUNT(*) FROM people_count
         WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+         AND (
+              :inboundFlag = false
+               OR date_inbound >= NOW() - INTERVAL '7 days'
+              )
         """,
             nativeQuery = true
     )
     Page<PeopleCount> findByCountDateBetweenNative(
              Date startDate,
              Date endDate,
+             boolean inboundFlag,
             Pageable pageable
     );
 
@@ -56,5 +65,28 @@ public interface PeopleCountRepository extends JpaRepository<PeopleCount,Long> {
             Date endDate,
             Pageable pageable
     );
+
+    @Query(
+            value = """
+        SELECT * FROM people_count
+        WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+          AND date_inbound BETWEEN :inboundStart AND :inboundEnd
+        ORDER BY count_date DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM people_count
+        WHERE DATE(count_date) BETWEEN :startDate AND :endDate
+          AND date_inbound BETWEEN :inboundStart AND :inboundEnd
+        """,
+            nativeQuery = true
+    )
+    Page<PeopleCount> findByCountDateAndInboundDateBetweenNative(
+            Date startDate,
+            Date endDate,
+            Date inboundStart,
+            Date inboundEnd,
+            Pageable pageable
+    );
+
 
 }

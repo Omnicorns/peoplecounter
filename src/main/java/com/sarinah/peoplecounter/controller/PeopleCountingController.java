@@ -31,11 +31,12 @@ public class PeopleCountingController {
             @RequestParam(value = "startDate", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
             @RequestParam(value = "endDate",   required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)   Date   endDate
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date   endDate,
+            @RequestParam(value = "inboundFlag", required = false)  boolean inboundFlag
     ) {
 
         return ResponseEntity.ok(
-                getAllPeopleCountingService.search(name, startDate, endDate, page, size)
+                getAllPeopleCountingService.search(name,inboundFlag,startDate, endDate, page, size)
         );
 
 
