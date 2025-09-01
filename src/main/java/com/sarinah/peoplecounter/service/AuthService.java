@@ -3,6 +3,7 @@ package com.sarinah.peoplecounter.service;
 import com.sarinah.peoplecounter.entity.User;
 import com.sarinah.peoplecounter.entity.UserStatus;
 import com.sarinah.peoplecounter.repository.UserRepository;
+import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
@@ -11,8 +12,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,14 +36,14 @@ public class AuthService {
     @Transactional
     public void register(RegisterRequest req){
         if(!req.getPassword().equals(req.getPasswordConfirm()))
-            throw new IllegalArgumentException("Password & konfirmasi tidak sama");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Password & konfirmasi tidak sama");
         if(userRepo.existsByUsername(req.getUsername()))
-            throw new IllegalArgumentException("Username sudah dipakai");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Username sudah dipakai");
         if(userRepo.existsByEmail(req.getEmail()))
-            throw new IllegalArgumentException("Email sudah terdaftar");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Email sudah terdaftar");
         if(userRepo.existsByPhone(req.getPhone()))
-            throw new IllegalArgumentException("Nomor HP sudah terdaftar");
-        if(!req.isAcceptTerms()) throw new IllegalArgumentException("Harus menyetujui Ketentuan Layanan");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Nomor HP sudah terdaftar");
+        if(!req.isAcceptTerms()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Harus menyetujui Ketentuan Layanan");
 
         String hash = BCrypt.hashpw(req.getPassword(), BCrypt.gensalt(10));
 
@@ -60,10 +63,10 @@ public class AuthService {
     public AuthResponse login(LoginRequest req){
         Optional<User> userOpt = userRepo.findByUsername(req.getUsernameOrEmail().toLowerCase());
         if(userOpt.isEmpty()) userOpt = userRepo.findByEmail(req.getUsernameOrEmail().toLowerCase());
-        User user = userOpt.orElseThrow(() -> new IllegalArgumentException("User tidak ditemukan"));
-        if(user.getStatus() != UserStatus.ACTIVE) throw new IllegalStateException("Akun tidak aktif");
+        User user = userOpt.orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,"User tidak ditemukan"));
+        if(user.getStatus() != UserStatus.ACTIVE)  throw new ResponseStatusException(HttpStatus.CONFLICT," user inactive");;
         if(!BCrypt.checkpw(req.getPassword(), user.getPasswordHash()))
-            throw new IllegalArgumentException("Password salah");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"password salah");
 
         String access = jwt.generateAccessToken(user.getId().toString(), Map.of(
                 "username", user.getUsername(),
@@ -77,10 +80,21 @@ public class AuthService {
         return new AuthResponse(access, accessExp, refreshToken, refreshTtl.toSeconds());
     }
 
-
-
     @Transactional
-    public void logout(String refreshToken){
+    public void forgotPassword(ForgotPasswordRequest req) {
+        if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Password & konfirmasi tidak sama");
+        }
 
+        String key = req.getUsernameOrEmail().toLowerCase();
+        User user = userRepo.findByUsername(key)
+                .or(() -> userRepo.findByEmail(key))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User tidak ditemukan"));
+
+        String hash = BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt(10));
+        user.setPasswordHash(hash);
+        userRepo.save(user);
     }
+
+
 }

@@ -10,67 +10,64 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ApiKeyAuthFilter extends OncePerRequestFilter {
+
     private static final String API_KEY_HEADER = "X-API-KEY";
+
     private final String expectedApiKey;
+    private final String[] publicEndpoints;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ApiKeyAuthFilter(String expectedApiKey) {
+    public ApiKeyAuthFilter(String expectedApiKey, String... publicEndpoints) {
         this.expectedApiKey = expectedApiKey;
+        this.publicEndpoints = publicEndpoints == null ? new String[0] : publicEndpoints;
+    }
+
+    /** Skip filter untuk endpoint publik */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        for (String pattern : publicEndpoints) {
+            if (pathMatcher.match(pattern, path)) return true;
+        }
+        return false;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+                                    FilterChain chain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        String apiKeyHeader = request.getHeader(API_KEY_HEADER);
 
-        // — Lewatkan semua path di /api/health tanpa cek API-KEY
-        if (path.startsWith("/api/health/")) {
-            filterChain.doFilter(request, response);
+        if (expectedApiKey != null && expectedApiKey.equals(apiKeyHeader)) {
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    "apiKeyUser", null, List.of(new SimpleGrantedAuthority("ROLE_API")));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            chain.doFilter(request, response);
             return;
         }
 
-        // — Ambil header X-API-KEY
-        String apiKey = request.getHeader(API_KEY_HEADER);
+        // API key salah / tidak ada -> 401 JSON
+        SecurityContextHolder.clearContext();
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
 
-        // — Jika cocok, buat Authentication dan simpan ke SecurityContext
-        if (expectedApiKey.equals(apiKey)) {
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    "apiKeyUser",                  // principal (nama user semu)
-                    null,                          // credentials
-                    List.of(new SimpleGrantedAuthority("ROLE_API"))
-            );
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            filterChain.doFilter(request, response);
-
-        } else {
-            // — Jika tidak ada atau salah, return 401 Unauthorized
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setCharacterEncoding("UTF-8");
-
-            Map<String,Object> body = new LinkedHashMap<>();
-            body.put("timestamp", Instant.now().toString());
-            body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-            body.put("error", "Unauthorized");
-            body.put("message", "Invalid API Key");
-            body.put("path", request.getRequestURI());
-
-            mapper.writeValue(response.getWriter(), body);
-            // --- Selesai JSON error response ---
-        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
+        body.put("error", "Unauthorized");
+        body.put("message", "Missing or invalid API key");
+        body.put("path", request.getRequestURI());
+        mapper.writeValue(response.getWriter(), body);
     }
-
-
 }
