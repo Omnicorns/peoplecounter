@@ -30,6 +30,7 @@
     <properties>
         <java.version>17</java.version>
         <camel.version>4.12.0</camel.version>
+        <jjwt.version>0.11.5</jjwt.version>
     </properties>
     <dependencies>
         <dependency>
@@ -110,6 +111,30 @@
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version> <!-- atau versi terbaru yang Anda inginkan -->
         </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.14.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
