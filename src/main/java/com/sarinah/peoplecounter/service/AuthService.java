@@ -7,6 +7,7 @@ import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
+import com.sarinah.peoplecounter.response.UserResponse;
 import com.sarinah.peoplecounter.util.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +98,22 @@ public class AuthService {
         user.setPasswordHash(hash);
         userRepo.save(user);
     }
+
+
+ public UserResponse getAll(){
+     List<com.sarinah.peoplecounter.dto.User> list = userRepo.findAll().stream()
+             .map(data-> com.sarinah.peoplecounter.dto.User.builder()
+                     .username(data.getUsername())
+                     .email(data.getEmail())
+                     .status(String.valueOf(data.getStatus()))
+                     .build()).collect(Collectors.toList());
+
+
+        return UserResponse.builder().users(list).build();
+ }
+
+
+
 
 
 }

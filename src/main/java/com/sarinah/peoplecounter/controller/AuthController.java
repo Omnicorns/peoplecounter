@@ -5,6 +5,7 @@ import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
+import com.sarinah.peoplecounter.response.UserResponse;
 import com.sarinah.peoplecounter.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,9 +40,8 @@ public class AuthController {
 //    }
 
     @GetMapping("/me")
-    public ResponseEntity<String> me(@RequestHeader("Authorization") String auth){
-        // If token valid, SecurityConfig sets Authentication with subject=userId
-        return ResponseEntity.ok("OK");
+    public ResponseEntity<UserResponse> me(){
+        return ResponseEntity.ok(authService.getAll());
     }
 
     @PostMapping("/forgot")
