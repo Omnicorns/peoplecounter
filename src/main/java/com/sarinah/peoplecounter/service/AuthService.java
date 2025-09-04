@@ -42,10 +42,10 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Password & konfirmasi tidak sama");
         if(userRepo.existsByUsername(req.getUsername()))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Username sudah dipakai");
-        if(userRepo.existsByEmail(req.getEmail()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Email sudah terdaftar");
-        if(userRepo.existsByPhone(req.getPhone()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Nomor HP sudah terdaftar");
+      //  if(userRepo.existsByEmail(req.getEmail()))
+      //      throw new ResponseStatusException(HttpStatus.CONFLICT,"Email sudah terdaftar");
+     //   if(userRepo.existsByPhone(req.getPhone()))
+     //       throw new ResponseStatusException(HttpStatus.CONFLICT,"Nomor HP sudah terdaftar");
         if(!req.isAcceptTerms()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Harus menyetujui Ketentuan Layanan");
 
         String hash = BCrypt.hashpw(req.getPassword(), BCrypt.gensalt(10));
