@@ -24,6 +24,11 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/health/**",
+            "/middleware/dashboard",
+            "/middleware/login",
+            "/middleware/logout",
+            "/middleware/users/register",
+            "/middleware/users/forgot",
                       // <-- login/register dlsb
             "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"  // opsional
     };

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROMIS — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root{ --bg:#f8fafc; --ink:#1e293b; --muted:#475569; --ring:#e5e7eb; --brand:#0b1220; --pri:#2563eb; --pri-2:#1d4ed8; --neutral:#64748b; }
+        *{box-sizing:border-box}
+        body{ font-family: Inter, system-ui, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+
+        header.appbar{ position:sticky; top:0; z-index:40; background:var(--brand); color:#fff; padding:12px 20px; }
+        .bar{ max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+        .brand{ font-weight:700; display:flex; align-items:center; gap:10px; }
+        .brand img{ height:20px; width:auto; display:block }
+        .spacer{ flex:1 }
+
+        .userwrap{ position:relative }
+        .userbtn{ display:flex; align-items:center; gap:10px; background:transparent; border:1px solid rgba(255,255,255,.18); color:#fff; padding:6px 10px; border-radius:999px; cursor:pointer }
+        .userbtn:hover{ background:rgba(255,255,255,.08) }
+        .avatar{ width:26px; height:26px; border-radius:999px; background:#222b; display:grid; place-items:center; font-size:12px; font-weight:700 }
+        .uname{ font-weight:700; font-size:13px }
+        .udesc{ font-size:11px; opacity:.85 }
+        .menu{ position:absolute; right:0; margin-top:8px; width:280px; background:#fff; color:var(--ink); border:1px solid var(--ring); border-radius:12px; box-shadow:0 12px 32px rgba(2,6,23,.18); display:none; overflow:hidden }
+        .menu.open{ display:block }
+        .menu .top{ padding:12px 14px; background:#f8fafc; border-bottom:1px solid var(--ring); display:flex; gap:10px; align-items:center }
+        .menu .top .avatar{ background:#e2e8f0; color:#0f172a }
+        .menu .top .name{ font-weight:700; font-size:14px }
+        .menu .top .meta{ font-size:12px; color:var(--muted) }
+        .menu .item{ display:flex; align-items:center; gap:10px; padding:10px 14px; font-size:14px; cursor:pointer; text-decoration:none; color:inherit; border-top:1px solid #0000 }
+        .menu .item:hover{ background:#f1f5f9 }
+        .menu .danger{ color:#b91c1c }
+        .menu form{ margin:0 }
+        .menu button.menu-btn{ appearance:none; background:none; border:0; width:100%; text-align:left; padding:0; }
+
+        main{ max-width:1200px; margin:0 auto; padding:24px; }
+        h1{ margin:0 0 16px; font-size:20px }
+        .toolbar{ margin:12px 0; display:flex; gap:8px }
+        .btn{ background:var(--pri); color:#fff; border:0; border-radius:8px; padding:9px 14px; font-weight:700; cursor:pointer }
+        .btn:hover{ background:var(--pri-2) }
+        .btn.secondary{ background:var(--neutral) }
+        .btn.secondary:hover{ filter:brightness(.95) }
+
+        table{ width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.1) }
+        th, td{ padding:12px 16px; border-bottom:1px solid #e5e7eb; text-align:left; font-size:14px }
+        th{ background:#f1f5f9; font-weight:600; color:#475569 }
+        tbody tr:hover{ background:#f9fafb }
+        .status{ font-weight:700; padding:4px 8px; border-radius:6px; font-size:12px; display:inline-block }
+        .ACTIVE{ background:#dcfce7; color:#166534 }
+        .INACTIVE{ background:#fee2e2; color:#991b1b }
+
+        .modal{ position:fixed; inset:0; display:none }
+        .modal.open{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.6) }
+        .sheet{ background:#fff; padding:20px; border-radius:10px; width:420px; max-width:95%; box-shadow:0 8px 24px rgba(0,0,0,.2) }
+        .field{ margin-bottom:12px }
+        .field label{ display:block; font-size:13px; font-weight:700; margin:6px 0 }
+        .form-input{
+          width:100%; height:40px;
+          padding:0 12px; border:1px solid #cbd5e1;
+          border-radius:10px; background:#fff; color:#0f172a;
+          font-size:14px; outline:none;
+          transition:border-color .15s, box-shadow .15s;
+        }
+        .form-input::placeholder{ color:#94a3b8 }
+        .form-input:focus{ border-color:#60a5fa; box-shadow:0 0 0 3px rgba(59,130,246,.25) }
+        .input-group{ position:relative }
+        .input-group .form-input{ padding-right:40px }
+        .eye-btn{
+          position:absolute; right:8px; top:50%; transform:translateY(-50%);
+          width:28px; height:28px; display:grid; place-items:center;
+          border:0; background:transparent; cursor:pointer;
+          border-radius:6px; color:#475569;
+        }
+        .eye-btn:hover{ background:#f1f5f9 }
+        .modal-footer .btn{ height:40px; padding:0 14px }
+    </style>
+</head>
+<body>
+
+<header class="appbar">
+    <div class="bar">
+        <div class="brand">
+            <img src="/promis.png" alt="PROMIS" onerror="this.style.display='none'">
+            <span>PROMIS Dashboard</span>
+        </div>
+        <div class="spacer"></div>
+
+        <!-- RIGHT USER MENU -->
+        <div class="userwrap" id="userwrap">
+            <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
+                <!-- Avatar huruf pertama -->
+                <div class="avatar"
+                     th:text="${(currentUser != null and currentUser.fullName != null) ? #strings.substring(currentUser.fullName,0,1).toUpperCase()
+                       : (username != null) ? #strings.substring(username,0,1).toUpperCase() : 'U'}">U</div>
+                <div>
+                    <!-- Nama tampilan -->
+                    <div class="uname"
+                         th:text="${(currentUser != null and currentUser.fullName != null) ? currentUser.fullName
+                         : (fullName != null) ? fullName
+                         : (username != null) ? username : 'User'}">User</div>
+                    <!-- Username kecil di bawah -->
+                    <div class="udesc"
+                         th:text="${(currentUser != null and currentUser.username != null) ? currentUser.username
+                         : (username != null) ? username : 'user'}">username</div>
+                </div>
+            </button>
+
+            <div class="menu" id="usermenu" role="menu" aria-label="Menu pengguna">
+                <div class="top">
+                    <div class="avatar"
+                         th:text="${(currentUser != null and currentUser.fullName != null) ? #strings.substring(currentUser.fullName,0,1).toUpperCase()
+                         : (username != null) ? #strings.substring(username,0,1).toUpperCase() : 'U'}">U</div>
+                    <div>
+                        <div class="name"
+                             th:text="${(currentUser != null and currentUser.fullName != null) ? currentUser.fullName
+                           : (fullName != null) ? fullName
+                           : (username != null) ? username : 'User'}">User Name</div>
+                        <div class="meta"
+                             th:text="${(currentUser != null and currentUser.username != null) ? currentUser.username
+                           : (username != null) ? username : 'user'}">user</div>
+                    </div>
+                </div>
+
+                <div class="item" role="menuitem">
+                    <form th:action="@{/middleware/logout}" method="post" style="width:100%">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="menu-btn danger">Keluar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- /RIGHT USER MENU -->
+    </div>
+</header>
+
+<main>
+    <h1 th:text="${message}">Welcome to our platform! Please choose a store.</h1>
+
+    <div class="toolbar">
+        <button class="btn" id="addBtn">＋ Add Row</button>
+        <button class="btn secondary" id="forgotBtn">Forgot</button>
+    </div>
+
+    <table id="tbl">
+        <thead>
+        <tr><th>Username</th><th>FullName</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="u : ${users}">
+            <td th:text="${u.username}">username</td>
+            <td th:text="${u.fullName}">fullname</td>
+            <td>
+        <span class="status" th:text="${u.status}"
+              th:classappend="${#strings.equalsIgnoreCase(u.status,'ACTIVE')} ? ' ACTIVE' : ' INACTIVE'">status</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<!-- Modal Add User -->
+<div class="modal" id="modalAdd">
+    <div class="sheet">
+        <h3>Form Add User</h3>
+        <form id="formUser" novalidate>
+            <div class="field">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" class="form-input" required />
+            </div>
+            <div class="field">
+                <label for="fullName">Full Name</label>
+                <input id="fullName" name="fullName" type="text" class="form-input" required />
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <input id="password" name="password" type="password" class="form-input" required />
+                    <button type="button" class="eye-btn" id="togglePwd" aria-label="Show/Hide">👁</button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="passwordConfirm">Confirm Password</label>
+                <div class="input-group">
+                    <input id="passwordConfirm" name="passwordConfirm" type="password" class="form-input" required />
+                    <button type="button" class="eye-btn" id="togglePwdConfirm" aria-label="Show/Hide">👁</button>
+                </div>
+            </div>
+            <div class="field" style="display:flex;align-items:center;gap:8px">
+                <input id="acceptTerms" name="acceptTerms" type="checkbox" />
+                <label for="acceptTerms" style="margin:0;font-weight:600">Accept Terms</label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" id="closeAdd">Close</button>
+                <button type="submit" class="btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Forgot -->
+<div class="modal" id="modalForgot">
+    <div class="sheet">
+        <h3>Forgot Password</h3>
+        <form id="formForgot" novalidate>
+            <div class="field">
+                <label for="usernameOrEmail">Username atau Email</label>
+                <input id="usernameOrEmail" name="usernameOrEmail" type="text" class="form-input" required />
+            </div>
+            <div class="field">
+                <label for="newPassword">Password Baru</label>
+                <div class="input-group">
+                    <input id="newPassword" name="newPassword" type="password" class="form-input" required />
+                    <button type="button" class="eye-btn" id="toggleNewPwd" aria-label="Show/Hide">👁</button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="confirmPassword">Konfirmasi Password</label>
+                <div class="input-group">
+                    <input id="confirmPassword" name="confirmPassword" type="password" class="form-input" required />
+                    <button type="button" class="eye-btn" id="toggleConfirmPwd" aria-label="Show/Hide">👁</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" id="closeForgot">Close</button>
+                <button type="submit" class="btn">Reset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Penting: nonaktifkan inline processing agar JS array tidak diparse Thymeleaf -->
+<script th:inline="none">
+    // --- Right user menu toggle
+    (function(){
+      const btn = document.getElementById('userbtn');
+      const menu = document.getElementById('usermenu');
+      const wrap = document.getElementById('userwrap');
+      if(!btn || !menu) return;
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); menu.classList.toggle('open') });
+      document.addEventListener('click', (e)=>{ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') menu.classList.remove('open'); });
+    })();
+
+    // --- Add User Modal
+    const modalAdd  = document.getElementById('modalAdd');
+    const addBtn    = document.getElementById('addBtn');
+    const closeAdd  = document.getElementById('closeAdd');
+    const formUser  = document.getElementById('formUser');
+
+    addBtn.onclick = () => modalAdd.classList.add('open');
+    closeAdd.onclick = () => modalAdd.classList.remove('open');
+    modalAdd.addEventListener('click', e => { if (e.target === modalAdd) modalAdd.classList.remove('open'); });
+
+    formUser.onsubmit = async (e) => {
+      e.preventDefault();
+      const payload = {
+        fullName:        formUser.fullName.value.trim(),
+        username:        formUser.username.value.trim(),
+        password:        formUser.password.value,
+        passwordConfirm: formUser.passwordConfirm.value,
+        acceptTerms:     formUser.acceptTerms.checked
+      };
+      if (!payload.username || !payload.fullName) return alert('Lengkapi Username & Full Name');
+      if (!payload.password || !payload.passwordConfirm) return alert('Isi password & konfirmasi');
+      if (payload.password !== payload.passwordConfirm) return alert('Password & konfirmasi tidak sama');
+      if (!payload.acceptTerms) return alert('Centang Accept Terms');
+
+      try {
+        const resp = await fetch('/middleware/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${payload.username}</td>
+          <td>${payload.fullName}</td>
+          <td><span class="status ACTIVE">ACTIVE</span></td>
+        `;
+        document.querySelector('#tbl tbody').appendChild(tr);
+
+        formUser.reset();
+        modalAdd.classList.remove('open');
+      } catch (err) {
+        alert(err.message || 'Terjadi kesalahan');
+      }
+    };
+
+    // --- Forgot Modal
+    const modalForgot = document.getElementById('modalForgot');
+    const forgotBtn   = document.getElementById('forgotBtn');
+    const closeForgot = document.getElementById('closeForgot');
+    const formForgot  = document.getElementById('formForgot');
+
+    forgotBtn.onclick = () => modalForgot.classList.add('open');
+    closeForgot.onclick = () => modalForgot.classList.remove('open');
+    modalForgot.addEventListener('click', e => { if (e.target === modalForgot) modalForgot.classList.remove('open'); });
+
+    formForgot.onsubmit = async (e) => {
+      e.preventDefault();
+      const payload = {
+        usernameOrEmail: formForgot.usernameOrEmail.value.trim(),
+        newPassword:     formForgot.newPassword.value,
+        confirmPassword: formForgot.confirmPassword.value
+      };
+      if (!payload.usernameOrEmail) return alert('Isi username atau email');
+      if (!payload.newPassword || !payload.confirmPassword) return alert('Isi password baru & konfirmasi');
+      if (payload.newPassword !== payload.confirmPassword) return alert('Password & konfirmasi tidak sama');
+
+      try {
+        const resp = await fetch('/middleware/users/forgot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        alert('Password berhasil direset');
+        formForgot.reset();
+        modalForgot.classList.remove('open');
+      } catch (err) {
+        alert(err.message || 'Gagal reset password');
+      }
+    };
+
+    // --- Toggle show/hide password
+    const toggles = [
+      ['togglePwd','password'],
+      ['togglePwdConfirm','passwordConfirm'],
+      ['toggleNewPwd','newPassword'],
+      ['toggleConfirmPwd','confirmPassword']
+    ];
+    toggles.forEach(([btnId,inputId])=>{
+      const btn = document.getElementById(btnId);
+      const el  = document.getElementById(inputId);
+      if(btn && el){
+        btn.addEventListener('click',()=>{ el.type = (el.type === 'password') ? 'text' : 'password'; });
+      }
+    });
+</script>
+</body>
+</html>
