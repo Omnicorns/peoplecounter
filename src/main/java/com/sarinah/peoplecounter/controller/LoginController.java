@@ -201,7 +201,7 @@ public class LoginController {
         return "product-detail";
     }
 
-    @PostMapping("/web/product/history/clear")
+    @PostMapping("/product/history/clear")
     public String clearHistory(HttpSession session) {
         session.removeAttribute(SESSION_SKU_HISTORY);
         return "redirect:/web/product";
