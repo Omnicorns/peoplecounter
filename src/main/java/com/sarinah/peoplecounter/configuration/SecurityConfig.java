@@ -29,6 +29,11 @@ public class SecurityConfig {
             "/middleware/logout",
             "/middleware/users/register",
             "/middleware/users/forgot",
+            "/web/login",
+            "/web/product",
+            "/web/logout",
+            "/web/product/history/clear",
+
                       // <-- login/register dlsb
             "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"  // opsional
     };

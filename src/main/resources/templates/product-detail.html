@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Detail</title>
+  <style>
+    :root{ --bg:#eef2f7;--ink:#0f172a;--muted:#5b6472;--ring:#e5e7eb;--card:#fff;--brand:#5b3fd3 }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+    /* Appbar */
+    .appbar{position:sticky;top:0;background:var(--brand);color:#fff;padding:12px 16px}
+    .appbar-inner{display:flex;align-items:center;gap:12px}
+    .brand-title{font-weight:800}
+    .flex-1{flex:1}
+    .userbox{display:flex;align-items:center;gap:10px}
+    .user-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+               padding:6px 10px;border-radius:999px;font-weight:700}
+    .btn-logout{padding:6px 10px;border:1px solid rgba(255,255,255,.5);border-radius:10px;
+                background:transparent;color:#fff;cursor:pointer;text-decoration:none}
+    .btn-logout:hover{background:rgba(255,255,255,.12)}
+
+    .page{min-height:calc(100vh - 48px);padding:16px;display:flex;flex-direction:column;gap:16px;max-width:920px;margin:0 auto}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;box-shadow:0 10px 30px rgba(2,6,23,.06)}
+    .card-head{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--ring)}
+    .card-title{font-weight:800}
+    .rows{padding:8px 16px 16px}
+    .row{display:grid;grid-template-columns:180px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--ring)}
+    .row:last-child{border-bottom:0}
+    .k{font-size:12px;color:#334155;font-weight:600}
+    .v{font-size:16px;font-weight:800;word-break:break-word}
+    .muted{color:var(--muted);font-weight:600}
+    .form{display:flex;gap:8px;flex-wrap:wrap;padding:16px}
+    .form input[type=text]{flex:1 1 260px;padding:10px 12px;border:1px solid var(--ring);border-radius:10px}
+    .form input[type=text]::placeholder{color:#94a3b8}
+    .btn{padding:10px 14px;border:0;border-radius:10px;background:#111827;color:#fff;font-weight:700;cursor:pointer;text-decoration:none}
+    .btn-outline{padding:8px 12px;border:1px solid var(--ring);border-radius:10px;background:#fff;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border-bottom:1px solid var(--ring);padding:10px;text-align:left}
+    th{font-size:12px;color:#334155;font-weight:700}
+    td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .empty{padding:16px;color:var(--muted)}
+    .hint{padding:12px 16px;color:#475569}
+
+    /* Promo chips */
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{background:#eef2ff;border:1px solid #c7d2fe;color:#1e293b;border-radius:999px;padding:6px 10px;font-weight:700}
+
+    /* Loading overlay */
+    .overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:9999}
+    .overlay.show{display:flex}
+    .spinner{width:64px;height:64px;border:6px solid #e5e7eb;border-top-color:#5b3fd3;border-radius:50%;animation:spin 1s linear infinite;background:#fff}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Modal */
+    .modal-wrap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.45);z-index:9998}
+    .modal-wrap.show{display:flex}
+    .modal{width:min(92vw,420px);background:#fff;border:1px solid var(--ring);border-radius:14px;box-shadow:0 20px 40px rgba(2,6,23,.18)}
+    .modal-h{padding:14px 16px;border-bottom:1px solid var(--ring);font-weight:800}
+    .modal-b{padding:16px;color:#334155}
+    .modal-f{padding:12px 16px;border-top:1px solid var(--ring);display:flex;justify-content:flex-end;gap:8px}
+    .btn-lite{padding:8px 12px;border:1px solid var(--ring);border-radius:10px;background:#fff;cursor:pointer}
+
+    /* History list */
+    .hist-list{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:1fr 140px;gap:8px;align-items:center}
+    .hist-item{display:contents}
+    .hist-main{background:#f8fafc;border:1px solid var(--ring);border-radius:10px;padding:10px 12px;min-height:42px}
+    .hist-title{font-weight:800}
+    .hist-sub{color:#64748b;font-size:12px}
+    .hist-actions{display:flex;gap:8px;justify-content:flex-end}
+    .hist-filter{display:flex;gap:8px;flex-wrap:wrap}
+    .hist-filter input{flex:1 1 240px;padding:8px 10px;border:1px solid var(--ring);border-radius:10px}
+
+    @media (max-width: 640px){
+      .row{grid-template-columns:1fr}
+      .hist-list{grid-template-columns:1fr}
+      .hist-actions{justify-content:flex-start}
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER dengan Username + Logout -->
+<div class="appbar">
+  <div class="appbar-inner">
+    <div class="brand-title">PROMIS</div>
+    <div class="flex-1"></div>
+
+    <!-- Sudah login -->
+    <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
+      <span class="user-chip" th:text="${session.AUTH_USERNAME}">promisadmin</span>
+      <form th:action="@{/web/logout}" method="post">
+        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button type="submit" class="btn-logout">Logout</button>
+      </form>
+    </div>
+    <!-- Belum login -->
+    <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
+      <a class="btn-logout" th:href="@{/web/login}" style="border-color:#fff">Login</a>
+    </div>
+  </div>
+</div>
+
+<main class="page"
+      th:with="
+        dataEmpty=${sku != null and (
+          stocks == null or #lists.isEmpty(stocks) or name == null or #strings.isEmpty(name) or name=='-'
+        )},
+        promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}
+      ">
+
+  <!-- Form Pencarian SKU / Barcode -->
+  <section class="card">
+    <div class="card-head">
+      <div class="card-title">Cari Produk</div>
+    </div>
+    <form id="queryForm" class="form" th:action="@{/web/product}" method="get">
+      <input type="text" name="sku"  placeholder="Masukkan SKU (mis. FnB0006696)" th:value="${qSku}" aria-label="SKU">
+      <input type="text" name="code" placeholder="Atau Barcode (opsional)"       th:value="${qCode}" aria-label="Barcode">
+      <button class="btn" type="submit" data-loading>Tampilkan</button>
+    </form>
+    <div class="hint" th:if="${sku == null}">
+      Tip: isi <b>SKU</b> atau <b>Barcode</b>, lalu klik <b>Tampilkan</b>.
+    </div>
+  </section>
+
+  <!-- Ringkasan Produk -->
+  <section class="card" th:if="${sku != null}">
+    <div class="card-head">
+      <div class="card-title">Detail Produk</div>
+    </div>
+    <div class="rows">
+      <div class="row">
+        <div class="k">Nama Produk</div>
+        <div class="v" th:text="${name}">-</div>
+      </div>
+      <div class="row">
+        <div class="k">SKU</div>
+        <div class="v" th:text="${sku}">-</div>
+      </div>
+      <div class="row">
+        <div class="k">Promo</div>
+        <div>
+          <div class="muted" th:if="${#lists.isEmpty(promoItems)}">-</div>
+          <div class="chips" th:if="${!#lists.isEmpty(promoItems)}">
+            <span class="chip" th:each="p : ${promoItems}" th:text="${#strings.trim(p)}">PROMO</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabel Stok & Harga per Lokasi -->
+  <section class="card" th:if="${sku != null}">
+    <div class="card-head">
+      <div class="card-title">Stok &amp; Harga per Lokasi</div>
+    </div>
+
+    <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}">
+      <div class="empty">Tidak ada data stok/harga.</div>
+    </div>
+
+    <div class="rows" th:if="${stocks != null and !#lists.isEmpty(stocks)}">
+      <table>
+        <thead>
+        <tr>
+          <th>Lokasi</th>
+          <th style="text-align:right">Stok</th>
+          <th style="text-align:right">Harga</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${stocks}">
+          <td th:text="${r.location}">JTM/Stock/Malang</td>
+          <td class="num" th:text="${r.stock}">0</td>
+          <td class="num" th:text="${'Rp ' + #numbers.formatDecimal(r.price,0,'POINT',0,'COMMA')}">Rp 0</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Riwayat SKU -->
+  <section class="card">
+    <div class="card-head">
+      <div class="card-title">Riwayat SKU</div>
+      <form th:action="@{/web/product/history/clear}" method="post">
+        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button type="submit" class="btn-outline">Hapus semua</button>
+      </form>
+    </div>
+    <div class="rows" th:if="${history == null or #lists.isEmpty(history)}">
+      <div class="empty">Belum ada riwayat. SKU akan otomatis tersimpan ketika data produk ditemukan.</div>
+    </div>
+    <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
+      <div class="hist-filter">
+        <input id="histFilter" type="text" placeholder="Filter berdasarkan SKU / nama…">
+      </div>
+      <ul class="hist-list" id="histList">
+        <li class="hist-item" th:each="h : ${history}" data-role="hist-item"
+            th:attr="data-sku=${h['sku']}, data-name=${h['name']}">
+          <div class="hist-main">
+            <div class="hist-title" th:text="${h['name'] != null ? h['name'] : h['sku']}">Nama produk</div>
+            <div class="hist-sub">
+              <b>SKU:</b> <span th:text="${h['sku']}">FN0001</span>
+              <span th:if="${h['name'] != null}"> • <span th:text="${h['name']}">Nama</span></span>
+            </div>
+          </div>
+          <div class="hist-actions">
+            <a class="btn" th:href="@{/web/product(sku=${h['sku']})}" data-loading>Pakai</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Modal Data Kosong -->
+  <div id="emptyModalWrap" class="modal-wrap" th:classappend="${dataEmpty} ? ' show' : ''">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emptyTitle">
+      <div class="modal-h" id="emptyTitle">Data Kosong</div>
+      <div class="modal-b">
+        Tidak ditemukan data produk untuk pencarian Anda. Silakan periksa SKU/Barcode dan coba lagi.
+      </div>
+      <div class="modal-f">
+        <button type="button" class="btn-lite" id="modalCloseBtn">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="overlay" aria-hidden="true">
+  <div class="spinner" aria-label="Loading"></div>
+</div>
+
+<script>
+  (function(){
+    const overlay = document.getElementById('loadingOverlay');
+    const showLoading = ()=> overlay.classList.add('show');
+
+    // Loading saat form submit
+    const form = document.getElementById('queryForm');
+    if (form) form.addEventListener('submit', showLoading);
+
+    // Semua tombol/link yang memicu navigasi
+    document.querySelectorAll('[data-loading]').forEach(el=>{
+      el.addEventListener('click', showLoading);
+    });
+
+    // Modal 'data kosong'
+    const modalWrap = document.getElementById('emptyModalWrap');
+    const closeBtn  = document.getElementById('modalCloseBtn');
+    if (modalWrap && closeBtn) {
+      closeBtn.addEventListener('click', ()=> modalWrap.classList.remove('show'));
+      modalWrap.addEventListener('click', (e)=>{
+        if (e.target === modalWrap) modalWrap.classList.remove('show');
+      });
+    }
+
+    // Filter riwayat (client-side)
+    const filterInput = document.getElementById('histFilter');
+    const list = document.getElementById('histList');
+    if (filterInput && list) {
+      const items = Array.from(list.querySelectorAll('[data-role="hist-item"]'));
+      filterInput.addEventListener('input', ()=>{
+        const q = filterInput.value.toLowerCase().trim();
+        items.forEach(li=>{
+          const sku  = (li.getAttribute('data-sku')  || '').toLowerCase();
+          const name = (li.getAttribute('data-name') || '').toLowerCase();
+          const match = q === '' || sku.includes(q) || name.includes(q);
+          li.style.display = match ? '' : 'none';
+        });
+      });
+    }
+  })();
+</script>
+</body>
+</html>
