@@ -1,12 +1,15 @@
 package com.sarinah.peoplecounter.controller;
 
 
+import com.sarinah.peoplecounter.model.ApiContext;
 import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
 import com.sarinah.peoplecounter.response.UserResponse;
 import com.sarinah.peoplecounter.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +30,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login( @RequestBody LoginRequest req){
-        return ResponseEntity.ok(authService.login(req));
+    public ResponseEntity<AuthResponse> login( @RequestBody LoginRequest req,  HttpServletRequest http){
+        AuthResponse resp = authService.login(req);
+        HttpSession s = http.getSession(true);
+        s.setAttribute("AUTH_USERNAME", req.getUsernameOrEmail());
+        return ResponseEntity.ok(resp);
     }
 
 

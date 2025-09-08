@@ -2,6 +2,7 @@ package com.sarinah.peoplecounter.service;
 
 import com.sarinah.peoplecounter.entity.User;
 import com.sarinah.peoplecounter.entity.UserStatus;
+import com.sarinah.peoplecounter.model.ApiContext;
 import com.sarinah.peoplecounter.repository.UserRepository;
 import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
@@ -78,6 +79,7 @@ public class AuthService {
         long accessExp = jwt.getAccessTtlSeconds();
 
         String refreshToken = UUID.randomUUID().toString();
+        ApiContext.setUsername(user.getUsername());
 
 
         return new AuthResponse(access, accessExp, refreshToken, refreshTtl.toSeconds());

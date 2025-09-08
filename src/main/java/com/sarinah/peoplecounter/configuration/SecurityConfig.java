@@ -29,10 +29,12 @@ public class SecurityConfig {
             "/middleware/logout",
             "/middleware/users/register",
             "/middleware/users/forgot",
+            "/middleware/users/inactive",
             "/web/login",
             "/web/product",
             "/web/logout",
             "/web/product/history/clear",
+
 
                       // <-- login/register dlsb
             "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"  // opsional
@@ -45,7 +47,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

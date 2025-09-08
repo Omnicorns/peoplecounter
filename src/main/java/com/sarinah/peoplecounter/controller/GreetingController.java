@@ -1,5 +1,6 @@
 package com.sarinah.peoplecounter.controller;
 
+import com.sarinah.peoplecounter.configuration.LoggingFilterConfig;
 import com.sarinah.peoplecounter.dto.User;
 import com.sarinah.peoplecounter.entity.MiddlewareUser;
 import com.sarinah.peoplecounter.entity.UserStatus;
@@ -7,6 +8,8 @@ import com.sarinah.peoplecounter.repository.UserRepository;
 import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.service.AuthServicePlain;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -15,7 +18,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -64,12 +70,27 @@ public class GreetingController {
 
 
     @GetMapping("/dashboard")
-    public String dashboard(HttpSession session, Model model) {
+    public String dashboard(HttpSession session, Model model, HttpServletRequest request) {
         String username = (String) session.getAttribute("AUTH_USERNAME");
         if (username == null) {
             // jika belum login, redirect ke login
             return "redirect:/middleware/login";
         }
+        ServletContext ctx = request.getServletContext();
+
+        String  lastScanUser  = (String)  ctx.getAttribute(LoggingFilterConfig.ATTR_LAST_SCAN_USER);
+        String  lastScanValue = (String)  ctx.getAttribute(LoggingFilterConfig.ATTR_LAST_SCAN_VALUE);
+        Instant lastScanAtRaw = (Instant) ctx.getAttribute(LoggingFilterConfig.ATTR_LAST_SCAN_AT);
+
+        // Konversi Instant -> LocalDateTime supaya gampang diformat di thymeleaf
+        LocalDateTime lastScanAt = (lastScanAtRaw == null)
+                ? null
+                : LocalDateTime.ofInstant(lastScanAtRaw, ZoneId.systemDefault());
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> scans =
+                (List<Map<String, Object>>) ctx.getAttribute(LoggingFilterConfig.ATTR_SCAN_TODAY);
+        if (scans == null) scans = List.of();
 
         model.addAttribute("username", username);
         model.addAttribute("fullName",username);
@@ -84,6 +105,11 @@ public class GreetingController {
         model.addAttribute("message", "Welcome to our platform!");
         model.addAttribute("users", list);
         model.addAttribute("username", username);
+
+        model.addAttribute("lastScanUser",  lastScanUser);
+        model.addAttribute("lastScanValue", lastScanValue);
+        model.addAttribute("lastScanAt",    lastScanAt);
+        model.addAttribute("scanToday",     scans);
         return "middleware-register";
     }
 
@@ -178,6 +204,42 @@ public class GreetingController {
             public final String result = "OK";
             public final String username = user.getUsername();
             public final String message = "Password berhasil direset";
+        };
+    }
+
+    @PostMapping(path = "/users/inactive", consumes = "application/json", produces = "application/json")
+    @ResponseBody
+    public Object InActiveUser(@RequestBody ForgotPasswordRequest req) {
+
+        // Validasi field
+        if (req.getUsernameOrEmail() == null || req.getUsernameOrEmail().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username/Email wajib diisi");
+        }
+
+
+        // Cari user by username ATAU email (lowercase untuk konsistensi)
+        final String key = req.getUsernameOrEmail().toLowerCase();
+        var user = userRepo.findByUsername(key)
+                .or(() -> userRepo.findByEmail(key))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User tidak ditemukan"));
+
+        user.setStatus(UserStatus.valueOf("SUSPENDED"));
+
+        // Hash password baru dengan BCrypt (sesuai skema PROMIS: passwordHash)
+
+
+        // (Opsional) update timestamp kolom terkait jika ada
+        // user.setPasswordUpdatedAt(Instant.now());
+
+        userRepo.save(user);
+
+        // (Opsional) kalau mau paksa logout semua sesi lama, lakukan di layer session store
+
+        // Response ringkas
+        return new Object() {
+            public final String result = "OK";
+            public final String username = user.getUsername();
+            public final String message = "user dinonaktifkan";
         };
     }
 
