@@ -147,7 +147,7 @@
             <thead>
             <tr>
                 <th>Waktu</th>
-<!--                <th>User</th>-->
+                <th>User</th>-->
                 <th>Value</th>
                 <th>Nama Produk</th>
 <!--                <th>Trace ID</th>-->
@@ -160,7 +160,7 @@
             <tr th:each="r : ${scanToday}">
                 <td th:text="${ r['time'] != null ? #temporals.format(r['time'], 'yyyy-MM-dd HH:mm:ss')
                          : (r['at'] != null ? #temporals.format(r['at'], 'yyyy-MM-dd HH:mm:ss') : '-') }">-</td>
-<!--                <td th:text="${r['user']    != null ? r['user']    : '-'}">-</td>-->
+               <td th:text="${r['user']    != null ? r['user']    : '-'}">-</td>-->
                 <td class="mono" th:text="${r['value']   != null ? r['value']   : '-'}">-</td>
                 <td th:text="${r['name']    != null ? r['name']    : '-'}">-</td>
 <!--                <td class="mono" th:text="${r['traceId'] != null ? r['traceId'] : '-'}">-</td>-->
