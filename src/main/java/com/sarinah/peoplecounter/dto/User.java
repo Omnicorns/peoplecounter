@@ -14,4 +14,5 @@ public class User {
     private String email;
     private String status;
     private String fullName;
+    private String keterangan;
 }

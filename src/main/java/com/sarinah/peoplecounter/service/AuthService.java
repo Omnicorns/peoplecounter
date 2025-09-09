@@ -56,9 +56,11 @@ public class AuthService {
                 .username(req.getUsername().toLowerCase())
               //  .email(req.getEmail().toLowerCase())
               //  .phone(req.getPhone())
+
                 .passwordHash(hash)
                 .termsAcceptedAt(Instant.now())
                 .status(UserStatus.ACTIVE)
+                .keterangan(req.getKeterangan())
                 .build();
         userRepo.save(user);
     }

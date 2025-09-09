@@ -33,6 +33,9 @@ public class User {
 
     private Instant termsAcceptedAt;
 
+    @Column(name = "keterangan")
+    private String keterangan;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;

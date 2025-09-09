@@ -88,9 +88,32 @@ public class GreetingController {
                 : LocalDateTime.ofInstant(lastScanAtRaw, ZoneId.systemDefault());
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> scans =
-                (List<Map<String, Object>>) ctx.getAttribute(LoggingFilterConfig.ATTR_SCAN_TODAY);
-        if (scans == null) scans = List.of();
+        var raw = (List<Map<String, Object>>) ctx.getAttribute(LoggingFilterConfig.ATTR_SCAN_TODAY);
+
+        var zone  = java.time.ZoneId.systemDefault();
+        var today = java.time.LocalDate.now(zone);
+
+        List<Map<String,Object>> scanToday = (raw == null) ? List.of()
+                : raw.stream()
+                .filter(m -> {
+                    Object t = m.get("time");
+                    java.time.LocalDate d = null;
+                    if (t instanceof java.time.LocalDateTime ldt) {
+                        d = ldt.toLocalDate();
+                    } else if (t instanceof java.time.Instant ins) {
+                        d = java.time.LocalDateTime.ofInstant(ins, zone).toLocalDate();
+                    } else if (t instanceof java.util.Date dt) {
+                        d = dt.toInstant().atZone(zone).toLocalDate();
+                    } else if (t instanceof CharSequence cs) {
+                        // fallback: kalau ada yang tersimpan sebagai String
+                        try {
+                            d = java.time.LocalDateTime.parse(cs.toString()).toLocalDate();
+                        } catch (Exception ignored) {}
+                    }
+                    return today.equals(d);
+                })
+                .toList();
+
 
         model.addAttribute("username", username);
         model.addAttribute("fullName",username);
@@ -100,6 +123,7 @@ public class GreetingController {
                         .username(data.getUsername())
                         .fullName(data.getFullName())
                         .status(String.valueOf(data.getStatus()))
+                        .keterangan(data.getKeterangan())
                         .build())
                 .collect(Collectors.toList());
         model.addAttribute("message", "Welcome to our platform!");
@@ -109,7 +133,7 @@ public class GreetingController {
         model.addAttribute("lastScanUser",  lastScanUser);
         model.addAttribute("lastScanValue", lastScanValue);
         model.addAttribute("lastScanAt",    lastScanAt);
-        model.addAttribute("scanToday",     scans);
+        model.addAttribute("scanToday",     scanToday);
         return "middleware-register";
     }
 
@@ -151,7 +175,8 @@ public class GreetingController {
                 // .phone(...)  // idem
                 .passwordHash(hash)                 // <-- kolom PROMIS
                 .termsAcceptedAt(Instant.now())
-                .status(UserStatus.ACTIVE)          // jika bukan enum: pakai string "ACTIVE"
+                .status(UserStatus.ACTIVE)
+                .keterangan(req.getKeterangan())// jika bukan enum: pakai string "ACTIVE"
                 .build();
 
         userRepo.save(user);
