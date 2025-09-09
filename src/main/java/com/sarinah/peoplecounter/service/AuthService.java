@@ -10,6 +10,7 @@ import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
 import com.sarinah.peoplecounter.response.UserResponse;
 import com.sarinah.peoplecounter.util.JwtService;
+import jakarta.servlet.ServletContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +18,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +77,22 @@ public class AuthService {
         if(user.getStatus() != UserStatus.ACTIVE)  throw new ResponseStatusException(HttpStatus.CONFLICT," user inactive");;
         if(!BCrypt.checkpw(req.getPassword(), user.getPasswordHash()))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"password salah");
+
+        String ip = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                .getRequest().getRemoteAddr();
+
+        ServletContext ctx = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                .getRequest().getServletContext();
+
+        Map<String, String> ipUserMap = (Map<String, String>) ctx.getAttribute("IP_USER_MAP");
+        if (ipUserMap == null) {
+            ipUserMap = new ConcurrentHashMap<>();
+            ctx.setAttribute("IP_USER_MAP", ipUserMap);
+        }
+        ipUserMap.put(ip, user.getUsername());
+
+        // ✅ Set ke ApiContext juga kalau kamu pakai ThreadLocal
+        ApiContext.setUsername(user.getUsername());
 
         String access = jwt.generateAccessToken(user.getId().toString(), Map.of(
                 "username", user.getUsername(),

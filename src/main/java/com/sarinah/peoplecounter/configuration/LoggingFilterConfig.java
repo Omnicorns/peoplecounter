@@ -81,6 +81,17 @@ public class LoggingFilterConfig {
             String username = (s != null && s.getAttribute("AUTH_USERNAME") != null)
                     ? String.valueOf(s.getAttribute("AUTH_USERNAME"))
                     : "anonymous";
+
+            if ("anonymous".equals(username)) {
+                String ip = request.getRemoteAddr();
+                ServletContext ctx = request.getServletContext();
+
+                @SuppressWarnings("unchecked")
+                Map<String, String> ipUserMap = (Map<String, String>) ctx.getAttribute("IP_USER_MAP");
+                if (ipUserMap != null && ipUserMap.containsKey(ip)) {
+                    username = ipUserMap.get(ip);
+                }
+            }
             MDC.put("username", username);
 
             long start = System.currentTimeMillis();
