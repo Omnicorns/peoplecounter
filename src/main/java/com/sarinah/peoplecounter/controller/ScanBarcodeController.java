@@ -1,6 +1,10 @@
 package com.sarinah.peoplecounter.controller;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sarinah.peoplecounter.service.PostJournalEntriesService;
+import com.sarinah.peoplecounter.service.PostLoyaltyMemberService;
+import com.sarinah.peoplecounter.service.PostPosHistoryService;
 import com.sarinah.peoplecounter.service.PostScanBarcodeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,9 +17,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/sarinah-forwarder/v1/modul")
 public class ScanBarcodeController {
     private final PostScanBarcodeService postScanBarcodeService;
+    private final PostLoyaltyMemberService postLoyaltyMemberService;
+    private final PostPosHistoryService postPosHistoryService;
+    private final PostJournalEntriesService postJournalEntriesService;
 
     @PostMapping(value = "/barcode")
     public ObjectNode postScanResponse(@RequestBody ObjectNode request) {
         return postScanBarcodeService.execute(request);
+    }
+
+    @PostMapping(value = "/member-loyalty")
+    public ArrayNode postLoyaltyMemberResponse(@RequestBody ObjectNode request) {
+        return postLoyaltyMemberService.execute(request);
+    }
+
+    @PostMapping(value = "/pos-order-history")
+    public ArrayNode postOrderHistoryResponse(@RequestBody ObjectNode request) {
+        return postPosHistoryService.execute(request);
+    }
+
+    @PostMapping(value = "/journal-entries")
+    public ArrayNode postJournalEntriesResponse(@RequestBody ObjectNode request) {
+        return postJournalEntriesService.execute(request);
     }
 }
