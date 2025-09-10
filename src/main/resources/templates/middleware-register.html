@@ -20,34 +20,48 @@
         .uname{font-weight:700;font-size:13px}.udesc{font-size:11px;opacity:.85}
         .menu{position:absolute;right:0;margin-top:8px;width:280px;background:#fff;color:var(--ink);border:1px solid var(--ring);border-radius:12px;box-shadow:0 12px 32px rgba(2,6,23,.18);display:none;overflow:hidden}
         .menu.open{display:block}.menu .top{padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--ring);display:flex;gap:10px;align-items:center}
+
         main{max-width:1200px;margin:0 auto;padding:24px}
         h1{margin:0 0 16px;font-size:20px}
         .section{margin-top:16px}
         .section h2{font-size:18px;margin:0 0 6px}
         .section .sub{color:#64748b;font-size:13px;margin-bottom:10px}
-        .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+        .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;align-items:center}
         .btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
         .btn:hover{background:var(--pri-2)}
         .btn.secondary{background:#475569}.btn.secondary:hover{filter:brightness(.95)}
         .btn.danger{background:#b91c1c}
+        .search{height:38px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;outline:none}
+
         table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--ring)}
         th,td{padding:12px 16px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14px}
-        th{background:#f1f5f9;font-weight:600;color:#475569}
+        th{background:#f1f5f9;font-weight:600;color:#475569;cursor:pointer;user-select:none}
         tbody tr:hover{background:#f9fafb}
         .status{font-weight:700;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
         .ACTIVE{background:#dcfce7;color:#166534}.INACTIVE{background:#fee2e2;color:#991b1b}.SUSPENDED{background:#fef3c7;color:#92400e}
         .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
         .empty{padding:18px;text-align:center;color:#64748b}
-        /* modal */
-        .modal{position:fixed;inset:0;display:none}
-        .modal.open{display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
-        .sheet{background:#fff;padding:20px;border-radius:10px;width:420px;max-width:95%;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+        th.asc::after { content: " ▲"; font-size: 11px; }
+        th.desc::after { content: " ▼"; font-size: 11px; }
+
+        /* Modal aman (anti bentrok dengan Bootstrap) */
+        .xmodal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:9999}
+        .xmodal.is-open{display:flex}
+        .sheet{background:#fff;padding:20px;border-radius:12px;min-width:340px;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
         .field{margin-bottom:12px}.field label{display:block;font-size:13px;font-weight:700;margin:6px 0}
         .form-input{width:100%;height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
         .form-input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.25)}
         .input-group{position:relative}.input-group .form-input{padding-right:40px}
         .eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;cursor:pointer;border-radius:6px;color:#475569}
-        .eye-btn:hover{background:#f1f5f9}.modal-footer .btn{height:40px;padding:0 14px}
+        .eye-btn:hover{background:#f1f5f9}
+        .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+        .modal-footer .btn{height:40px;padding:0 14px}
+
+        /* Pagination */
+        .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+        .pager .info{font-size:13px;color:#64748b}
+        .pager .btn{padding:6px 10px;border-radius:8px}
+        .pager select{height:36px;border:1px solid #cbd5e1;border-radius:8px;padding:0 8px;background:#fff}
     </style>
 </head>
 <body>
@@ -57,6 +71,8 @@
             <img src="/promis.png" alt="PROMIS" onerror="this.style.display='none'"><span>PROMIS Dashboard</span>
         </div>
         <div class="spacer"></div>
+
+        <!-- user menu -->
         <div class="userwrap" id="userwrap">
             <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
                 <div class="avatar"
@@ -96,10 +112,8 @@
         <button class="btn" id="addBtn">+ Add User</button>
         <button class="btn secondary" id="forgotBtn">Forgot Password</button>
         <button class="btn secondary" id="inactiveBtn">Inactive</button>
+        <input class="search" id="tblSearch" type="search" placeholder="Cari di tabel Users..." aria-label="Cari Users" />
     </div>
-
-    <!-- Riwayat Scan -->
-
 
     <!-- Users -->
     <div class="section">
@@ -107,12 +121,12 @@
         <table id="tbl">
             <thead>
             <tr>
-                <th>Username</th>
-                <th>FullName</th>
-                <th>Status</th>
-                <th>Keterangan</th> <!-- NEW -->
-                <th>Last Scan</th>
-                <th>When</th>
+                <th data-col="username">Username</th>
+                <th data-col="fullname">FullName</th>
+                <th data-col="status">Status</th>
+                <th data-col="keterangan">Keterangan</th>
+                <th data-col="lastscan">Last Scan</th>
+                <th data-col="when">When</th>
             </tr>
             </thead>
             <tbody>
@@ -120,25 +134,42 @@
                 <td th:text="${u.username}">username</td>
                 <td th:text="${u.fullName}">fullname</td>
                 <td>
-              <span class="status"
-                    th:text="${u.status}"
-                    th:classappend="${ #strings.equalsIgnoreCase(u.status,'ACTIVE') ? ' ACTIVE' :
-                                      (#strings.equalsIgnoreCase(u.status,'SUSPENDED') ? ' SUSPENDED' : ' INACTIVE') }">status</span>
+          <span class="status"
+                th:text="${u.status}"
+                th:classappend="${ #strings.equalsIgnoreCase(u.status,'ACTIVE') ? ' ACTIVE' :
+                                  (#strings.equalsIgnoreCase(u.status,'SUSPENDED') ? ' SUSPENDED' : ' INACTIVE') }">status</span>
                 </td>
-                <td th:text="${u.keterangan}">-</td> <!-- NEW -->
+                <td th:text="${u.keterangan}">-</td>
                 <td>
-              <span class="mono"
-                    th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanValue != null
-                               ? lastScanValue : '-' }">-</span>
+          <span class="mono"
+                th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanValue != null
+                           ? lastScanValue : '-' }">-</span>
                 </td>
                 <td th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanAt != null
-                           ? #temporals.format(lastScanAt, 'yyyy-MM-dd HH:mm:ss') : '-' }">-</td>
+                       ? #temporals.format(lastScanAt, 'yyyy-MM-dd HH:mm:ss') : '-' }">-</td>
             </tr>
             </tbody>
         </table>
+
+        <!-- Pagination -->
+        <div class="pager" id="tblPager">
+            <div class="info" id="tblInfo">Showing 0–0 of 0</div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <label for="tblPageSize" style="font-size:13px;color:#64748b">Rows:</label>
+                <select id="tblPageSize">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <button class="btn secondary" id="tblPrev">Prev</button>
+                <span class="info" id="tblPage">1 / 1</span>
+                <button class="btn secondary" id="tblNext">Next</button>
+            </div>
+        </div>
     </div>
 
-
+    <!-- Riwayat Scan Hari Ini -->
     <div class="section">
         <h2>Riwayat Scan Hari Ini</h2>
         <div class="sub">Menampilkan scan dari pukul 00:00 s/d sekarang.</div>
@@ -150,27 +181,25 @@
                 <th>User</th>
                 <th>Value</th>
                 <th>Nama Produk</th>
-<!--                <th>Trace ID</th>-->
             </tr>
             </thead>
-            <tbody>
+            <tbody id="scanTodayTbody">
             <tr th:if="${scanToday == null or #lists.isEmpty(scanToday)}">
                 <td colspan="5" class="empty">Belum ada scan hari ini.</td>
             </tr>
             <tr th:each="r : ${scanToday}">
                 <td th:text="${ r['time'] != null ? #temporals.format(r['time'], 'yyyy-MM-dd HH:mm:ss')
                          : (r['at'] != null ? #temporals.format(r['at'], 'yyyy-MM-dd HH:mm:ss') : '-') }">-</td>
-               <td th:text="${r['user']    != null ? r['user']    : '-'}">-</td>
+                <td th:text="${r['user']    != null ? r['user']    : '-'}">-</td>
                 <td class="mono" th:text="${r['value']   != null ? r['value']   : '-'}">-</td>
                 <td th:text="${r['name']    != null ? r['name']    : '-'}">-</td>
-<!--                <td class="mono" th:text="${r['traceId'] != null ? r['traceId'] : '-'}">-</td>-->
             </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Modals -->
-    <div class="modal" id="modalAdd">
+    <!-- Modals (pakai .xmodal) -->
+    <div class="xmodal" id="modalAdd" aria-hidden="true">
         <div class="sheet">
             <h3>Form Add User</h3>
             <form id="formUser" novalidate>
@@ -195,7 +224,6 @@
                     <input id="acceptTerms" name="acceptTerms" type="checkbox" />
                     <label for="acceptTerms" style="margin:0;font-weight:600">Accept Terms</label>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn secondary" id="closeAdd">Close</button>
                     <button type="submit" class="btn">Save</button>
@@ -204,7 +232,7 @@
         </div>
     </div>
 
-    <div class="modal" id="modalForgot">
+    <div class="xmodal" id="modalForgot" aria-hidden="true">
         <div class="sheet">
             <h3>Forgot Password</h3>
             <form id="formForgot" novalidate>
@@ -231,7 +259,7 @@
         </div>
     </div>
 
-    <div class="modal" id="modalInactive">
+    <div class="xmodal" id="modalInactive" aria-hidden="true">
         <div class="sheet">
             <h3>Nonaktifkan (Suspend) User</h3>
             <form id="formInactive" novalidate>
@@ -245,7 +273,7 @@
     </div>
 </main>
 
-<!-- JS (non-inline agar Thymeleaf tidak memproses) -->
+<!-- JS -->
 <script th:inline="none">
     // user menu
     (function(){
@@ -256,67 +284,158 @@
       document.addEventListener('keydown',e=>{if(e.key==='Escape') menu.classList.remove('open')});
     })();
 
-   // Add User
-const modalAdd=document.getElementById('modalAdd'),
-      addBtn=document.getElementById('addBtn'),
-      closeAdd=document.getElementById('closeAdd'),
-      formUser=document.getElementById('formUser');
+    // ===== Sorting + Search + Pagination untuk #tbl =====
+    (function(){
+      const table = document.getElementById('tbl'); if(!table) return;
+      const thead  = table.querySelector('thead');
+      const headers= thead.querySelectorAll('th');
+      const tbody  = table.querySelector('tbody');
+      const search = document.getElementById('tblSearch');
 
-if(addBtn){addBtn.onclick=()=>modalAdd.classList.add('open')}
-if(closeAdd){closeAdd.onclick=()=>modalAdd.classList.remove('open')}
-if(modalAdd){modalAdd.addEventListener('click',e=>{if(e.target===modalAdd) modalAdd.classList.remove('open')})}
+      const pager     = document.getElementById('tblPager');
+      const info      = document.getElementById('tblInfo');
+      const pageText  = document.getElementById('tblPage');
+      const prevBtn   = document.getElementById('tblPrev');
+      const nextBtn   = document.getElementById('tblNext');
+      const pageSizeEl= document.getElementById('tblPageSize');
 
-if(formUser){
-  formUser.onsubmit=async(e)=>{
-    e.preventDefault();
+      const STATUS_ORDER = { 'active': 1, 'suspended': 2, 'inactive': 3 };
 
-    const p={
-      fullName: formUser.fullName.value.trim(),
-      username: formUser.username.value.trim(),
-      password: formUser.password.value,
-      passwordConfirm: formUser.passwordConfirm.value,
-      acceptTerms: formUser.acceptTerms.checked,
-      keterangan: (formUser.keterangan?.value || '').trim()   // ambil dari textarea
-    };
+      let rowsAll   = Array.from(tbody.querySelectorAll('tr'));
+      let rowsView  = rowsAll.slice();
+      let sortIdx   = null, sortAsc = true;
+      let pageSize  = parseInt(pageSizeEl.value, 10);
+      let pageNow   = 1;
 
-    if(!p.username||!p.fullName) return alert('Lengkapi Username & Full Name');
-    if(!p.password||!p.passwordConfirm) return alert('Isi password & konfirmasi');
-    if(p.password!==p.passwordConfirm) return alert('Password & konfirmasi tidak sama');
-    if(!p.acceptTerms) return alert('Centang Accept Terms');
+      function parseCell(index, td){
+        const txt = td.textContent.trim();
+        if(index === 2){ const key = txt.toLowerCase(); return STATUS_ORDER[key] ?? 999; }
+        if(index === 5 && txt !== '-' && !Number.isNaN(Date.parse(txt))) return new Date(txt).getTime();
+        const num = Number(txt.replaceAll(',','')); if(!Number.isNaN(num) && txt!=='') return num;
+        return txt.toLowerCase();
+      }
 
-    try{
-      const resp=await fetch('/middleware/users/register',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(p)
+      function applySort(){
+        if(sortIdx === null) return;
+        rowsView.sort((ra, rb)=>{
+          const a = parseCell(sortIdx, ra.children[sortIdx]);
+          const b = parseCell(sortIdx, rb.children[sortIdx]);
+          if (a < b) return sortAsc ? -1 : 1;
+          if (a > b) return sortAsc ? 1 : -1;
+          return 0;
+        });
+      }
+
+      function applyFilter(){
+        const q = (search?.value || '').trim().toLowerCase();
+        rowsView = rowsAll.filter(tr => tr.textContent.toLowerCase().includes(q));
+      }
+
+      function renderPage(){
+        const total = rowsView.length;
+        const pages = Math.max(1, Math.ceil(total / pageSize));
+        if(pageNow > pages) pageNow = pages;
+        const start = (pageNow-1)*pageSize;
+        const end   = Math.min(start + pageSize, total);
+
+        tbody.innerHTML = '';
+        rowsView.slice(start, end).forEach(r => tbody.appendChild(r));
+
+        info.textContent = total ? `Showing ${start+1}–${end} of ${total}` : 'Showing 0–0 of 0';
+        pageText.textContent = `${pageNow} / ${pages}`;
+        prevBtn.disabled = pageNow <= 1;
+        nextBtn.disabled = pageNow >= pages;
+      }
+
+      function reflow(){
+        applyFilter(); applySort(); pageNow = 1; renderPage();
+      }
+
+      headers.forEach((th, idx)=>{
+        th.addEventListener('click', ()=>{
+          const isAsc = !(sortIdx === idx && sortAsc === true);
+          headers.forEach(h=>h.classList.remove('asc','desc'));
+          sortIdx = idx; sortAsc = isAsc;
+          th.classList.add(isAsc ? 'asc' : 'desc');
+          reflow();
+        });
       });
-      if(!resp.ok) throw new Error(await resp.text());
 
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${p.username}</td>
-        <td>${p.fullName}</td>
-        <td><span class="status ACTIVE">ACTIVE</span></td>
-        <td>${p.keterangan || '-'}</td>
-        <td>-</td>
-        <td>-</td>   <!-- kolom keterangan -->
-      `;
-      document.querySelector('#tbl tbody').appendChild(tr);
+      search?.addEventListener('input', reflow);
+      pageSizeEl.addEventListener('change', ()=>{
+        pageSize = parseInt(pageSizeEl.value,10) || 10;
+        renderPage();
+      });
+      prevBtn.addEventListener('click', ()=>{ if(pageNow>1){ pageNow--; renderPage(); }});
+      nextBtn.addEventListener('click', ()=>{ pageNow++; renderPage(); });
 
-      formUser.reset();
-      modalAdd.classList.remove('open');
-    }catch(err){
-      alert(err.message||'Terjadi kesalahan')
+      // helper agar baris baru ikut ke pagination/filter
+      window.__users_table_add_row = function(tr){ rowsAll.push(tr); reflow(); };
+      window.__users_table_reset   = function(){ // dipanggil saat rebuild dari live update
+        rowsAll = Array.from(tbody.querySelectorAll('tr')); reflow();
+      };
+
+      reflow();
+    })();
+
+    // ===== MODAL Helpers =====
+    function openModal(el){ el?.classList.add('is-open'); el?.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ el?.classList.remove('is-open'); el?.setAttribute('aria-hidden','true'); }
+
+    // ===== Add User =====
+    const modalAdd=document.getElementById('modalAdd'),
+          addBtn=document.getElementById('addBtn'),
+          closeAdd=document.getElementById('closeAdd'),
+          formUser=document.getElementById('formUser');
+
+    if(addBtn){addBtn.onclick=()=>openModal(modalAdd)}
+    if(closeAdd){closeAdd.onclick=()=>closeModal(modalAdd)}
+    if(modalAdd){modalAdd.addEventListener('click',e=>{if(e.target===modalAdd) closeModal(modalAdd)})}
+
+    if(formUser){
+      formUser.onsubmit=async(e)=>{ e.preventDefault();
+        const p={
+          fullName: formUser.fullName.value.trim(),
+          username: formUser.username.value.trim(),
+          password: formUser.password.value,
+          passwordConfirm: formUser.passwordConfirm.value,
+          acceptTerms: formUser.acceptTerms.checked,
+          keterangan: (formUser.keterangan?.value || '').trim()
+        };
+        if(!p.username||!p.fullName) return alert('Lengkapi Username & Full Name');
+        if(!p.password||!p.passwordConfirm) return alert('Isi password & konfirmasi');
+        if(p.password!==p.passwordConfirm) return alert('Password & konfirmasi tidak sama');
+        if(!p.acceptTerms) return alert('Centang Accept Terms');
+
+        try{
+          const resp=await fetch('/middleware/users/register',{
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p)
+          });
+          if(!resp.ok) throw new Error(await resp.text());
+
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td>${p.username}</td>
+                        <td>${p.fullName}</td>
+                        <td><span class="status ACTIVE">ACTIVE</span></td>
+                        <td>${p.keterangan || '-'}</td>
+                        <td>-</td><td>-</td>`;
+          document.querySelector('#tbl tbody').appendChild(tr);
+          window.__users_table_add_row?.(tr);
+
+          formUser.reset(); closeModal(modalAdd);
+        }catch(err){ alert(err.message||'Terjadi kesalahan'); }
+      }
     }
-  }
-}
 
+    // ===== Forgot =====
+    const modalForgot=document.getElementById('modalForgot'),
+          forgotBtn=document.getElementById('forgotBtn'),
+          closeForgot=document.getElementById('closeForgot'),
+          formForgot=document.getElementById('formForgot');
 
-    // Forgot
-    const modalForgot=document.getElementById('modalForgot'),forgotBtn=document.getElementById('forgotBtn'),closeForgot=document.getElementById('closeForgot'),formForgot=document.getElementById('formForgot');
-    if(forgotBtn){forgotBtn.onclick=()=>modalForgot.classList.add('open')}
-    if(closeForgot){closeForgot.onclick=()=>modalForgot.classList.remove('open')}
-    if(modalForgot){modalForgot.addEventListener('click',e=>{if(e.target===modalForgot) modalForgot.classList.remove('open')})}
+    if(forgotBtn){forgotBtn.onclick=()=>openModal(modalForgot)}
+    if(closeForgot){closeForgot.onclick=()=>closeModal(modalForgot)}
+    if(modalForgot){modalForgot.addEventListener('click',e=>{if(e.target===modalForgot) closeModal(modalForgot)})}
     if(formForgot){formForgot.onsubmit=async(e)=>{e.preventDefault();
       const p={usernameOrEmail:formForgot.usernameOrEmail.value.trim(),newPassword:formForgot.newPassword.value,confirmPassword:formForgot.confirmPassword.value};
       if(!p.usernameOrEmail) return alert('Isi username atau email');
@@ -325,15 +444,19 @@ if(formUser){
       try{
         const resp=await fetch('/middleware/users/forgot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
         if(!resp.ok) throw new Error(await resp.text());
-        alert('Password berhasil direset'); formForgot.reset(); modalForgot.classList.remove('open');
-      }catch(err){alert(err.message||'Gagal reset password')}}
-    }
+        alert('Password berhasil direset'); formForgot.reset(); closeModal(modalForgot);
+      }catch(err){alert(err.message||'Gagal reset password')}
+    }}
 
-    // Inactive
-    const modalInactive=document.getElementById('modalInactive'),inactiveBtn=document.getElementById('inactiveBtn'),closeInactive=document.getElementById('closeInactive'),formInactive=document.getElementById('formInactive');
-    if(inactiveBtn){inactiveBtn.onclick=()=>modalInactive.classList.add('open')}
-    if(closeInactive){closeInactive.onclick=()=>modalInactive.classList.remove('open')}
-    if(modalInactive){modalInactive.addEventListener('click',e=>{if(e.target===modalInactive) modalInactive.classList.remove('open')})}
+    // ===== Inactive =====
+    const modalInactive=document.getElementById('modalInactive'),
+          inactiveBtn=document.getElementById('inactiveBtn'),
+          closeInactive=document.getElementById('closeInactive'),
+          formInactive=document.getElementById('formInactive');
+
+    if(inactiveBtn){inactiveBtn.onclick=()=>openModal(modalInactive)}
+    if(closeInactive){closeInactive.onclick=()=>closeModal(modalInactive)}
+    if(modalInactive){modalInactive.addEventListener('click',e=>{if(e.target===modalInactive) closeModal(modalInactive)})}
     if(formInactive){formInactive.onsubmit=async(e)=>{e.preventDefault();
       const usernameOrEmail=formInactive.usernameOrEmail.value.trim(); if(!usernameOrEmail) return alert('Isi username atau email');
       try{
@@ -349,9 +472,89 @@ if(formUser){
           }
         });
         if(!found) alert(`${data.message||'user dinonaktifkan'}: ${data.username}`);
-        formInactive.reset(); modalInactive.classList.remove('open');
-      }catch(err){alert(err.message||'Gagal menonaktifkan user')}}
+        formInactive.reset(); closeModal(modalInactive);
+      }catch(err){alert(err.message||'Gagal menonaktifkan user')}
+    }}
+
+    // ======== LIVE UPDATE (tanpa reload) ========
+    // Backend harus menyediakan:
+    //   GET /middleware/users/list   -> [{username,fullName,status,keterangan,lastScanValue,lastScanAt}]
+    //   GET /middleware/scans/today  -> [{time|at,user,value,name}]
+    async function getJSON(url){
+      const r = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      if(!r.ok) throw new Error(await r.text());
+      return r.json();
     }
+
+    // Rebuild Users table from JSON (gunakan helper reset dari modul pagination)
+    function rebuildUsers(users){
+      const tbody = document.querySelector('#tbl tbody'); if(!tbody) return;
+      const frag = document.createDocumentFragment();
+      for(const u of users){
+        const tr = document.createElement('tr');
+        const status = (u.status || '-').toUpperCase();
+        const lastVal = (u.lastScanValue ?? '-');
+        const whenStr = u.lastScanAt ? new Date(u.lastScanAt).toISOString().replace('T',' ').slice(0,19) : '-';
+        tr.innerHTML = `
+          <td>${u.username ?? '-'}</td>
+          <td>${u.fullName ?? '-'}</td>
+          <td><span class="status ${status}">${u.status ?? '-'}</span></td>
+          <td>${u.keterangan ?? '-'}</td>
+          <td class="mono">${lastVal}</td>
+          <td>${whenStr}</td>`;
+        frag.appendChild(tr);
+      }
+      tbody.innerHTML = ''; tbody.appendChild(frag);
+      window.__users_table_reset?.();
+    }
+
+    function renderScanToday(rows){
+      const tb = document.getElementById('scanTodayTbody'); if(!tb) return;
+      if(!rows || rows.length === 0){
+        tb.innerHTML = `<tr><td colspan="5" class="empty">Belum ada scan hari ini.</td></tr>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      for(const r of rows){
+        const when = r.time ? new Date(r.time) : (r.at ? new Date(r.at) : null);
+        const whenStr = when ? when.toISOString().replace('T',' ').slice(0,19) : '-';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${whenStr}</td>
+          <td>${r.user ?? '-'}</td>
+          <td class="mono">${r.value ?? '-'}</td>
+          <td>${r.name ?? '-'}</td>`;
+        frag.appendChild(tr);
+      }
+      tb.innerHTML = ''; tb.appendChild(frag);
+    }
+
+    (function live(){
+      const USERS_URL = '/middleware/users/list';
+      const SCANS_URL = '/middleware/scans/today';
+      const INTERVAL_MS = 5000; // 5 detik
+
+      let timer = null;
+
+      async function tick(){
+        try{
+          const [users, scans] = await Promise.all([
+            getJSON(USERS_URL),
+            getJSON(SCANS_URL)
+          ]);
+          if(Array.isArray(users)) rebuildUsers(users);
+          if(Array.isArray(scans)) renderScanToday(scans);
+        }catch(e){
+          console.warn('Live update failed:', e.message || e);
+        }
+      }
+
+      function start(){ if(!timer){ timer = setInterval(tick, INTERVAL_MS); tick(); } }
+      function stop(){ if(timer){ clearInterval(timer); timer = null; } }
+
+      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stop(); else start(); });
+      start();
+    })();
 
     // toggle show/hide password inputs
     [['togglePwd','password'],['togglePwdConfirm','passwordConfirm'],['toggleNewPwd','newPassword'],['toggleConfirmPwd','confirmPassword']]
