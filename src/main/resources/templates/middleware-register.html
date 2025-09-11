@@ -44,7 +44,6 @@
         th.asc::after { content: " ▲"; font-size: 11px; }
         th.desc::after { content: " ▼"; font-size: 11px; }
 
-        /* Modal aman (anti bentrok dengan Bootstrap) */
         .xmodal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:9999}
         .xmodal.is-open{display:flex}
         .sheet{background:#fff;padding:20px;border-radius:12px;min-width:340px;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
@@ -57,7 +56,6 @@
         .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
         .modal-footer .btn{height:40px;padding:0 14px}
 
-        /* Pagination */
         .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
         .pager .info{font-size:13px;color:#64748b}
         .pager .btn{padding:6px 10px;border-radius:8px}
@@ -72,12 +70,11 @@
         </div>
         <div class="spacer"></div>
 
-        <!-- user menu -->
         <div class="userwrap" id="userwrap">
             <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
                 <div class="avatar"
                      th:text="${(fullName!=null && !#strings.isEmpty(fullName)) ? #strings.substring(fullName,0,1).toUpperCase()
-                     : (username!=null ? #strings.substring(username,0,1).toUpperCase() : 'U')}">U</div>
+             : (username!=null ? #strings.substring(username,0,1).toUpperCase() : 'U')}">U</div>
                 <div>
                     <div class="uname" th:text="${fullName!=null ? fullName : (username!=null ? username : 'User')}">User</div>
                     <div class="udesc" th:text="${username!=null ? username : 'user'}">username</div>
@@ -87,7 +84,7 @@
                 <div class="top">
                     <div class="avatar"
                          th:text="${(fullName!=null && !#strings.isEmpty(fullName)) ? #strings.substring(fullName,0,1).toUpperCase()
-                       : (username!=null ? #strings.substring(username,0,1).toUpperCase() : 'U')}">U</div>
+             : (username!=null ? #strings.substring(username,0,1).toUpperCase() : 'U')}">U</div>
                     <div>
                         <div class="name" th:text="${fullName!=null ? fullName : (username!=null ? username : 'User')}">User Name</div>
                         <div class="meta" th:text="${username!=null ? username : 'user'}">user</div>
@@ -121,8 +118,8 @@
         <table id="tbl">
             <thead>
             <tr>
+                <th data-col="fullname">Fullname</th>
                 <th data-col="username">Username</th>
-                <th data-col="fullname">FullName</th>
                 <th data-col="status">Status</th>
                 <th data-col="keterangan">Keterangan</th>
                 <th data-col="lastscan">Last Scan</th>
@@ -131,22 +128,20 @@
             </thead>
             <tbody>
             <tr th:each="u : ${users}">
-                <td th:text="${u.username}">username</td>
                 <td th:text="${u.fullName}">fullname</td>
+                <td th:text="${u.username}">username</td>
                 <td>
-          <span class="status"
-                th:text="${u.status}"
-                th:classappend="${ #strings.equalsIgnoreCase(u.status,'ACTIVE') ? ' ACTIVE' :
-                                  (#strings.equalsIgnoreCase(u.status,'SUSPENDED') ? ' SUSPENDED' : ' INACTIVE') }">status</span>
+            <span class="status"
+                  th:text="${u.status}"
+                  th:classappend="${ #strings.equalsIgnoreCase(u.status,'ACTIVE') ? ' ACTIVE' :
+                                    (#strings.equalsIgnoreCase(u.status,'SUSPENDED') ? ' SUSPENDED' : ' INACTIVE') }">status</span>
                 </td>
                 <td th:text="${u.keterangan}">-</td>
-                <td>
-          <span class="mono"
-                th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanValue != null
-                           ? lastScanValue : '-' }">-</span>
-                </td>
+                <td class="mono"
+                    th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanValue != null
+                         ? lastScanValue : '-' }">-</td>
                 <td th:text="${ lastScanUser != null and #strings.equalsIgnoreCase(u.username, lastScanUser) and lastScanAt != null
-                       ? #temporals.format(lastScanAt, 'yyyy-MM-dd HH:mm:ss') : '-' }">-</td>
+                         ? #temporals.format(lastScanAt, 'yyyy-MM-dd HH:mm:ss') : '-' }">-</td>
             </tr>
             </tbody>
         </table>
@@ -169,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Riwayat Scan Hari Ini -->
+    <!-- Riwayat Scan -->
     <div class="section">
         <h2>Riwayat Scan Hari Ini</h2>
         <div class="sub">Menampilkan scan dari pukul 00:00 s/d sekarang.</div>
@@ -189,7 +184,7 @@
             </tr>
             <tr th:each="r : ${scanToday}">
                 <td th:text="${ r['time'] != null ? #temporals.format(r['time'], 'yyyy-MM-dd HH:mm:ss')
-                         : (r['at'] != null ? #temporals.format(r['at'], 'yyyy-MM-dd HH:mm:ss') : '-') }">-</td>
+                       : (r['at'] != null ? #temporals.format(r['at'], 'yyyy-MM-dd HH:mm:ss') : '-') }">-</td>
                 <td th:text="${r['user']    != null ? r['user']    : '-'}">-</td>
                 <td class="mono" th:text="${r['value']   != null ? r['value']   : '-'}">-</td>
                 <td th:text="${r['name']    != null ? r['name']    : '-'}">-</td>
@@ -198,7 +193,7 @@
         </table>
     </div>
 
-    <!-- Modals (pakai .xmodal) -->
+    <!-- Modals -->
     <div class="xmodal" id="modalAdd" aria-hidden="true">
         <div class="sheet">
             <h3>Form Add User</h3>
@@ -273,9 +268,8 @@
     </div>
 </main>
 
-<!-- JS -->
 <script th:inline="none">
-    // user menu
+    // User menu
     (function(){
       const btn=document.getElementById('userbtn'),menu=document.getElementById('usermenu'),wrap=document.getElementById('userwrap');
       if(!btn||!menu) return;
@@ -284,105 +278,96 @@
       document.addEventListener('keydown',e=>{if(e.key==='Escape') menu.classList.remove('open')});
     })();
 
-    // ===== Sorting + Search + Pagination untuk #tbl =====
+    // Sorting + Search + Pagination
     (function(){
-      const table = document.getElementById('tbl'); if(!table) return;
-      const thead  = table.querySelector('thead');
-      const headers= thead.querySelectorAll('th');
-      const tbody  = table.querySelector('tbody');
-      const search = document.getElementById('tblSearch');
+      const table=document.getElementById('tbl'); if(!table) return;
+      const thead=table.querySelector('thead');
+      const headers=thead.querySelectorAll('th');
+      const tbody=table.querySelector('tbody');
+      const search=document.getElementById('tblSearch');
 
-      const pager     = document.getElementById('tblPager');
-      const info      = document.getElementById('tblInfo');
-      const pageText  = document.getElementById('tblPage');
-      const prevBtn   = document.getElementById('tblPrev');
-      const nextBtn   = document.getElementById('tblNext');
-      const pageSizeEl= document.getElementById('tblPageSize');
+      const info=document.getElementById('tblInfo');
+      const pageText=document.getElementById('tblPage');
+      const prevBtn=document.getElementById('tblPrev');
+      const nextBtn=document.getElementById('tblNext');
+      const pageSizeEl=document.getElementById('tblPageSize');
 
-      const STATUS_ORDER = { 'active': 1, 'suspended': 2, 'inactive': 3 };
+      const STATUS_ORDER={ 'active':1,'suspended':2,'inactive':3 };
+      let rowsAll=Array.from(tbody.querySelectorAll('tr'));
+      let rowsView=rowsAll.slice();
+      let sortIdx=null,sortAsc=true;
+      let pageSize=parseInt(pageSizeEl.value,10);
+      let pageNow=1;
 
-      let rowsAll   = Array.from(tbody.querySelectorAll('tr'));
-      let rowsView  = rowsAll.slice();
-      let sortIdx   = null, sortAsc = true;
-      let pageSize  = parseInt(pageSizeEl.value, 10);
-      let pageNow   = 1;
-
-      function parseCell(index, td){
-        const txt = td.textContent.trim();
-        if(index === 2){ const key = txt.toLowerCase(); return STATUS_ORDER[key] ?? 999; }
-        if(index === 5 && txt !== '-' && !Number.isNaN(Date.parse(txt))) return new Date(txt).getTime();
-        const num = Number(txt.replaceAll(',','')); if(!Number.isNaN(num) && txt!=='') return num;
+      function parseCell(index,td){
+        const txt=td.textContent.trim();
+        if(index===2){ const key=txt.toLowerCase(); return STATUS_ORDER[key]??999; }
+        if(index===5 && txt!==''
+           && !Number.isNaN(Date.parse(txt))) return new Date(txt).getTime();
+        const num=Number(txt.replaceAll(',',''));
+        if(!Number.isNaN(num) && txt!=='') return num;
         return txt.toLowerCase();
       }
 
       function applySort(){
-        if(sortIdx === null) return;
-        rowsView.sort((ra, rb)=>{
-          const a = parseCell(sortIdx, ra.children[sortIdx]);
-          const b = parseCell(sortIdx, rb.children[sortIdx]);
-          if (a < b) return sortAsc ? -1 : 1;
-          if (a > b) return sortAsc ? 1 : -1;
+        if(sortIdx===null) return;
+        rowsView.sort((ra,rb)=>{
+          const a=parseCell(sortIdx,ra.children[sortIdx]);
+          const b=parseCell(sortIdx,rb.children[sortIdx]);
+          if(a<b) return sortAsc?-1:1;
+          if(a>b) return sortAsc?1:-1;
           return 0;
         });
       }
 
       function applyFilter(){
-        const q = (search?.value || '').trim().toLowerCase();
-        rowsView = rowsAll.filter(tr => tr.textContent.toLowerCase().includes(q));
+        const q=(search?.value||'').trim().toLowerCase();
+        rowsView=rowsAll.filter(tr=>tr.textContent.toLowerCase().includes(q));
       }
 
       function renderPage(){
-        const total = rowsView.length;
-        const pages = Math.max(1, Math.ceil(total / pageSize));
-        if(pageNow > pages) pageNow = pages;
-        const start = (pageNow-1)*pageSize;
-        const end   = Math.min(start + pageSize, total);
-
-        tbody.innerHTML = '';
-        rowsView.slice(start, end).forEach(r => tbody.appendChild(r));
-
-        info.textContent = total ? `Showing ${start+1}–${end} of ${total}` : 'Showing 0–0 of 0';
-        pageText.textContent = `${pageNow} / ${pages}`;
-        prevBtn.disabled = pageNow <= 1;
-        nextBtn.disabled = pageNow >= pages;
+        const total=rowsView.length;
+        const pages=Math.max(1,Math.ceil(total/pageSize));
+        if(pageNow>pages) pageNow=pages;
+        const start=(pageNow-1)*pageSize;
+        const end=Math.min(start+pageSize,total);
+        tbody.innerHTML='';
+        rowsView.slice(start,end).forEach(r=>tbody.appendChild(r));
+        info.textContent=total?`Showing ${start+1}–${end} of ${total}`:'Showing 0–0 of 0';
+        pageText.textContent=`${pageNow} / ${pages}`;
+        prevBtn.disabled=pageNow<=1;
+        nextBtn.disabled=pageNow>=pages;
       }
 
-      function reflow(){
-        applyFilter(); applySort(); pageNow = 1; renderPage();
-      }
+      function reflow(){ applyFilter(); applySort(); pageNow=1; renderPage(); }
 
-      headers.forEach((th, idx)=>{
-        th.addEventListener('click', ()=>{
-          const isAsc = !(sortIdx === idx && sortAsc === true);
+      headers.forEach((th,idx)=>{
+        th.addEventListener('click',()=>{
+          const isAsc=!(sortIdx===idx && sortAsc===true);
           headers.forEach(h=>h.classList.remove('asc','desc'));
-          sortIdx = idx; sortAsc = isAsc;
-          th.classList.add(isAsc ? 'asc' : 'desc');
+          sortIdx=idx; sortAsc=isAsc;
+          th.classList.add(isAsc?'asc':'desc');
           reflow();
         });
       });
 
-      search?.addEventListener('input', reflow);
-      pageSizeEl.addEventListener('change', ()=>{
-        pageSize = parseInt(pageSizeEl.value,10) || 10;
-        renderPage();
-      });
-      prevBtn.addEventListener('click', ()=>{ if(pageNow>1){ pageNow--; renderPage(); }});
-      nextBtn.addEventListener('click', ()=>{ pageNow++; renderPage(); });
+      search?.addEventListener('input',reflow);
+      pageSizeEl.addEventListener('change',()=>{ pageSize=parseInt(pageSizeEl.value,10)||10; renderPage(); });
+      prevBtn.addEventListener('click',()=>{ if(pageNow>1){ pageNow--; renderPage(); }});
+      nextBtn.addEventListener('click',()=>{ pageNow++; renderPage(); });
 
-      // helper agar baris baru ikut ke pagination/filter
-      window.__users_table_add_row = function(tr){ rowsAll.push(tr); reflow(); };
-      window.__users_table_reset   = function(){ // dipanggil saat rebuild dari live update
-        rowsAll = Array.from(tbody.querySelectorAll('tr')); reflow();
-      };
+      // helper untuk baris baru dari form Add User
+      window.__users_table_add_row=function(tr){ rowsAll.push(tr); reflow(); };
+      window.__users_table_reset=function(){ rowsAll=Array.from(tbody.querySelectorAll('tr')); reflow(); };
 
       reflow();
     })();
 
-    // ===== MODAL Helpers =====
+    // Modal helpers
     function openModal(el){ el?.classList.add('is-open'); el?.setAttribute('aria-hidden','false'); }
     function closeModal(el){ el?.classList.remove('is-open'); el?.setAttribute('aria-hidden','true'); }
 
-    // ===== Add User =====
+    // Add User
     const modalAdd=document.getElementById('modalAdd'),
           addBtn=document.getElementById('addBtn'),
           closeAdd=document.getElementById('closeAdd'),
@@ -427,7 +412,7 @@
       }
     }
 
-    // ===== Forgot =====
+    // Forgot Password
     const modalForgot=document.getElementById('modalForgot'),
           forgotBtn=document.getElementById('forgotBtn'),
           closeForgot=document.getElementById('closeForgot'),
@@ -448,7 +433,7 @@
       }catch(err){alert(err.message||'Gagal reset password')}
     }}
 
-    // ===== Inactive =====
+    // Inactive (Suspend)
     const modalInactive=document.getElementById('modalInactive'),
           inactiveBtn=document.getElementById('inactiveBtn'),
           closeInactive=document.getElementById('closeInactive'),
@@ -476,87 +461,7 @@
       }catch(err){alert(err.message||'Gagal menonaktifkan user')}
     }}
 
-    // ======== LIVE UPDATE (tanpa reload) ========
-    // Backend harus menyediakan:
-    //   GET /middleware/users/list   -> [{username,fullName,status,keterangan,lastScanValue,lastScanAt}]
-    //   GET /middleware/scans/today  -> [{time|at,user,value,name}]
-    async function getJSON(url){
-      const r = await fetch(url, { headers: { 'Accept': 'application/json' }});
-      if(!r.ok) throw new Error(await r.text());
-      return r.json();
-    }
-
-    // Rebuild Users table from JSON (gunakan helper reset dari modul pagination)
-    function rebuildUsers(users){
-      const tbody = document.querySelector('#tbl tbody'); if(!tbody) return;
-      const frag = document.createDocumentFragment();
-      for(const u of users){
-        const tr = document.createElement('tr');
-        const status = (u.status || '-').toUpperCase();
-        const lastVal = (u.lastScanValue ?? '-');
-        const whenStr = u.lastScanAt ? new Date(u.lastScanAt).toISOString().replace('T',' ').slice(0,19) : '-';
-        tr.innerHTML = `
-          <td>${u.username ?? '-'}</td>
-          <td>${u.fullName ?? '-'}</td>
-          <td><span class="status ${status}">${u.status ?? '-'}</span></td>
-          <td>${u.keterangan ?? '-'}</td>
-          <td class="mono">${lastVal}</td>
-          <td>${whenStr}</td>`;
-        frag.appendChild(tr);
-      }
-      tbody.innerHTML = ''; tbody.appendChild(frag);
-      window.__users_table_reset?.();
-    }
-
-    function renderScanToday(rows){
-      const tb = document.getElementById('scanTodayTbody'); if(!tb) return;
-      if(!rows || rows.length === 0){
-        tb.innerHTML = `<tr><td colspan="5" class="empty">Belum ada scan hari ini.</td></tr>`;
-        return;
-      }
-      const frag = document.createDocumentFragment();
-      for(const r of rows){
-        const when = r.time ? new Date(r.time) : (r.at ? new Date(r.at) : null);
-        const whenStr = when ? when.toISOString().replace('T',' ').slice(0,19) : '-';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${whenStr}</td>
-          <td>${r.user ?? '-'}</td>
-          <td class="mono">${r.value ?? '-'}</td>
-          <td>${r.name ?? '-'}</td>`;
-        frag.appendChild(tr);
-      }
-      tb.innerHTML = ''; tb.appendChild(frag);
-    }
-
-    (function live(){
-      const USERS_URL = '/middleware/users/list';
-      const SCANS_URL = '/middleware/scans/today';
-      const INTERVAL_MS = 5000; // 5 detik
-
-      let timer = null;
-
-      async function tick(){
-        try{
-          const [users, scans] = await Promise.all([
-            getJSON(USERS_URL),
-            getJSON(SCANS_URL)
-          ]);
-          if(Array.isArray(users)) rebuildUsers(users);
-          if(Array.isArray(scans)) renderScanToday(scans);
-        }catch(e){
-          console.warn('Live update failed:', e.message || e);
-        }
-      }
-
-      function start(){ if(!timer){ timer = setInterval(tick, INTERVAL_MS); tick(); } }
-      function stop(){ if(timer){ clearInterval(timer); timer = null; } }
-
-      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stop(); else start(); });
-      start();
-    })();
-
-    // toggle show/hide password inputs
+    // Toggle show/hide password
     [['togglePwd','password'],['togglePwdConfirm','passwordConfirm'],['toggleNewPwd','newPassword'],['toggleConfirmPwd','confirmPassword']]
       .forEach(([b,i])=>{const btn=document.getElementById(b),el=document.getElementById(i); if(btn&&el) btn.addEventListener('click',()=>{el.type=(el.type==='password')?'text':'password'})});
 </script>
