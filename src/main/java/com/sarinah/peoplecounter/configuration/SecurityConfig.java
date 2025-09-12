@@ -34,6 +34,7 @@ public class SecurityConfig {
             "/web/product",
             "/web/logout",
             "/web/product/history/clear",
+            "/api/admin/users/import-csv",
 
 
                       // <-- login/register dlsb
