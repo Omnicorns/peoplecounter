@@ -6,71 +6,189 @@
 
   <title>PROMIS — Produk</title>
 
+  <!-- (Opsional) Inter font. Jika CSP ketat, hapus 2 baris ini -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#f4f6fa; --ink:#111827; --muted:#6b7280; --ring:#e5e7eb; --card:#fff;
-      --pri:#2DB36D; --pri-2:#229957; --pri-3:#157248; --chip:#f1f5f9; --chip-tx:#111827;
-      --shadow:0 6px 20px rgba(0,0,0,.06); --radius:14px;
+      /* Light */
+      --bg:#f5f7fb; --ink:#0b1220; --muted:#667085; --ring:#e6e8ee; --card:#ffffff;
+      --pri:#2DB36D; --pri-2:#229957; --pri-3:#157248;
+      --chip:#eef2f6; --chip-tx:#0b1220;
+      --surface:#0b1220;
+      --shadow:0 10px 30px rgba(17,24,39,.08);
+      --radius:16px;
+      --table-stripe:#fafbfc;
+      --ok-bg:#dcfce7; --ok-br:#86efac; --ok-tx:#065f46;
+      --ring-focus:0 0 0 3px rgba(45,179,109,.25);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0c1220; --ink:#eff3fb; --muted:#9aa5b1; --ring:#1f2937; --card:#0f172a;
+        --chip:#111827; --chip-tx:#e5e7eb; --surface:#0b1220;
+        --shadow:0 10px 30px rgba(0,0,0,.35);
+        --table-stripe:#0b1426;
+        --ok-bg:#06361f; --ok-br:#115e38; --ok-tx:#b7f7d2;
+      }
     }
 
-    body{margin:0;background:var(--bg);color:var(--ink);
-      font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    /* Base */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{color:inherit; text-decoration:none}
+    button{font:inherit}
 
-    /* APPBAR */
-    .appbar{background:#0b1220;color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50}
-    .appbar-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px}
-    .logo{width:28px;height:28px;border-radius:8px;background:#fff;color:#0b1220;display:grid;place-items:center;font-weight:900}
-    .title{font-weight:800;letter-spacing:.2px}
+    /* Appbar */
+    .appbar{
+      position:sticky; top:0; z-index:50; color:#fff;
+      background:linear-gradient(180deg,#0b1220 0%, #101a32 100%);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .appbar-inner{
+      max-width:1100px; margin:0 auto; padding:12px 16px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .logo{
+      width:32px; height:32px; border-radius:10px; background:#fff; color:#0b1220;
+      display:grid; place-items:center; font-weight:900;
+      box-shadow:0 4px 14px rgba(255,255,255,.15) inset, 0 8px 20px rgba(0,0,0,.25);
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .title{font-weight:800; letter-spacing:.2px}
+    .brand-chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18);
+      font-weight:700;
+    }
     .flex-1{flex:1}
-    .userbox{display:flex;align-items:center;gap:10px}
-    .chip{background:#fff;color:#111827;border-radius:999px;padding:6px 12px;font-weight:700}
-    .btn-ghost{padding:6px 12px;border:1px solid #fff;border-radius:10px;background:transparent;color:#fff;cursor:pointer}
+    .userbox{display:flex; align-items:center; gap:10px}
+    .chip{
+      background:#fff; color:#111827; border-radius:999px; padding:6px 12px; font-weight:700
+    }
+    .btn-ghost{
+      padding:8px 12px; border:1px solid rgba(255,255,255,.6);
+      border-radius:12px; background:transparent; color:#fff; cursor:pointer;
+    }
     .btn-ghost:hover{background:rgba(255,255,255,.12)}
+    .btn-ghost:focus{outline:none; box-shadow:var(--ring-focus)}
 
-    /* PAGE */
-    .page{max-width:1100px;margin:16px auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+    /* Page */
+    .page{max-width:1100px; margin:18px auto; padding:0 16px; display:flex; flex-direction:column; gap:16px}
 
-    /* CARD */
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-    .card-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--ring)}
-    .card-title{font-weight:800}
-    .rows{padding:12px 16px}
-    .row{display:grid;grid-template-columns:200px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--ring)}
-    .row:last-child{border-bottom:0}
-    .k{font-size:12px;color:var(--muted);font-weight:700}
-    .v{font-size:16px;font-weight:800;word-break:break-word}
-    .empty{padding:16px;color:var(--muted)}
+    /* Card */
+    .card{
+      background:var(--card); border:1px solid var(--ring); border-radius:var(--radius);
+      box-shadow:var(--shadow); overflow:hidden;
+    }
+    .card-h{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:16px; border-bottom:1px solid var(--ring);
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.02));
+    }
+    .card-title{font-weight:800; letter-spacing:.2px}
+    .rows{padding:14px 16px}
+    .empty{padding:16px; color:var(--muted)}
 
-    /* SEARCH BAR */
+    /* Search */
     .search{padding:16px}
-    .group{display:flex;border:1px solid var(--ring);border-radius:12px;overflow:hidden;background:#fff}
-    .seg{display:flex;align-items:center;gap:8px;padding:8px 12px;flex:1}
-    .seg+ .seg{border-left:1px solid var(--ring)}
-    .icon{width:18px;height:18px;opacity:.9}
-    .inpt{flex:1;border:0;outline:none;background:transparent;font:14px/1.5 inherit;color:var(--ink)}
-    .inpt::placeholder{color:#6b7280}
-    .btn{background:var(--pri);color:#fff;font-weight:700;border:0;min-width:110px;cursor:pointer}
+    .group{
+      display:flex; gap:0; border:1px solid var(--ring); border-radius:14px; overflow:hidden; background:#fff;
+    }
+    @media (prefers-color-scheme: dark){ .group{background:#0b1426} }
+    .seg{
+      display:flex; align-items:center; gap:10px; padding:10px 12px; flex:1; min-width:0;
+      background:transparent;
+    }
+    .seg + .seg{border-left:1px solid var(--ring)}
+    .icon{width:18px; height:18px; opacity:.9; flex:0 0 auto}
+    .inpt{
+      flex:1; border:0; outline:none; background:transparent; font:14px/1.5 inherit; color:var(--ink);
+    }
+    .inpt::placeholder{color:#98a2b3}
+    .btn{
+      background:var(--pri); color:#fff; font-weight:800; border:0; min-width:120px; cursor:pointer;
+      padding:0 16px;
+    }
     .btn:hover{background:var(--pri-2)}
+    .btn:active{background:var(--pri-3)}
+    .btn:focus{outline:none; box-shadow:var(--ring-focus)}
+    @media (max-width:720px){
+      .group{flex-direction:column; border-radius:16px}
+      .seg + .seg{border-left:0; border-top:1px solid var(--ring)}
+      .btn{width:100%; height:44px}
+    }
 
-    /* CHIPS */
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .chip-p{background:#dcfce7;border:1px solid #86efac;color:#065f46;padding:6px 10px;border-radius:999px;font-weight:700}
+    /* Key-Value rows */
+    .kv{
+      display:grid; grid-template-columns:240px 1fr; gap:14px; border-bottom:1px solid var(--ring); padding:12px 0;
+    }
+    .kv:last-child{border-bottom:0}
+    .k{font-size:12px; color:var(--muted); font-weight:700}
+    .v{font-size:16px; font-weight:800; word-break:break-word}
+    @media (max-width:640px){ .kv{grid-template-columns:1fr} }
 
-    /* TABLE */
-    table{width:100%;border-collapse:collapse;background:#fff}
-    th,td{padding:10px;border-bottom:1px solid var(--ring);text-align:left}
-    th{font-size:12px;color:var(--muted);font-weight:700}
-    td.num{text-align:right;font-variant-numeric:tabular-nums}
-    tbody tr:hover{background:#f9fafb}
+    /* Promo list rapi */
+    .promo-list{display:flex;flex-wrap:wrap;gap:8px}
+    .promo-item{
+      display:inline-flex;align-items:center;gap:8px;
+      background:var(--ok-bg);border:1px solid var(--ok-br);color:var(--ok-tx);
+      padding:6px 10px;border-radius:999px;font-weight:800;letter-spacing:.2px;
+      max-width:100%;overflow-wrap:anywhere;line-height:1.25;
+    }
+    .promo-item .dot{width:6px;height:6px;border-radius:999px;background:var(--ok-br);flex:0 0 auto}
 
-    /* HISTORY */
-    .hist-grid{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center}
-    .hist-main{background:#f9fafb;border:1px solid var(--ring);border-radius:12px;padding:10px 12px}
+    /* Table */
+    .table-wrap{overflow:auto; max-height:56vh}
+    table{width:100%; border-collapse:collapse; background:transparent}
+    thead th{
+      position:sticky; top:0; background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.75));
+      backdrop-filter:saturate(120%) blur(4px);
+      font-size:12px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.3px;
+      border-bottom:1px solid var(--ring);
+    }
+    @media (prefers-color-scheme: dark){
+      thead th{background:linear-gradient(180deg, rgba(16,24,40,.85), rgba(16,24,40,.65))}
+    }
+    th,td{padding:12px 12px; border-bottom:1px solid var(--ring); text-align:left; vertical-align:middle}
+    tbody tr:hover{background:var(--table-stripe)}
+    td.num{text-align:right; font-variant-numeric:tabular-nums}
+
+    /* History */
+    .hist-grid{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center}
+    .hist-main{
+      background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.3));
+      border:1px solid var(--ring); border-radius:12px; padding:12px 14px;
+    }
+    @media (prefers-color-scheme: dark){
+      .hist-main{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))}
+    }
     .hist-title{font-weight:800}
-    .hist-sub{color:#64748b;font-size:12px}
-    .btn-sm{padding:8px 12px;background:var(--pri);color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+    .hist-sub{color:#64748b; font-size:12px}
+    .btn-sm{
+      padding:10px 14px; background:var(--pri); color:#fff; border:0; border-radius:10px; font-weight:800; cursor:pointer;
+    }
     .btn-sm:hover{background:var(--pri-2)}
-    @media (max-width:640px){.row{grid-template-columns:1fr}.hist-grid{grid-template-columns:1fr}.btn{width:100%}}
+    .btn-sm:focus{outline:none; box-shadow:var(--ring-focus)}
+    @media (max-width:640px){ .hist-grid{grid-template-columns:1fr} }
+
+    /* Utilities */
+    .fade-hr{height:1px; border:0; background:linear-gradient(90deg, transparent, var(--ring), transparent)}
+    .subtle{color:var(--muted); font-weight:600}
+
+    /* Print */
+    @media print{
+      .appbar{display:none}
+      .page{margin:0; padding:0}
+      .card{box-shadow:none}
+      .table-wrap{max-height:none; overflow:visible}
+      a[href]::after{content:""}
+    }
   </style>
 </head>
 <body>
@@ -78,9 +196,16 @@
 <!-- APPBAR -->
 <header class="appbar">
   <div class="appbar-inner">
-    <div class="logo">P</div>
-    <div class="title">PROMIS</div>
+    <div class="brand">
+      <div class="logo" aria-label="PROMIS">P</div>
+      <div class="title">PROMIS</div>
+      <span class="brand-chip" title="Produk & Stok">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+        Produk
+      </span>
+    </div>
     <div class="flex-1"></div>
+
     <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
       <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
       <form th:action="@{/web/logout}" method="post">
@@ -96,42 +221,75 @@
 <main class="page">
 
   <!-- SEARCH -->
-  <section class="card">
-    <div class="card-h"><div class="card-title">Cari Produk</div></div>
+  <section class="card" aria-labelledby="cari-produk-title">
+    <div class="card-h">
+      <div class="card-title" id="cari-produk-title">Cari Produk</div>
+      <div class="subtle" th:if="${sku != null}">Menampilkan: <strong th:text="${sku}">-</strong></div>
+    </div>
     <div class="search">
       <form class="group" th:action="@{/web/product}" method="get">
         <div class="seg">
-          <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5h2v14H3zm4 0h2v14H7zm4 0h2v14h-2zM3 3h18v2H3zm0 16h18v2H3z"/></svg>
-          <input class="inpt" type="text" name="sku" th:value="${qSku}" placeholder="Masukkan SKU (mis. ank0002721)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 105.3 14.1l4.3 4.3 1.4-1.4-4.3-4.3A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+          <input class="inpt" type="text" name="sku" th:value="${qSku}" placeholder="Masukkan SKU (mis. ank0002721)" aria-label="SKU">
         </div>
         <div class="seg">
-          <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M4 7h2v10H4zm3 0h1v10H7zm3 0h2v10h-2zm4 0h1v10h-1zm3 0h2v10h-2z"/></svg>
-          <input class="inpt" type="text" name="code" th:value="${qCode}" placeholder="Atau Barcode (opsional)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 7h2v10H4zm3 0h1v10H7zm3 0h2v10h-2zm4 0h1v10h-1zm3 0h2v10h-2z"/></svg>
+          <input class="inpt" type="text" name="code" th:value="${qCode}" placeholder="Atau Barcode (opsional)" aria-label="Barcode">
         </div>
-        <button class="btn" type="submit">Tampilkan</button>
+        <button class="btn" type="submit" aria-label="Tampilkan hasil">Tampilkan</button>
       </form>
     </div>
   </section>
 
   <!-- DETAIL -->
-  <section class="card" th:if="${sku != null}">
-    <div class="card-h"><div class="card-title">Detail Produk</div></div>
+  <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
+    <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
     <div class="rows">
-      <div class="row"><div class="k">Nama Produk</div><div class="v" th:text="${name}">-</div></div>
-      <div class="row"><div class="k">SKU</div><div class="v" th:text="${sku}">-</div></div>
-      <div class="row"><div class="k">Promo</div>
-        <div><span class="chip-p" th:if="${promo != null}" th:text="${promo}">-</span></div>
+      <div class="kv">
+        <div class="k">Nama Produk</div>
+        <div class="v" th:text="${name}">-</div>
+      </div>
+      <div class="kv">
+        <div class="k">SKU</div>
+        <div class="v" th:text="${sku}">-</div>
+      </div>
+
+      <!-- PROMO rapi: split string jadi chip -->
+      <div class="kv"
+           th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
+        <div class="k">Promo</div>
+
+        <!-- Tidak ada promo -->
+        <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
+
+        <!-- Ada promo: tampil chip per item -->
+        <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-list">
+          <span class="promo-item" th:each="p : ${promoItems}">
+            <span class="dot" aria-hidden="true"></span>
+            <span th:text="${#strings.trim(p)}">PROMO</span>
+          </span>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- STOK -->
-  <section class="card" th:if="${sku != null}">
-    <div class="card-h"><div class="card-title">Stok & Harga per Lokasi</div></div>
-    <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}"><div class="empty">Tidak ada data stok/harga.</div></div>
-    <div class="rows" th:if="${stocks != null and !#lists.isEmpty(stocks)}">
-      <table>
-        <thead><tr><th>Lokasi</th><th style="text-align:right">Stok</th><th style="text-align:right">Harga</th></tr></thead>
+  <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
+    <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
+
+    <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}">
+      <div class="empty">Tidak ada data stok/harga.</div>
+    </div>
+
+    <div class="table-wrap" th:if="${stocks != null and !#lists.isEmpty(stocks)}">
+      <table role="table" aria-label="Tabel Stok dan Harga">
+        <thead>
+        <tr>
+          <th scope="col">Lokasi</th>
+          <th scope="col" style="text-align:right">Stok</th>
+          <th scope="col" style="text-align:right">Harga</th>
+        </tr>
+        </thead>
         <tbody>
         <tr th:each="r : ${stocks}">
           <td th:text="${r.location}">-</td>
@@ -144,16 +302,22 @@
   </section>
 
   <!-- HISTORY -->
-  <section class="card">
-    <div class="card-h"><div class="card-title">Riwayat SKU</div></div>
-    <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
+  <section class="card" aria-labelledby="riwayat-title">
+    <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
+
+    <div class="rows" th:if="${history == null or #lists.isEmpty(history)}">
+      <div class="empty">Belum ada riwayat.</div>
+    </div>
+
     <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
       <div class="hist-grid" th:each="h : ${history}">
         <div class="hist-main">
           <div class="hist-title" th:text="${h['name'] != null ? h['name'] : h['sku']}">Nama produk</div>
           <div class="hist-sub">SKU: <span th:text="${h['sku']}">FN001</span></div>
         </div>
-        <div class="hist-actions"><a class="btn-sm" th:href="@{/web/product(sku=${h['sku']})}">Pakai</a></div>
+        <div class="hist-actions">
+          <a class="btn-sm" th:href="@{/web/product(sku=${h['sku']})}">Pakai</a>
+        </div>
       </div>
     </div>
   </section>
