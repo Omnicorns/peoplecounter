@@ -1,0 +1,18 @@
+{
+
+  "name": "PROMIS",
+  "short_name": "PROMIS",
+  "start_url": "/web/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "/promis.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/promis.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/promis.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/promis.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+
+  ]
+}
+
