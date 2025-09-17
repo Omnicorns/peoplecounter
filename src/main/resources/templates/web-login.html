@@ -127,6 +127,20 @@
           .card{ box-shadow:none; border:0; }
           a[href]:after { content:"" !important; }
         }
+        .brand{
+            display:flex;
+            justify-content:center;   /* ketengahin */
+            align-items:center;
+            margin: 4px 0 14px;
+         }
+        .logo{
+            width: 160px;             /* lebih besar */
+            height: auto;
+            max-width: 45vw;          /* tetap responsif di layar kecil */
+          }
+        @media (min-width: 640px){
+            .logo{ width: 200px; }    /* lebih besar di layar ≥640px */
+           }
     </style>
 </head>
 <body>
@@ -158,6 +172,12 @@
 
 <main>
     <div class="card" role="main" aria-labelledby="title">
+        <a class="brand" th:href="@{/}" aria-label="PROMIS">
+            <img class="logo"
+                 th:src="@{/login.png}"
+                 src="/login.png"
+                 alt="PROMIS" width="96" height="96" decoding="async" />
+        </a>
         <h1 id="title">Masuk</h1>
         <p class="subtitle">Gunakan akun PROMIS Anda</p>
 

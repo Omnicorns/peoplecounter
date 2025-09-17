@@ -49,6 +49,7 @@ public class SecurityConfig {
             "/manifest.webmanifest",
             "/sw.js",
             "/promis.png",// <- perbaiki dari /static/promis.png
+            "/login.png",
             "icons/promis-512.png",
             "icons/promis-192.png",
             "icons/promis-maskable-512.png",
