@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PROMIS</title>
 
-  <!-- (Opsional) Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -124,13 +123,8 @@
       </span>
     </div>
     <div class="flex-1"></div>
-    <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
-      <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
-      <form th:action="@{/web/logout}" method="post" data-loading><button type="submit" class="btn-ghost">Logout</button></form>
-    </div>
-    <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
-      <a class="btn-ghost" th:href="@{/web/login}" data-loading>Login</a>
-    </div>
+    <div class="userbox" th:if="${session.AUTH_USERNAME != null}"><span class="chip" th:text="${session.AUTH_USERNAME}">john</span><form th:action="@{/web/logout}" method="post" data-loading><button type="submit" class="btn-ghost">Logout</button></form></div>
+    <div class="userbox" th:if="${session.AUTH_USERNAME == null}"><a class="btn-ghost" th:href="@{/web/login}" data-loading>Login</a></div>
   </div>
 </header>
 
@@ -160,7 +154,6 @@
     </div>
   </section>
 
-  <!-- DETAIL -->
   <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
     <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
     <div class="rows">
@@ -176,7 +169,6 @@
     </div>
   </section>
 
-  <!-- STOK -->
   <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
     <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
     <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}"><div class="empty">Tidak ada data stok/harga.</div></div>
@@ -188,7 +180,6 @@
     </div>
   </section>
 
-  <!-- HISTORY -->
   <section class="card" aria-labelledby="riwayat-title">
     <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
     <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
@@ -270,7 +261,6 @@
       return all.filter(d => d.kind === 'videoinput');
     }
 
-    // PATCH Safari/iOS: no focusMode, wait loadedmetadata, playsinline+muted
     async function startCamera(preferredDeviceId){
       stopCamera();
 
@@ -283,7 +273,6 @@
         video: Object.assign({}, base, {
           width:  { ideal: 1280 },
           height: { ideal: 720 }
-          // focusMode non-standar — dihapus agar Safari tidak error
         }),
         audio: false
       };
@@ -321,7 +310,6 @@
       catch(e){ torchBtn.disabled = true; }
     }
 
-    // PATCH: switch kamera pakai facingMode di iOS/Safari
     async function switchCamera(){
       if (isIOS() || isSafari()){
         const curTrack = stream?.getVideoTracks?.()[0];
@@ -376,24 +364,26 @@
     }
     function stopNativeLoop(){ nativeLoop = false; }
 
-    // ===== Fallback decoder (EAN-13/EAN-8/UPC-A) – no CDN =====
+    // ===== Fallback decoder (EAN-13/EAN-8/UPC-A) – improved for Safari =====
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently:true });
     let fbActive = false, fbTimer = null;
 
     function stopFallback(){ fbActive = false; if (fbTimer) { cancelAnimationFrame(fbTimer); fbTimer=null; } }
 
-    function grayscaleAndBinarize(imgData, w, h){
+    // Threshold dihitung sekali per frame dari band tengah, lalu dipakai untuk beberapa baris
+    function computeThreshold(imgData, w, h){
       const data = imgData.data;
       const histogram = new Uint32Array(256);
-      for (let y = h*0.4|0; y < h*0.6|0; y++){
+      const y0 = Math.floor(h*0.4), y1 = Math.floor(h*0.6);
+      for (let y = y0; y < y1; y++){
         for (let x = 0; x < w; x++){
           const i = (y*w + x)*4;
           const v = (data[i]*0.2126 + data[i+1]*0.7152 + data[i+2]*0.0722)|0;
           histogram[v]++;
         }
       }
-      let sum=0, sumB=0, wB=0, max=0, threshold=127, total = (h*0.2|0)*w;
+      let sum=0, sumB=0, wB=0, max=0, threshold=127, total = (y1-y0)*w;
       for (let i=0;i<256;i++) sum += i*histogram[i];
       for (let t=0;t<256;t++){
         wB += histogram[t]; if (!wB) continue;
@@ -403,7 +393,11 @@
         let between = wB * wF * (mB - mF) * (mB - mF);
         if (between > max){ max=between; threshold=t; }
       }
-      const y = h>>1;
+      return threshold|0;
+    }
+
+    function buildRowBits(imgData, w, y, threshold){
+      const data = imgData.data;
       const row = new Uint8Array(w);
       for (let x=0; x<w; x++){
         const i = (y*w + x)*4;
@@ -418,7 +412,6 @@
       for (let i=1;i<bits.length;i++){ if (bits[i] === cur) cnt++; else { rl.push(cnt); cur = bits[i]; cnt = 1; } }
       rl.push(cnt); return rl;
     }
-
     function normalizeModules(run, modules){
       const sum = run.reduce((a,b)=>a+b,0); if (!sum) return null;
       const scale = modules / sum;
@@ -469,9 +462,7 @@
       }
       return null;
     }
-
     function decodeUPC_A(ean13){ if (ean13 && ean13.length===13 && ean13[0]==='0') return ean13.slice(1); return null; }
-
     function decodeEAN8(bits){
       const rl = runLengthEncode(bits);
       if (bits[0]===0) rl.shift();
@@ -507,14 +498,35 @@
         if (!fbActive || !videoEl || videoEl.readyState < 2) { fbTimer = requestAnimationFrame(loop); return; }
         const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
         if (vw === 0 || vh === 0){ fbTimer = requestAnimationFrame(loop); return; }
-        const cw = 800, ch = Math.max(200, Math.floor(cw * vh / vw));
+
+        const cw = Math.min(1280, Math.max(640, vw)); // detail cukup tinggi, cap 1280
+        const ch = Math.round(cw * vh / vw);
         canvas.width = cw; canvas.height = ch;
+
+        // render apa adanya (hindari transform untuk iOS)
         ctx.drawImage(videoEl, 0, 0, cw, ch);
         const img = ctx.getImageData(0, 0, cw, ch);
-        const row = grayscaleAndBinarize(img, cw, ch);
-        const ean13 = decodeEAN(row);
-        let text = ean13 || decodeEAN8(row) || decodeUPC_A(ean13);
-        if (text){ onScan(text); return; }
+
+        // threshold global utk frame ini
+        const thr = computeThreshold(img, cw, ch);
+
+        // scan beberapa garis di band tengah (35%..65%), step 4px
+        const yStart = Math.floor(ch * 0.35);
+        const yEnd   = Math.floor(ch * 0.65);
+        for (let y = yStart; y <= yEnd; y += 4){
+          const row = buildRowBits(img, cw, y, thr);
+
+          // coba 3 decoder + arah normal
+          const ean13 = decodeEAN(row);
+          const res   = ean13 || decodeEAN8(row) || decodeUPC_A(ean13);
+          if (res){ onScan(res); return; }
+
+          // coba arah reverse (antisipasi mirroring)
+          const rev = row.slice().reverse();
+          const ean13r = decodeEAN(rev);
+          const res2   = ean13r || decodeEAN8(rev) || decodeUPC_A(ean13r);
+          if (res2){ onScan(res2); return; }
+        }
         fbTimer = requestAnimationFrame(loop);
       };
       fbTimer = requestAnimationFrame(loop);
@@ -526,7 +538,6 @@
       stopNativeLoop();
       stopFallback();
       stopCamera();
-      // (opsional) auto submit:
       // barcodeInput.closest('form')?.submit();
     }
 
