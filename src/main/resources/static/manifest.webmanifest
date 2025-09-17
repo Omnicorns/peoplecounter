@@ -1,7 +1,7 @@
 {
 
-  "name": "PROMIS",
-  "short_name": "PROMIS",
+  "name": "PROMIS Web App",
+  "short_name": "",
   "start_url": "/web/login",
   "scope": "/",
   "display": "standalone",

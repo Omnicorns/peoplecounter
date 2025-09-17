@@ -16,18 +16,16 @@
     <style>
         :root{
           --bg:#f6f8fb; --surface:#ffffff; --ink:#0b1220; --muted:#526072; --ring:#e6e9ee;
-          --brand:#0b1220; --pri:#2DB36D; --pri-2:#20985A; --danger:#ef4444; --ok:#16a34a;
-          --card-shadow:0 10px 30px rgba(2,6,23,.08);
-          --radius:14px;
+          --pri:#2DB36D; --pri-2:#20985A; --danger:#ef4444; --ok:#16a34a;
+          --card-shadow:0 10px 30px rgba(2,6,23,.08); --radius:14px;
         }
         @media (prefers-color-scheme: dark){
           :root{
             --bg:#0c1220; --surface:#0f172a; --ink:#e5e7eb; --muted:#9aa4b2; --ring:#1f2a44;
-            --brand:#0b1220; --card-shadow:0 10px 30px rgba(0,0,0,.45);
+            --card-shadow:0 10px 30px rgba(0,0,0,.45);
           }
           img, svg { color-scheme: dark light; }
         }
-
         *{box-sizing:border-box}
         html,body{height:100%}
         body{
@@ -43,10 +41,7 @@
           color:#fff; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,.06);
         }
         .brand{display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.3px}
-        .brand-logo{
-          width:30px; height:30px; overflow:hidden; border-radius:8px;
-          display:grid; place-items:center; background:#fff;
-        }
+        .brand-logo{ width:30px; height:30px; overflow:hidden; border-radius:8px; display:grid; place-items:center; background:#fff }
         .brand-logo img{width:100%; height:100%; object-fit:cover}
         .brand-text{font-size:16px}
 
@@ -62,7 +57,7 @@
         .pwa-logo{width:22px; height:22px; border-radius:6px; overflow:hidden; display:grid; place-items:center; background:#fff}
         .pwa-logo img{width:100%; height:100%; object-fit:cover}
         .pwa-text{line-height:1.2}
-        .pwa-title{font-size:14px; color:var(--ink)}
+        .pwa-title{font-size:14px}
         .pwa-sub{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
         .pwa-actions{display:flex; align-items:center; gap:10px}
         .pwa-install{
@@ -72,12 +67,24 @@
         .pwa-install:hover{background:var(--pri-2)}
         .pwa-close{background:transparent; border:0; cursor:pointer; font-size:18px; color:#94a3b8; padding:4px 6px}
 
+        /* Tooltip/Sheet instruksi Safari */
+        .pwa-tip{
+          display:none; position:fixed; inset:auto 12px 12px 12px; z-index:60;
+          background:var(--surface); border:1px solid var(--ring); border-radius:12px; box-shadow:var(--card-shadow);
+          padding:12px 14px; max-width:520px; margin:0 auto;
+        }
+        .pwa-tip.show{display:block}
+        .pwa-tip h3{margin:0 0 6px; font-size:16px}
+        .pwa-tip p{margin:6px 0; color:var(--muted); font-size:13px}
+        .pwa-tip .rows{display:grid; gap:6px}
+        .pwa-tip .btns{display:flex; justify-content:flex-end; gap:8px; margin-top:10px}
+        .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:700}
+        @media (prefers-color-scheme: dark){ .btn-lite{background:#0d1426; color:#e5e7eb} }
+
         /* Layout */
         main{display:grid; place-items:center; min-height:calc(100vh - 56px); padding:24px}
-        .card{
-          width:100%; max-width:440px; background:var(--surface); border:1px solid var(--ring);
-          border-radius:var(--radius); padding:24px; box-shadow:var(--card-shadow);
-        }
+        .card{ width:100%; max-width:440px; background:var(--surface); border:1px solid var(--ring);
+          border-radius:var(--radius); padding:24px; box-shadow:var(--card-shadow); }
         h1{margin:0 0 6px; font-size:22px}
         p.subtitle{margin:0 0 18px; color:var(--muted); font-size:13px}
 
@@ -85,70 +92,40 @@
         .field{display:flex; flex-direction:column; gap:6px; margin-bottom:12px}
         .label{font-size:12px; color:#6b7280; font-weight:600}
         .control{position:relative}
-        .icon{
-          position:absolute; left:10px; top:50%; transform:translateY(-50%);
-          width:18px; height:18px; opacity:.65; pointer-events:none;
-        }
-        .input{
-          width:100%; padding:10px 12px 10px 36px;
-          border:1px solid var(--ring); border-radius:10px; background:#fff; color:#111827; outline:none; font-size:14px;
-        }
+        .icon{position:absolute; left:10px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:.65; pointer-events:none}
+        .input{width:100%; padding:10px 12px 10px 36px; border:1px solid var(--ring); border-radius:10px; background:#fff; color:#111827; outline:none; font-size:14px}
         .pw .input{padding-right:38px}
-        @media (prefers-color-scheme: dark){
-          .input{ background:#0d1426; color:#e5e7eb; border-color:#1f2a44; }
-        }
-        .input::placeholder{ color:#6b7280; }               /* kontras placeholder DITINGGIKAN */
+        @media (prefers-color-scheme: dark){ .input{background:#0d1426; color:#e5e7eb; border-color:#1f2a44} }
+        .input::placeholder{ color:#6b7280 }
         .input:focus{border-color:var(--pri); box-shadow:0 0 0 3px color-mix(in srgb, var(--pri) 25%, transparent)}
-        .toggle-eye{
-          position:absolute; right:10px; top:50%; transform:translateY(-50%);
-          background:transparent; border:0; padding:4px; cursor:pointer; color:#64748b;
-        }
+        .toggle-eye{ position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:0; padding:4px; cursor:pointer; color:#64748b }
         .actions{margin-top:14px; display:flex; gap:10px; align-items:center}
-        .btn{
-          appearance:none; border:0; background:var(--pri); color:#fff; padding:10px 14px;
-          border-radius:10px; font-weight:700; cursor:pointer; width:100%; transition:.15s;
-        }
-        .btn:hover{background:var(--pri-2)}
-        .btn[disabled]{opacity:.7; cursor:not-allowed}
+        .btn{appearance:none; border:0; background:var(--pri); color:#fff; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; width:100%; transition:.15s}
+        .btn:hover{background:var(--pri-2)} .btn[disabled]{opacity:.7; cursor:not-allowed}
 
-        .hint{font-size:12px; color:var(--muted); margin-top:8px}
-        .alert, .ok{
-          padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:12px
-        }
+        .hint{font-size:12px; color:#muted; margin-top:8px}
+        .alert, .ok{ padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:12px }
         .alert{border:1px solid var(--danger); color:#991b1b; background:#fff1f2}
         .ok{border:1px solid var(--ok); color:#065f46; background:#ecfdf5}
 
         footer{margin-top:16px; text-align:center; color:#94a3b8; font-size:12px}
         a{text-decoration:none; color:inherit}
 
-        /* Print – sembunyikan elemen non-essensial & URL */
+        /* Print */
         @media print{
-          header, .pwa-wrap { display:none !important; }
+          header, .pwa-wrap, .pwa-tip { display:none !important; }
           .card{ box-shadow:none; border:0; }
           a[href]:after { content:"" !important; }
         }
-        .brand{
-            display:flex;
-            justify-content:center;   /* ketengahin */
-            align-items:center;
-            margin: 4px 0 14px;
-         }
-        .logo{
-            width: 160px;             /* lebih besar */
-            height: auto;
-            max-width: 45vw;          /* tetap responsif di layar kecil */
-          }
-        @media (min-width: 640px){
-            .logo{ width: 200px; }    /* lebih besar di layar ≥640px */
-           }
+        .brand{ display:flex; justify-content:center; align-items:center; margin: 4px 0 14px; }
+        .logo{ width:160px; height:auto; max-width:45vw }
+        @media (min-width: 640px){ .logo{ width:200px } }
     </style>
 </head>
 <body>
 <header class="appbar" role="banner">
     <div class="brand" aria-label="PROMIS">
-        <div class="brand-logo" aria-hidden="true">
-            <img th:src="@{/promis.png}" alt="PROMIS">
-        </div>
+        <div class="brand-logo" aria-hidden="true"><img th:src="@{/promis.png}" alt="PROMIS"></div>
         <div class="brand-text">PROMIS</div>
     </div>
 </header>
@@ -160,7 +137,7 @@
             <span class="pwa-logo"><img th:src="@{/promis.png}" alt="App icon"></span>
             <div class="pwa-text">
                 <div class="pwa-title">Install web launcher PROMIS</div>
-                <div class="pwa-sub">Tambahkan ke layar utama untuk akses cepat</div>
+                <div class="pwa-sub" id="pwaSub">Tambahkan ke layar utama untuk akses cepat</div>
             </div>
         </div>
         <div class="pwa-actions">
@@ -170,13 +147,17 @@
     </div>
 </div>
 
+<!-- Sheet instruksi Safari -->
+<div class="pwa-tip" id="pwaTip" role="dialog" aria-modal="true" aria-labelledby="pwaTipTitle">
+    <h3 id="pwaTipTitle">Cara memasang di Safari</h3>
+    <div class="rows" id="pwaTipBody"></div>
+    <div class="btns"><button class="btn-lite" id="pwaTipClose">Tutup</button></div>
+</div>
+
 <main>
     <div class="card" role="main" aria-labelledby="title">
         <a class="brand" th:href="@{/}" aria-label="PROMIS">
-            <img class="logo"
-                 th:src="@{/login.png}"
-                 src="/login.png"
-                 alt="PROMIS" width="96" height="96" decoding="async" />
+            <img class="logo" th:src="@{/login.png}" src="/login.png" alt="PROMIS" width="96" height="96" decoding="async" />
         </a>
         <h1 id="title">Masuk</h1>
         <p class="subtitle">Gunakan akun PROMIS Anda</p>
@@ -188,20 +169,15 @@
             <div class="field">
                 <label class="label" for="usernameOrEmail">Username / Email</label>
                 <div class="control">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 4.5V21h16v-2.5C20 16.17 16.33 14 12 14Z"/>
-                    </svg>
-                    <input class="input" id="usernameOrEmail" name="usernameOrEmail" type="text"
-                           placeholder="mis. jdoe atau jdoe@domain.com" autofocus required />
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 4.5V21h16v-2.5C20 16.17 16.33 14 12 14Z"/></svg>
+                    <input class="input" id="usernameOrEmail" name="usernameOrEmail" type="text" placeholder="mis. jdoe atau jdoe@domain.com" autofocus required />
                 </div>
             </div>
 
             <div class="field pw">
                 <label class="label" for="password">Password</label>
                 <div class="control">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M17 8V7a5 5 0 1 0-10 0v1H5v13h14V8Zm-8 0V7a3 3 0 1 1 6 0v1Z"/>
-                    </svg>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 8V7a5 5 0 1 0-10 0v1H5v13h14V8Zm-8 0V7a3 3 0 1 1 6 0v1Z"/></svg>
                     <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
                     <button type="button" class="toggle-eye" id="togglePw" aria-label="Tampilkan password">
                         <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 7c-5 0-9 5-9 5s4 5 9 5 9-5 9-5-4-5-9-5Zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>
@@ -209,9 +185,7 @@
                 </div>
             </div>
 
-            <div class="actions">
-                <button class="btn" type="submit" id="submitBtn">Masuk</button>
-            </div>
+            <div class="actions"><button class="btn" type="submit" id="submitBtn">Masuk</button></div>
             <div class="hint">Dengan masuk, Anda menyetujui ketentuan yang berlaku.</div>
         </form>
 
@@ -220,39 +194,125 @@
 </main>
 
 <script th:inline="javascript">
-    // Register Service Worker (respect context-path via Thymeleaf)
+    /* ===== Service Worker (sesuaikan path) ===== */
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register(/*[[@{/sw.js}]]*/ '/sw.js').catch(()=>{});
     }
 
-    // PWA banner logic
-    let deferredPrompt;
+    /* ===== PWA banner cross-browser: Opsi 1 + Patch reload ===== */
     const wrap   = document.getElementById('pwaWrap');
     const banner = document.getElementById('pwaBanner');
     const btnIns = document.getElementById('pwaInstall');
     const btnX   = document.getElementById('pwaClose');
+    const subEl  = document.getElementById('pwaSub');
 
-    const showBanner = () => { wrap.setAttribute('aria-hidden','false'); banner.classList.add('show'); };
-    const hideBanner = () => { banner.classList.remove('show'); wrap.setAttribute('aria-hidden','true'); };
+    const tip      = document.getElementById('pwaTip');
+    const tipBody  = document.getElementById('pwaTipBody');
+    const tipClose = document.getElementById('pwaTipClose');
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      showBanner();
+    let deferredPrompt;
+    const DISMISS_KEY = 'pwa_banner_dismissed_session'; // sessionStorage
+
+    /* 🔧 DETEKSI RELOAD & BERSIHKAN FLAG (agar muncul lagi setelah refresh) */
+    function isReloadNavigation(){
+      try {
+        const nav = performance.getEntriesByType('navigation')[0];
+        return nav && nav.type === 'reload';
+      } catch {
+        return (performance && performance.navigation && performance.navigation.type === 1);
+      }
+    }
+    if (isReloadNavigation()) {
+      sessionStorage.removeItem(DISMISS_KEY);
+    }
+
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    const ua = navigator.userAgent || '';
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const isSafariMobile = isIOS && /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+    const isSafariMac = /^Apple/.test(navigator.vendor || '') && !/Chrome|Chromium|Edg|Firefox/i.test(ua);
+    const isSafari = isSafariMobile || isSafariMac;
+
+    function showBanner(){
+      if (sessionStorage.getItem(DISMISS_KEY)) return;
+      wrap.setAttribute('aria-hidden','false');
+      banner.classList.add('show');
+    }
+    function hideBanner(){
+      banner.classList.remove('show');
+      wrap.setAttribute('aria-hidden','true');
+    }
+    function showTip(){ tip.classList.add('show'); }
+    function hideTip(){ tip.classList.remove('show'); }
+    function fillSafariTip(){
+      tipBody.innerHTML = isSafariMobile
+        ? `
+          <p>Di iPhone/iPad:</p>
+          <p>1. Ketuk tombol <strong>Share</strong> (ikon kotak + panah ke atas).</p>
+          <p>2. Pilih <strong>Add to Home Screen</strong>.</p>
+          <p>3. Ketuk <strong>Add</strong>.</p>
+        `
+        : `
+          <p>Di Safari macOS:</p>
+          <p>1. Menu <strong>File</strong> → <strong>Add to Dock…</strong>.</p>
+          <p>2. Atau tombol <strong>Share</strong> → <strong>Add to Dock</strong>.</p>
+        `;
+    }
+
+    /* Sembunyikan jika sudah terpasang */
+    if (isStandalone) {
+      hideBanner();
+    } else {
+      // Chromium: pakai beforeinstallprompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showBanner();
+      });
+
+      // Safari: tampilkan instruksi manual
+      document.addEventListener('DOMContentLoaded', () => {
+        const chromiumSupported = 'BeforeInstallPromptEvent' in window;
+        if (!chromiumSupported && isSafari) {
+          if (btnIns) btnIns.textContent = 'Cara install';
+          subEl.textContent = isSafariMobile
+            ? 'iOS: Share → Add to Home Screen'
+            : 'macOS: File → Add to Dock…';
+          showBanner();
+        }
+      });
+    }
+
+    /* Tombol Install / Instruksi */
+    btnIns?.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        hideBanner();
+      } else if (isSafari) {
+        fillSafariTip();
+        showTip();
+      }
     });
 
-    btnIns?.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
+    /* Tutup banner → hanya untuk sesi ini (muncul lagi setelah reload) */
+    btnX?.addEventListener('click', () => {
+      sessionStorage.setItem(DISMISS_KEY, '1');
       hideBanner();
     });
+    tipClose?.addEventListener('click', hideTip);
 
-    btnX?.addEventListener('click', hideBanner);
+    /* Hilangkan banner kalau app terpasang */
+    window.matchMedia('(display-mode: standalone)').addEventListener?.('change', (ev) => {
+      if (ev.matches) hideBanner();
+    });
     window.addEventListener('appinstalled', hideBanner);
 
-    // Toggle password visibility
+    /* ===== UX Form kecil ===== */
     const pw = document.getElementById('password');
     const togglePw = document.getElementById('togglePw');
     togglePw?.addEventListener('click', () => {
@@ -260,15 +320,13 @@
       pw.type = show ? 'text' : 'password';
       togglePw.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
     });
-
-    // Submit loading state
     const form = document.getElementById('loginForm');
     const btn  = document.getElementById('submitBtn');
     form?.addEventListener('submit', () => {
       btn.disabled = true;
       const original = btn.textContent;
       btn.textContent = 'Memproses…';
-      setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 8000); // fallback
+      setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 8000);
     });
 </script>
 </body>
