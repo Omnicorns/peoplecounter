@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PROMIS</title>
 
-  <!-- (Opsional) Inter font. Jika CSP ketat, hapus 2 baris ini -->
+  <!-- (Opsional) Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -160,7 +160,7 @@
     </div>
   </section>
 
-  <!-- DETAIL (tetap sama seperti punyamu) -->
+  <!-- DETAIL -->
   <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
     <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
     <div class="rows">
@@ -233,7 +233,7 @@
 
 <script>
   (function(){
-    // ===== Loading overlay (punyamu) =====
+    // ===== Loading overlay =====
     const overlay = document.getElementById('loading');
     const showLoading = () => { if (!overlay.classList.contains('show')) { overlay.classList.add('show'); document.body.setAttribute('aria-busy','true'); } };
     document.addEventListener('submit', function(e){
@@ -262,43 +262,90 @@
     let stream = null, currentDeviceId = null, devices = [];
     let torchOn = false;
 
+    function isSafari(){ return /^Apple/.test(navigator.vendor || '') && !/Chrome|Chromium|Edg|Firefox/i.test(navigator.userAgent); }
+    function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent || ''); }
+
     async function listCameras(){
       const all = await navigator.mediaDevices.enumerateDevices();
       return all.filter(d => d.kind === 'videoinput');
     }
+
+    // PATCH Safari/iOS: no focusMode, wait loadedmetadata, playsinline+muted
     async function startCamera(preferredDeviceId){
       stopCamera();
-      const base = preferredDeviceId ? { deviceId: { exact: preferredDeviceId } } : { facingMode: { ideal: 'environment' } };
-      const constraints = { video: Object.assign(base, { width:{ideal:1280}, height:{ideal:720}, focusMode:'continuous' }), audio:false };
+
+      const useFacing = (isIOS() || isSafari());
+      const base = useFacing
+        ? { facingMode: { ideal: 'environment' } }
+        : (preferredDeviceId ? { deviceId: { exact: preferredDeviceId } } : { facingMode: { ideal: 'environment' } });
+
+      const constraints = {
+        video: Object.assign({}, base, {
+          width:  { ideal: 1280 },
+          height: { ideal: 720 }
+          // focusMode non-standar — dihapus agar Safari tidak error
+        }),
+        audio: false
+      };
+
       stream = await navigator.mediaDevices.getUserMedia(constraints);
+
       videoEl.srcObject = stream;
-      await videoEl.play();
+      videoEl.setAttribute('playsinline','');
+      videoEl.muted = true;
+
+      await new Promise((res)=> {
+        if (videoEl.readyState >= 1) return res();
+        videoEl.onloadedmetadata = () => res();
+      });
+      try { await videoEl.play(); } catch(_) {}
+
       const track = stream.getVideoTracks()[0];
       currentDeviceId = track.getSettings().deviceId || preferredDeviceId || null;
 
-      // Torch support
       torchBtn.disabled = true;
-      try { const caps = track.getCapabilities ? track.getCapabilities() : {}; if (caps.torch) torchBtn.disabled = false; } catch(_){}
+      try { const caps = track.getCapabilities?.() || {}; if (caps.torch) torchBtn.disabled = false; } catch(_){}
     }
+
     function stopCamera(){
       if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
       torchOn = false;
-      // stop fallback loop
       stopFallback();
+      stopNativeLoop();
     }
+
     async function toggleTorch(){
       if (!stream) return;
       const track = stream.getVideoTracks()[0];
       try { torchOn = !torchOn; await track.applyConstraints({ advanced: [{ torch: torchOn }] }); torchBtn.textContent = torchOn ? 'Matikan Lampu' : 'Nyalakan Lampu'; }
       catch(e){ torchBtn.disabled = true; }
     }
+
+    // PATCH: switch kamera pakai facingMode di iOS/Safari
     async function switchCamera(){
+      if (isIOS() || isSafari()){
+        const curTrack = stream?.getVideoTracks?.()[0];
+        const facing = curTrack?.getSettings?.().facingMode || 'environment';
+        const nextFacing = facing === 'environment' ? 'user' : 'environment';
+        try{
+          stopCamera();
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: nextFacing } }, audio:false });
+          videoEl.srcObject = stream;
+          videoEl.setAttribute('playsinline',''); videoEl.muted = true;
+          await new Promise((res)=>{ if (videoEl.readyState>=1) return res(); videoEl.onloadedmetadata=()=>res(); });
+          await videoEl.play();
+          startDecoding();
+        }catch(e){
+          await startCamera(); // fallback
+          startDecoding();
+        }
+        return;
+      }
       if (!devices.length) devices = await listCameras();
       if (!devices.length) return;
       let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
       idx = (idx + 1) % devices.length;
       await startCamera(devices[idx].deviceId);
-      // restart decoding
       startDecoding();
     }
 
@@ -336,9 +383,7 @@
 
     function stopFallback(){ fbActive = false; if (fbTimer) { cancelAnimationFrame(fbTimer); fbTimer=null; } }
 
-    // Core utilities
     function grayscaleAndBinarize(imgData, w, h){
-      // Otsu-ish quick threshold on center band
       const data = imgData.data;
       const histogram = new Uint32Array(256);
       for (let y = h*0.4|0; y < h*0.6|0; y++){
@@ -358,85 +403,53 @@
         let between = wB * wF * (mB - mF) * (mB - mF);
         if (between > max){ max=between; threshold=t; }
       }
-      // build 1-bit image (only a single scanline band to speed)
       const y = h>>1;
       const row = new Uint8Array(w);
       for (let x=0; x<w; x++){
         const i = (y*w + x)*4;
         const v = (data[i]*0.2126 + data[i+1]*0.7152 + data[i+2]*0.0722)|0;
-        row[x] = v < threshold ? 1 : 0; // 1 = bar (black)
+        row[x] = v < threshold ? 1 : 0;
       }
       return row;
     }
 
     function runLengthEncode(bits){
-      const rl = [];
-      let cur = bits[0], cnt = 1;
-      for (let i=1;i<bits.length;i++){
-        if (bits[i] === cur) cnt++;
-        else { rl.push(cnt); cur = bits[i]; cnt = 1; }
-      }
-      rl.push(cnt);
-      return rl;
+      const rl = []; let cur = bits[0], cnt = 1;
+      for (let i=1;i<bits.length;i++){ if (bits[i] === cur) cnt++; else { rl.push(cnt); cur = bits[i]; cnt = 1; } }
+      rl.push(cnt); return rl;
     }
 
     function normalizeModules(run, modules){
-      // Convert run-lengths to module counts by scaling to target 'modules'
-      const sum = run.reduce((a,b)=>a+b,0);
-      if (!sum) return null;
+      const sum = run.reduce((a,b)=>a+b,0); if (!sum) return null;
       const scale = modules / sum;
       const out = run.map(v => Math.round(v * scale));
-      // Fix zeros
       for (let i=0;i<out.length;i++) if (out[i] === 0) out[i] = 1;
       return out;
     }
 
-    // EAN patterns
     const L = { '0001101':0,'0011001':1,'0010011':2,'0111101':3,'0100011':4,'0110001':5,'0101111':6,'0111011':7,'0110111':8,'0001011':9 };
     const G = { '0100111':0,'0110011':1,'0011011':2,'0100001':3,'0011101':4,'0111001':5,'0000101':6,'0010001':7,'0001001':8,'0010111':9 };
     const R = { '1110010':0,'1100110':1,'1101100':2,'1000010':3,'1011100':4,'1001110':5,'1010000':6,'1000100':7,'1001000':8,'1110100':9 };
     const PARITY = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
 
     function decodeEAN(bits){
-      // Find start guard 101 and end guard 101 with center 01010
-      // Convert to run-lengths and then resample to modules of 95 (EAN-13 total modules incl guards)
       const rl = runLengthEncode(bits);
-      // Need at least alternating runs starting with bar (1). Ensure starts with 1
-      if (bits[0] === 0){ rl.shift(); } // drop leading white
-      // Sliding window over run-lengths to approximate 95 modules
-      let best=null, bestErr=1e9, bestStart=0, bestNorm=null;
-      for (let s=0; s<Math.max(0, rl.length-59); s++){ // 59 runs typical for EAN-13
+      if (bits[0] === 0){ rl.shift(); }
+      for (let s=0; s<Math.max(0, rl.length-59); s++){
         const slice = rl.slice(s, s+59);
         const norm = normalizeModules(slice, 95);
         if (!norm) continue;
-        // validate guards roughly: 1-1-1 at start, 1-1-1 at center (01010), 1-1-1 at end
-        // Build module bits from norm
-        const modules = [];
-        let color=1;
-        for (let i=0;i<norm.length;i++){
-          for (let k=0;k<norm[i];k++) modules.push(color);
-          color = 1 - color;
-        }
+        const modules = []; let color=1;
+        for (let i=0;i<norm.length;i++){ for (let k=0;k<norm[i];k++) modules.push(color); color = 1 - color; }
         if (modules.length !== 95) continue;
         const startOk = modules[0]===1 && modules[1]===0 && modules[2]===1;
         const midOk   = modules[45]===0 && modules[46]===1 && modules[47]===0 && modules[48]===1 && modules[49]===0;
         const endOk   = modules[92]===1 && modules[93]===0 && modules[94]===1;
         if (!(startOk && midOk && endOk)) continue;
-
-        // read left digits (6×7 bits) from modules[3..45), right digits (6×7) from modules(50..92)
-        function read7(start){
-          let s = '';
-          for (let i=0;i<7;i++) s += modules[start+i] ? '1':'0';
-          return s;
-        }
-        const leftBits = [];
-        for (let i=3;i<45;i+=7) leftBits.push(read7(i));
-        const rightBits = [];
-        for (let i=50;i<92;i+=7) rightBits.push(read7(i));
-
-        // determine parity for left side
-        let parity = '';
-        const leftDigits = [];
+        function read7(start){ let s=''; for (let i=0;i<7;i++) s += modules[start+i] ? '1':'0'; return s; }
+        const leftBits = []; for (let i=3;i<45;i+=7) leftBits.push(read7(i));
+        const rightBits = []; for (let i=50;i<92;i+=7) rightBits.push(read7(i));
+        let parity = ''; const leftDigits = [];
         for (let i=0;i<6;i++){
           const b = leftBits[i];
           if (L.hasOwnProperty(b)){ leftDigits.push(L[b]); parity+='L'; }
@@ -446,68 +459,43 @@
         if (parity==='?') continue;
         const firstDigit = PARITY.indexOf(parity);
         if (firstDigit < 0) continue;
-
         const rightDigits = [];
-        for (let i=0;i<6;i++){
-          const b = rightBits[i];
-          if (!R.hasOwnProperty(b)){ parity='?'; break; }
-          rightDigits.push(R[b]);
-        }
+        for (let i=0;i<6;i++){ const b = rightBits[i]; if (!R.hasOwnProperty(b)){ parity='?'; break; } rightDigits.push(R[b]); }
         if (parity==='?') continue;
-
         const digits = [firstDigit, ...leftDigits, ...rightDigits];
-        // checksum
-        let sum = 0;
-        for (let i=0;i<12;i++){
-          sum += (i%2===0 ? digits[i] : digits[i]*3);
-        }
-        const check = (10 - (sum%10))%10;
-        if (check !== digits[12]) continue;
-
-        // OK
+        let sum = 0; for (let i=0;i<12;i++){ sum += (i%2===0 ? digits[i] : digits[i]*3); }
+        const check = (10 - (sum%10))%10; if (check !== digits[12]) continue;
         return digits.join('');
       }
       return null;
     }
 
-    function decodeUPC_A(ean13){
-      // UPC-A is EAN-13 with leading 0
-      if (ean13 && ean13.length===13 && ean13[0]==='0') return ean13.slice(1);
-      return null;
-    }
+    function decodeUPC_A(ean13){ if (ean13 && ean13.length===13 && ean13[0]==='0') return ean13.slice(1); return null; }
 
     function decodeEAN8(bits){
-      // Simple attempt: resample to 67 modules (EAN-8)
       const rl = runLengthEncode(bits);
       if (bits[0]===0) rl.shift();
       for (let s=0; s<Math.max(0, rl.length-43); s++){
         const slice = rl.slice(s, s+43);
         const norm = normalizeModules(slice, 67);
         if (!norm) continue;
-        const modules=[];
-        let color=1;
+        const modules=[]; let color=1;
         for (let i=0;i<norm.length;i++){ for(let k=0;k<norm[i];k++) modules.push(color); color=1-color; }
         if (modules.length!==67) continue;
         const startOk = modules[0]===1&&modules[1]===0&&modules[2]===1;
         const midOk = modules[31]===0&&modules[32]===1&&modules[33]===0&&modules[34]===1&&modules[35]===0;
         const endOk = modules[64]===1&&modules[65]===0&&modules[66]===1;
         if (!(startOk&&midOk&&endOk)) continue;
-
         function read7(i){ let s=''; for(let k=0;k<7;k++) s+=modules[i+k]?'1':'0'; return s; }
         const left=[read7(3),read7(10),read7(17),read7(24)];
         const right=[read7(36),read7(43),read7(50),read7(57)];
-
         const leftDigits=[]; for (const b of left){ if (L[b]!=null) leftDigits.push(L[b]); else if (G[b]!=null) leftDigits.push(G[b]); else { leftDigits.length=0; break; } }
         if (!leftDigits.length) continue;
         const rightDigits=[]; for (const b of right){ if (R[b]!=null) rightDigits.push(R[b]); else { rightDigits.length=0; break; } }
         if (!rightDigits.length) continue;
-
         const digits=[...leftDigits,...rightDigits];
-        // checksum
         let sum=0; for (let i=0;i<7;i++){ sum += (i%2===0 ? digits[i]*3 : digits[i]); }
-        const check=(10 - (sum%10))%10;
-        if (check!==digits[7]) continue;
-
+        const check=(10 - (sum%10))%10; if (check!==digits[7]) continue;
         return digits.join('');
       }
       return null;
@@ -521,15 +509,12 @@
         if (vw === 0 || vh === 0){ fbTimer = requestAnimationFrame(loop); return; }
         const cw = 800, ch = Math.max(200, Math.floor(cw * vh / vw));
         canvas.width = cw; canvas.height = ch;
-        ctx.drawImage(videoEl, (vw - vw)/2, (vh - vh)/2, vw, vh, 0, 0, cw, ch);
+        ctx.drawImage(videoEl, 0, 0, cw, ch);
         const img = ctx.getImageData(0, 0, cw, ch);
         const row = grayscaleAndBinarize(img, cw, ch);
         const ean13 = decodeEAN(row);
         let text = ean13 || decodeEAN8(row) || decodeUPC_A(ean13);
-        if (text){
-          onScan(text);
-          return;
-        }
+        if (text){ onScan(text); return; }
         fbTimer = requestAnimationFrame(loop);
       };
       fbTimer = requestAnimationFrame(loop);
@@ -541,18 +526,18 @@
       stopNativeLoop();
       stopFallback();
       stopCamera();
-
-      // // (Opsional) auto-submit:
-      // const form = barcodeInput.closest('form'); if (form) form.submit();
+      // (opsional) auto submit:
+      // barcodeInput.closest('form')?.submit();
     }
 
     async function startDecoding(){
-      const hasNative = await tryNativeDetector();
-      if (hasNative){
-        startNativeLoop();
-      } else {
-        startFallback();
+      if (!videoEl || videoEl.readyState < 2){
+        await new Promise((res)=> {
+          const t = setInterval(()=>{ if (videoEl.readyState >= 2){ clearInterval(t); res(); }}, 50);
+        });
       }
+      const hasNative = await tryNativeDetector();
+      if (hasNative){ startNativeLoop(); } else { startFallback(); }
     }
 
     async function openCam(){
@@ -564,11 +549,10 @@
 
         const back = devices.find(d=>/back|rear|environment/i.test(d.label));
         await startCamera(currentDeviceId || (back && back.deviceId));
-
         await startDecoding();
       }catch(err){
         console.error(err);
-        noteEl.textContent = 'Tidak bisa mengaktifkan kamera. Pastikan HTTPS/izin kamera.';
+        noteEl.textContent = 'Tidak bisa mengaktifkan kamera. Pastikan HTTPS dan izin kamera.';
       }
     }
     function closeCam(){ backdrop.classList.remove('show'); stopNativeLoop(); stopFallback(); stopCamera(); }

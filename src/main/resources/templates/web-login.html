@@ -277,7 +277,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         const chromiumSupported = 'BeforeInstallPromptEvent' in window;
         if (!chromiumSupported && isSafari) {
-          if (btnIns) btnIns.textContent = 'Cara install';
+          if (btnIns) btnIns.textContent = 'install';
           subEl.textContent = isSafariMobile
             ? 'iOS: Share → Add to Home Screen'
             : 'macOS: File → Add to Dock…';
