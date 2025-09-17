@@ -399,8 +399,9 @@
           if(!resp.ok) throw new Error(await resp.text());
 
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${p.username}</td>
-                        <td>${p.fullName}</td>
+
+          tr.innerHTML=`<td>${p.fullName}</td>
+                        <td>${p.username}</td>
                         <td><span class="status ACTIVE">ACTIVE</span></td>
                         <td>${p.keterangan || '-'}</td>
                         <td>-</td><td>-</td>`;
