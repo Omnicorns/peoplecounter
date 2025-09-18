@@ -19,13 +19,7 @@
           --pri:#2DB36D; --pri-2:#20985A; --danger:#ef4444; --ok:#16a34a;
           --card-shadow:0 10px 30px rgba(2,6,23,.08); --radius:14px;
         }
-        @media (prefers-color-scheme: dark){
-          :root{
-            --bg:#0c1220; --surface:#0f172a; --ink:#e5e7eb; --muted:#9aa4b2; --ring:#1f2a44;
-            --card-shadow:0 10px 30px rgba(0,0,0,.45);
-          }
-          img, svg { color-scheme: dark light; }
-        }
+
         *{box-sizing:border-box}
         html,body{height:100%}
         body{
@@ -79,7 +73,7 @@
         .pwa-tip .rows{display:grid; gap:6px}
         .pwa-tip .btns{display:flex; justify-content:flex-end; gap:8px; margin-top:10px}
         .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:700}
-        @media (prefers-color-scheme: dark){ .btn-lite{background:#0d1426; color:#e5e7eb} }
+
 
         /* Layout */
         main{display:grid; place-items:center; min-height:calc(100vh - 56px); padding:24px}
@@ -95,7 +89,7 @@
         .icon{position:absolute; left:10px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:.65; pointer-events:none}
         .input{width:100%; padding:10px 12px 10px 36px; border:1px solid var(--ring); border-radius:10px; background:#fff; color:#111827; outline:none; font-size:14px}
         .pw .input{padding-right:38px}
-        @media (prefers-color-scheme: dark){ .input{background:#0d1426; color:#e5e7eb; border-color:#1f2a44} }
+
         .input::placeholder{ color:#6b7280 }
         .input:focus{border-color:var(--pri); box-shadow:0 0 0 3px color-mix(in srgb, var(--pri) 25%, transparent)}
         .toggle-eye{ position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:0; padding:4px; cursor:pointer; color:#64748b }
