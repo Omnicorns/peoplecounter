@@ -1,582 +1,672 @@
 <!doctype html>
 <html lang="id" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PROMIS</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PROMIS</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      --bg:#f5f7fb; --ink:#0b1220; --muted:#667085; --ring:#e6e8ee; --card:#ffffff;
-      --pri:#2DB36D; --pri-2:#229957; --pri-3:#157248;
-      --chip:#eef2f6; --chip-tx:#0b1220; --surface:#0b1220;
-      --shadow:0 10px 30px rgba(17,24,39,.08); --radius:16px; --table-stripe:#fafbfc;
-      --ok-bg:#dcfce7; --ok-br:#86efac; --ok-tx:#065f46; --ring-focus:0 0 0 3px rgba(45,179,109,.25);
-    }
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0c1220; --ink:#eff3fb; --muted:#9aa5b1; --ring:#1f2937; --card:#0f172a;
-        --chip:#111827; --chip-tx:#e5e7eb; --surface:#0b1220;
-        --shadow:0 10px 30px rgba(0,0,0,.35); --table-stripe:#0b1426;
-        --ok-bg:#06361f; --ok-br:#115e38; --ok-tx:#b7f7d2;
-      }
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--ink);
-      font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    a{color:inherit;text-decoration:none} button{font:inherit}
+    <style>
+        :root{--bg:#f5f7fb;--ink:#0b1220;--muted:#667085;--ring:#e6e8ee;--card:#ffffff;--pri:#2DB36D;--pri-2:#229957;--pri-3:#157248;--chip:#eef2f6;--chip-tx:#0b1220;--surface:#0b1220;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px;--table-stripe:#fafbfc;--ok-bg:#dcfce7;--ok-br:#86efac;--ok-tx:#065f46;--ring-focus:0 0 0 3px rgba(45,179,109,.25)}
+        @media (prefers-color-scheme: dark){
+          :root{--bg:#0c1220;--ink:#eff3fb;--muted:#9aa5b1;--ring:#1f2937;--card:#0f172a;--chip:#111827;--chip-tx:#e5e7eb;--surface:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.35);--table-stripe:#0b1426;--ok-bg:#06361f;--ok-br:#115e38;--ok-tx:#b7f7d2}
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+        a{color:inherit;text-decoration:none} button,input,select{font:inherit}
 
-    .appbar{position:sticky;top:0;z-index:50;color:#fff;background:linear-gradient(180deg,#0b1220 0%,#101a32 100%);border-bottom:1px solid rgba(255,255,255,.06)}
-    .appbar-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    .logo{width:32px;height:32px;border-radius:10px;background:#fff;color:#0b1220;display:grid;place-items:center;font-weight:900;box-shadow:0 4px 14px rgba(255,255,255,.15) inset,0 8px 20px rgba(0,0,0,.25)}
-    .brand{display:flex;align-items:center;gap:10px}.title{font-weight:800;letter-spacing:.2px}
-    .brand-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-weight:700}
-    .flex-1{flex:1} .userbox{display:flex;align-items:center;gap:10px}
-    .chip{background:#fff;color:#111827;border-radius:999px;padding:6px 12px;font-weight:700}
-    .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;cursor:pointer}
-    .btn-ghost:hover{background:rgba(255,255,255,.12)} .btn-ghost:focus{outline:none;box-shadow:var(--ring-focus)}
-    .page{max-width:1100px;margin:18px auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+        .appbar{position:sticky;top:0;z-index:50;color:#fff;background:linear-gradient(180deg,#0b1220 0%,#101a32 100%);border-bottom:1px solid rgba(255,255,255,.06)}
+        .appbar-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+        .logo{width:32px;height:32px;border-radius:10px;background:#fff;color:#0b1220;display:grid;place-items:center;font-weight:900;box-shadow:0 4px 14px rgba(255,255,255,.15) inset,0 8px 20px rgba(0,0,0,.25)}
+        .brand{display:flex;align-items:center;gap:10px}.title{font-weight:800;letter-spacing:.2px}
+        .brand-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-weight:700}
+        .flex-1{flex:1}.userbox{display:flex;align-items:center;gap:10px}
+        .chip{background:#fff;color:#111827;border-radius:999px;padding:6px 12px;font-weight:700}
+        .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;cursor:pointer}
+        .btn-ghost:hover{background:rgba(255,255,255,.12)} .btn-ghost:focus{outline:none;box-shadow:var(--ring-focus)}
 
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-    .card-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--ring);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.02))}
-    .card-title{font-weight:800;letter-spacing:.2px}
-    .rows{padding:14px 16px}.empty{padding:16px;color:var(--muted)}
+        .page{max-width:1100px;margin:18px auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+        .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+        .card-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--ring);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.02))}
+        .card-title{font-weight:800;letter-spacing:.2px}
+        .rows{padding:14px 16px}.empty{padding:16px;color:var(--muted)}
 
-    .search{padding:16px}
-    .group{display:flex;gap:0;border:1px solid var(--ring);border-radius:14px;overflow:hidden;background:#fff}
-    @media (prefers-color-scheme: dark){.group{background:#0b1426}}
-    .seg{display:flex;align-items:center;gap:10px;padding:10px 12px;flex:1;min-width:0;background:transparent}
-    .seg + .seg{border-left:1px solid var(--ring)}
-    .icon{width:18px;height:18px;opacity:.9;flex:0 0 auto}
-    .inpt{flex:1;border:0;outline:none;background:transparent;font:14px/1.5 inherit;color:var(--ink)}
-    .inpt::placeholder{color:#98a2b3}
-    .btn{background:var(--pri);color:#fff;font-weight:800;border:0;min-width:120px;cursor:pointer;padding:0 16px}
-    .btn:hover{background:var(--pri-2)} .btn:active{background:var(--pri-3)} .btn:focus{outline:none;box-shadow:var(--ring-focus)}
-    @media (max-width:720px){.group{flex-direction:column;border-radius:16px}.seg + .seg{border-left:0;border-top:1px solid var(--ring)}.btn{width:100%;height:44px}}
+        .search{padding:16px}
+        .group{display:flex;gap:0;border:1px solid var(--ring);border-radius:14px;overflow:hidden;background:#fff;width:100%}
+        @media (prefers-color-scheme: dark){.group{background:#0b1426}}
+        .seg{display:flex;align-items:center;gap:10px;padding:10px 12px;flex:1;min-width:0;background:transparent}
+        .seg + .seg{border-left:1px solid var(--ring)}
+        .icon{width:18px;height:18px;opacity:.9;flex:0 0 auto}
+        .inpt{flex:1;border:0;outline:none;background:transparent;font:14px/1.5 inherit;color:var(--ink)}
+        .inpt::placeholder{color:#98a2b3}
+        .btn{background:var(--pri);color:#fff;font-weight:800;border:0;min-width:120px;cursor:pointer;padding:0 16px}
+        .btn:hover{background:var(--pri-2)} .btn:active{background:var(--pri-3)} .btn:focus{outline:none;box-shadow:var(--ring-focus)}
+        @media (max-width:720px){.group{flex-direction:column;border-radius:16px}.seg + .seg{border-left:0;border-top:1px solid var(--ring)}.btn{width:100%;height:44px}}
+        .seg{min-width:0}
+        @media (max-width:480px){
+          .search{padding:12px}
+          .group .seg:nth-child(2){flex-wrap:wrap;gap:8px}
+          .group .seg:nth-child(2) .inpt{flex:1 1 100%;min-width:0}
+          .group .seg:nth-child(2) .scan-btn{flex:1 1 calc(50% - 4px);justify-content:center}
+          .btn{width:100%;height:44px}
+        }
+        html,body{max-width:100%;overflow-x:hidden}
+        .scan-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--ring);background:#fff;color:#0b1220;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800}
+        @media (prefers-color-scheme: dark){.scan-btn{background:#0b1426;color:#eff3fb}}
+        .scan-btn:hover{filter:brightness(1.05)} .scan-btn:focus{outline:none;box-shadow:var(--ring-focus)}
 
-    .scan-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--ring);background:#fff;color:#0b1220;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800}
-    @media (prefers-color-scheme: dark){.scan-btn{background:#0b1426;color:#eff3fb}}
-    .scan-btn:hover{filter:brightness(1.05)} .scan-btn:focus{outline:none;box-shadow:var(--ring-focus)}
+        .kv{display:grid;grid-template-columns:240px 1fr;gap:14px;border-bottom:1px solid var(--ring);padding:12px 0}
+        .kv:last-child{border-bottom:0}.k{font-size:12px;color:var(--muted);font-weight:700}.v{font-size:16px;font-weight:800;word-break:break-word}
+        @media (max-width:640px){.kv{grid-template-columns:1fr}}
 
-    .kv{display:grid;grid-template-columns:240px 1fr;gap:14px;border-bottom:1px solid var(--ring);padding:12px 0}
-    .kv:last-child{border-bottom:0}.k{font-size:12px;color:var(--muted);font-weight:700}.v{font-size:16px;font-weight:800;word-break:break-word}
-    @media (max-width:640px){.kv{grid-template-columns:1fr}}
+        .promo-list{display:flex;flex-wrap:wrap;gap:8px}
+        .promo-item{display:inline-flex;align-items:center;gap:8px;background:var(--ok-bg);border:1px solid var(--ok-br);color:var(--ok-tx);padding:6px 10px;border-radius:999px;font-weight:800;letter-spacing:.2px;max-width:100%;overflow-wrap:anywhere;line-height:1.25}
+        .promo-item .dot{width:6px;height:6px;border-radius:999px;background:var(--ok-br);flex:0 0 auto}
 
-    .promo-list{display:flex;flex-wrap:wrap;gap:8px}
-    .promo-item{display:inline-flex;align-items:center;gap:8px;background:var(--ok-bg);border:1px solid var(--ok-br);color:var(--ok-tx);padding:6px 10px;border-radius:999px;font-weight:800;letter-spacing:.2px;max-width:100%;overflow-wrap:anywhere;line-height:1.25}
-    .promo-item .dot{width:6px;height:6px;border-radius:999px;background:var(--ok-br);flex:0 0 auto}
+        .table-wrap{overflow:auto;max-height:56vh}
+        table{width:100%;border-collapse:collapse;background:transparent}
+        thead th{position:sticky;top:0;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.75));backdrop-filter:saturate(120%) blur(4px);font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--ring)}
+        @media (prefers-color-scheme: dark){thead th{background:linear-gradient(180deg,rgba(16,24,40,.85),rgba(16,24,40,.65))}}
+        th,td{padding:12px;border-bottom:1px solid var(--ring);text-align:left;vertical-align:middle}
+        tbody tr:hover{background:var(--table-stripe)} td.num{text-align:right;font-variant-numeric:tabular-nums}
 
-    .table-wrap{overflow:auto;max-height:56vh}
-    table{width:100%;border-collapse:collapse;background:transparent}
-    thead th{position:sticky;top:0;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.75));backdrop-filter:saturate(120%) blur(4px);font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--ring)}
-    @media (prefers-color-scheme: dark){thead th{background:linear-gradient(180deg,rgba(16,24,40,.85),rgba(16,24,40,.65))}}
-    th,td{padding:12px 12px;border-bottom:1px solid var(--ring);text-align:left;vertical-align:middle}
-    tbody tr:hover{background:var(--table-stripe)} td.num{text-align:right;font-variant-numeric:tabular-nums}
+        .hist-grid{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+        .hist-main{background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.3));border:1px solid var(--ring);border-radius:12px;padding:12px 14px}
+        @media (prefers-color-scheme: dark){.hist-main{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02))}}
+        .hist-title{font-weight:800}.hist-sub{color:#64748b;font-size:12px}
+        .btn-sm{padding:10px 14px;background:var(--pri);color:#fff;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+        .btn-sm:hover{background:var(--pri-2)} .btn-sm:focus{outline:none;box-shadow:var(--ring-focus)}
+        @media (max-width:640px){.hist-grid{grid-template-columns:1fr}}
+        .fade-hr{height:1px;border:0;background:linear-gradient(90deg,transparent,var(--ring),transparent)}
+        .subtle{color:var(--muted);font-weight:600}
+        @media print{.appbar{display:none}.page{margin:0;padding:0}.card{box-shadow:none}.table-wrap{max-height:none;overflow:visible}a[href]::after{content:""}}
 
-    .hist-grid{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
-    .hist-main{background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.3));border:1px solid var(--ring);border-radius:12px;padding:12px 14px}
-    @media (prefers-color-scheme: dark){.hist-main{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02))}}
-    .hist-title{font-weight:800}.hist-sub{color:#64748b;font-size:12px}
-    .btn-sm{padding:10px 14px;background:var(--pri);color:#fff;border:0;border-radius:10px;font-weight:800;cursor:pointer}
-    .btn-sm:hover{background:var(--pri-2)} .btn-sm:focus{outline:none;box-shadow:var(--ring-focus)}
-    @media (max-width:640px){.hist-grid{grid-template-columns:1fr}}
+        .loading{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(12,18,32,.45);backdrop-filter:saturate(120%) blur(2px);z-index:9999}
+        .loading.show{display:flex}
+        .loading-box{background:var(--card);color:var(--ink);border:1px solid var(--ring);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;font-weight:800}
+        .spinner{width:22px;height:22px;border-radius:999px;border:3px solid var(--ring);border-top-color:var(--pri);animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
 
-    .fade-hr{height:1px;border:0;background:linear-gradient(90deg,transparent,var(--ring),transparent)}
-    .subtle{color:var(--muted);font-weight:600}
-
-    @media print{.appbar{display:none}.page{margin:0;padding:0}.card{box-shadow:none}.table-wrap{max-height:none;overflow:visible}a[href]::after{content:""}}
-
-    .loading{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(12,18,32,.45);backdrop-filter:saturate(120%) blur(2px);z-index:9999}
-    .loading.show{display:flex}
-    .loading-box{background:var(--card);color:var(--ink);border:1px solid var(--ring);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;font-weight:800}
-    .spinner{width:22px;height:22px;border-radius:999px;border:3px solid var(--ring);border-top-color:var(--pri);animation:spin .8s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    .cam-backdrop{position:fixed;inset:0;display:none;z-index:10000;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:16px}
-    .cam-backdrop.show{display:flex}
-    .cam-modal{width:min(680px,100%);background:var(--card);color:var(--ink);border:1px solid var(--ring);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
-    .cam-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--ring)}
-    .cam-title{font-weight:800}.cam-bd{padding:12px 14px}
-    .cam-video-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--ring)}
-    video{width:100%;height:auto;display:block;background:#000}
-    .scan-frame{position:absolute;inset:10% 15%;border:2px dashed rgba(255,255,255,.8);border-radius:12px;pointer-events:none}
-    .cam-ft{display:flex;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--ring)}
-    .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:800}
-    @media (prefers-color-scheme: dark){.btn-lite{background:#0b1426;color:#eff3fb}}
-    .btn-danger{background:#ef4444;color:#fff;border:0}.btn-ok{background:var(--pri);color:#fff;border:0}
-    .note{font-size:12px;color:var(--muted);margin-top:8px}.hide{display:none!important}
-  </style>
+        body.scroll-lock{overflow:hidden;touch-action:none}
+        .cam-backdrop{position:fixed;inset:0;display:none;z-index:10000;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow:auto;align-items:center;justify-content:center}
+        .cam-backdrop.show{display:flex}
+        .cam-modal{width:min(680px,100%);max-height:92vh;background:var(--card);color:var(--ink);border:1px solid var(--ring);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+        .cam-h{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--ring);background:inherit}
+        .cam-bd{flex:1;overflow:auto;padding:12px 14px}
+        .cam-video-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--ring);aspect-ratio:var(--vidratio,16/9);max-height:70vh;background:#000}
+        video{width:100%;height:100%;display:block;background:#000;object-fit:contain}
+        .scan-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(85%,560px);height:min(60%,360px);border:2px dashed rgba(255,255,255,.8);border-radius:12px;pointer-events:none}
+        .cam-ft{position:sticky;bottom:0;z-index:1;display:flex;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--ring);background:inherit;flex-wrap:wrap}
+        .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:800}
+        @media (prefers-color-scheme: dark){.btn-lite{background:#0b1426;color:#eff3fb}}
+        .btn-danger{background:#ef4444;color:#fff;border:0}.btn-ok{background:var(--pri);color:#fff;border:0}
+        .note{font-size:12px;color:#muted;margin-top:8px}.hide{display:none!important}
+        .warn{margin-top:8px;padding:8px 10px;border:1px solid #f59e0b;background:#fffbeb;border-radius:10px;color:#92400e;font-weight:700}
+    </style>
 </head>
 <body>
 
 <header class="appbar">
-  <div class="appbar-inner">
-    <div class="brand">
-      <div class="logo" aria-label="PROMIS">P</div>
-      <div class="title">PROMIS</div>
-      <span class="brand-chip" title="Produk & Stok">
+    <div class="appbar-inner">
+        <div class="brand">
+            <div class="logo" aria-label="PROMIS">P</div>
+            <div class="title">PROMIS</div>
+            <span class="brand-chip" title="Produk & Stok">
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
         Produk
       </span>
+        </div>
+        <div class="flex-1"></div>
+        <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
+            <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
+            <form th:action="@{/web/logout}" method="post" data-loading><button type="submit" class="btn-ghost">Logout</button></form>
+        </div>
+        <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
+            <a class="btn-ghost" th:href="@{/web/login}" data-loading>Login</a>
+        </div>
     </div>
-    <div class="flex-1"></div>
-    <div class="userbox" th:if="${session.AUTH_USERNAME != null}"><span class="chip" th:text="${session.AUTH_USERNAME}">john</span><form th:action="@{/web/logout}" method="post" data-loading><button type="submit" class="btn-ghost">Logout</button></form></div>
-    <div class="userbox" th:if="${session.AUTH_USERNAME == null}"><a class="btn-ghost" th:href="@{/web/login}" data-loading>Login</a></div>
-  </div>
 </header>
 
 <main class="page">
-  <section class="card" aria-labelledby="cari-produk-title">
-    <div class="card-h">
-      <div class="card-title" id="cari-produk-title">Cari Produk</div>
-      <div class="subtle" th:if="${sku != null}">Menampilkan: <strong th:text="${sku}">-</strong></div>
-    </div>
-    <div class="search">
-      <form class="group" th:action="@{/web/product}" method="get" data-loading>
-        <div class="seg">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 105.3 14.1l4.3 4.3 1.4-1.4-4.3-4.3A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-          <input class="inpt" type="text" name="sku" th:value="${qSku}" placeholder="Masukkan SKU (mis. ank0002721)" aria-label="SKU">
+    <section class="card" aria-labelledby="cari-produk-title">
+        <div class="card-h">
+            <div class="card-title" id="cari-produk-title">Cari Produk</div>
+            <div class="subtle" th:if="${sku != null}">Menampilkan: <strong th:text="${sku}">-</strong></div>
         </div>
-        <div class="seg">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 7h2v10H4zm3 0h1v10H7zm3 0h2v10h-2zm4 0h1v10h-1zm3 0h2v10h-2z"/></svg>
-          <input id="barcodeInput" class="inpt" type="text" name="code" th:value="${qCode}" placeholder="Atau Barcode (opsional)" aria-label="Barcode">
-          <button type="button" id="openCamBtn" class="scan-btn" aria-haspopup="dialog" aria-controls="camDialog" title="Scan barcode via kamera">
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 5h-3.6l-1.2-2H8.8L7.6 5H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2zm0 12H4V7h4.4l1.2-2h4.8l1.2 2H20v10zM12 8a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg>
-            Camera
-          </button>
+        <div class="search">
+            <form class="group" th:action="@{/web/product}" method="get" data-loading>
+                <div class="seg">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 105.3 14.1l4.3 4.3 1.4-1.4-4.3-4.3A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+                    <input class="inpt" type="text" name="sku" th:value="${qSku}" placeholder="Masukkan SKU (mis. ank0002721)" aria-label="SKU">
+                </div>
+                <div class="seg">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 7h2v10H4zm3 0h1v10H7zm3 0h2v10h-2zm4 0h1v10h-1zm3 0h2v10h-2z"/></svg>
+                    <input id="barcodeInput" class="inpt" type="text" name="code" th:value="${qCode}" placeholder="Atau Barcode (opsional)" aria-label="Barcode">
+                    <button type="button" id="openCamBtn" class="scan-btn" aria-haspopup="dialog" aria-controls="camDialog" title="Scan barcode via kamera">
+                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 5h-3.6l-1.2-2H8.8L7.6 5H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2zm0 12H4V7h4.4l1.2-2h4.8l1.2 2H20v10zM12 8a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg>
+                        Camera
+                    </button>
+                    <!-- Fallback Foto AKTIF -->
+<!--                    <button type="button" id="photoBtn" class="scan-btn" title="Ambil foto barcode (fallback)">Foto</button>-->
+<!--                    <input id="photoInput" type="file" accept="image/*" capture="environment" class="hide">-->
+                </div>
+                <button class="btn" type="submit" aria-label="Tampilkan hasil">Tampilkan</button>
+            </form>
+            <p class="note">Tips: klik <strong>Camera</strong> untuk scan. Jika device tidak mendukung API native atau tidak HTTPS, gunakan <strong>Foto</strong>.</p>
+            <div id="httpsWarn" class="warn hide">Untuk akses kamera di iOS Safari, halaman harus lewat <strong>HTTPS</strong> atau <strong>localhost</strong>.</div>
         </div>
-        <button class="btn" type="submit" aria-label="Tampilkan hasil">Tampilkan</button>
-      </form>
-      <p class="note">Tips: klik <strong>Camera</strong> untuk scan. Jika device tidak mendukung API native, fallback offline (EAN-13/EAN-8/UPC-A) akan aktif.</p>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
-    <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
-    <div class="rows">
-      <div class="kv"><div class="k">Nama Produk</div><div class="v" th:text="${name}">-</div></div>
-      <div class="kv"><div class="k">SKU</div><div class="v" th:text="${sku}">-</div></div>
-      <div class="kv" th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
-        <div class="k">Promo</div>
-        <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
-        <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-list">
-          <span class="promo-item" th:each="p : ${promoItems}"><span class="dot"></span><span th:text="${#strings.trim(p)}">PROMO</span></span>
+    <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
+        <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
+        <div class="rows">
+            <div class="kv"><div class="k">Nama Produk</div><div class="v" th:text="${name}">-</div></div>
+            <div class="kv"><div class="k">SKU</div><div class="v" th:text="${sku}">-</div></div>
+            <div class="kv" th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
+                <div class="k">Promo</div>
+                <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
+                <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-list">
+                    <span class="promo-item" th:each="p : ${promoItems}"><span class="dot"></span><span th:text="${#strings.trim(p)}">PROMO</span></span>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
-    <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
-    <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}"><div class="empty">Tidak ada data stok/harga.</div></div>
-    <div class="table-wrap" th:if="${stocks != null and !#lists.isEmpty(stocks)}">
-      <table role="table" aria-label="Tabel Stok dan Harga">
-        <thead><tr><th scope="col">Lokasi</th><th scope="col" style="text-align:right">Stok</th><th scope="col" style="text-align:right">Harga</th></tr></thead>
-        <tbody><tr th:each="r : ${stocks}"><td th:text="${r.location}">-</td><td class="num" th:text="${r.stock}">0</td><td class="num" th:text="${'Rp ' + #numbers.formatDecimal(r.price,0,'POINT',0,'COMMA')}">Rp 0</td></tr></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="card" aria-labelledby="riwayat-title">
-    <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
-    <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
-    <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
-      <div class="hist-grid" th:each="h : ${history}">
-        <div class="hist-main">
-          <div class="hist-title" th:text="${h['name'] != null ? h['name'] : h['sku']}">Nama produk</div>
-          <div class="hist-sub">SKU: <span th:text="${h['sku']}">FN001</span></div>
+    <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
+        <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
+        <div class="rows" th:if="${stocks == null or #lists.isEmpty(stocks)}"><div class="empty">Tidak ada data stok/harga.</div></div>
+        <div class="table-wrap" th:if="${stocks != null and !#lists.isEmpty(stocks)}">
+            <table role="table" aria-label="Tabel Stok dan Harga">
+                <thead><tr><th scope="col">Lokasi</th><th scope="col" style="text-align:right">Stok</th><th scope="col" style="text-align:right">Harga</th></tr></thead>
+                <tbody><tr th:each="r : ${stocks}"><td th:text="${r.location}">-</td><td class="num" th:text="${r.stock}">0</td><td class="num" th:text="${'Rp ' + #numbers.formatDecimal(r.price,0,'POINT',0,'COMMA')}">Rp 0</td></tr></tbody>
+            </table>
         </div>
-        <div class="hist-actions"><a class="btn-sm" th:href="@{/web/product(sku=${h['sku']})}" data-loading>Pakai</a></div>
-      </div>
-    </div>
-  </section>
+    </section>
+
+    <section class="card" aria-labelledby="riwayat-title">
+        <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
+        <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
+        <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
+            <div class="hist-grid" th:each="h : ${history}">
+                <div class="hist-main">
+                    <div class="hist-title" th:text="${h['name'] != null ? h['name'] : h['sku']}">Nama produk</div>
+                    <div class="hist-sub">SKU: <span th:text="${h['sku']}">FN001</span></div>
+                </div>
+                <div class="hist-actions"><a class="btn-sm" th:href="@{/web/product(sku=${h['sku']})}" data-loading>Pakai</a></div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <div id="loading" class="loading" role="status" aria-live="polite" aria-label="Memuat">
-  <div class="loading-box"><div class="spinner" aria-hidden="true"></div><div>Loading…</div></div>
+    <div class="loading-box"><div class="spinner" aria-hidden="true"></div><div>Loading…</div></div>
 </div>
 
 <!-- CAMERA MODAL -->
 <div id="camBackdrop" class="cam-backdrop" role="dialog" aria-modal="true" aria-labelledby="camTitle">
-  <div class="cam-modal" id="camDialog">
-    <div class="cam-h">
-      <div class="cam-title" id="camTitle">Scan Barcode</div>
-      <button type="button" class="btn-lite btn-danger" id="closeCamBtn" aria-label="Tutup kamera">Tutup</button>
+    <div class="cam-modal" id="camDialog">
+        <div class="cam-h">
+            <div class="cam-title" id="camTitle">Scan Barcode</div>
+            <button type="button" class="btn-lite btn-danger" id="closeCamBtn" aria-label="Tutup kamera">Tutup</button>
+        </div>
+        <div class="cam-bd">
+            <div class="cam-video-wrap">
+                <video id="camVideo" playsinline webkit-playsinline muted autoplay></video>
+                <div class="scan-frame" aria-hidden="true"></div>
+            </div>
+            <div class="note" id="camNote">Arahkan barcode ke dalam kotak. Otomatis terdeteksi.</div>
+            <div class="note">Jika tidak terbaca, gunakan pencahayaan bagus atau dekatkan kamera.</div>
+        </div>
+        <div class="cam-ft">
+            <button type="button" class="btn-lite" id="torchBtn" disabled>Nyalakan Lampu</button>
+            <button type="button" class="btn-lite" id="switchBtn">Ganti Kamera</button>
+            <button type="button" class="btn-ok" id="stopCamBtn">Stop</button>
+        </div>
     </div>
-    <div class="cam-bd">
-      <div class="cam-video-wrap">
-        <video id="camVideo" playsinline muted></video>
-        <div class="scan-frame" aria-hidden="true"></div>
-      </div>
-      <div class="note" id="camNote">Arahkan barcode ke dalam kotak. Otomatis terdeteksi.</div>
-      <div class="note">Jika tidak terbaca, gunakan pencahayaan bagus atau dekatkan kamera.</div>
-    </div>
-    <div class="cam-ft">
-      <button type="button" class="btn-lite" id="torchBtn" disabled>Nyalakan Lampu</button>
-      <button type="button" class="btn-lite" id="switchBtn">Ganti Kamera</button>
-      <button type="button" class="btn-ok" id="stopCamBtn">Stop</button>
-    </div>
-  </div>
 </div>
 
 <script>
-  (function(){
-    // ===== Loading overlay =====
-    const overlay = document.getElementById('loading');
-    const showLoading = () => { if (!overlay.classList.contains('show')) { overlay.classList.add('show'); document.body.setAttribute('aria-busy','true'); } };
-    document.addEventListener('submit', function(e){
-      const form = e.target;
-      if (form.matches('[data-loading]')) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) { btn.disabled = true; btn.dataset._txt = btn.textContent; btn.textContent = 'Loading…'; }
-        showLoading();
+    (function(){
+      // ===== Helpers & State =====
+      const openBtn   = document.getElementById('openCamBtn');
+      const closeBtn  = document.getElementById('closeCamBtn');
+      const stopBtn   = document.getElementById('stopCamBtn');
+      const torchBtn  = document.getElementById('torchBtn');
+      const switchBtn = document.getElementById('switchBtn');
+      const backdrop  = document.getElementById('camBackdrop');
+      const videoEl   = document.getElementById('camVideo');
+      const barcodeInput = document.getElementById('barcodeInput');
+      const noteEl    = document.getElementById('camNote');
+      const httpsWarn = document.getElementById('httpsWarn');
+      const photoBtn  = document.getElementById('photoBtn');
+      const photoInput= document.getElementById('photoInput');
+
+      function logd(){}
+
+      let stream = null, currentDeviceId = null, devices = [];
+      let torchOn = false, modalOpen = false;
+
+      const ua = navigator.userAgent || '';
+      const isSafari = /^Apple/.test(navigator.vendor || '') || (/Safari/i.test(ua) && !/Chrome|Chromium|Edg|Firefox/i.test(ua));
+      const isIOS    = /iphone|ipad|ipod/i.test(ua);
+      const isMac    = /Mac/i.test(navigator.platform);
+      const isSecure = location.protocol === 'https:' || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|::1)$/i.test(location.hostname);
+      const inIframe = (()=>{ try { return window.self !== window.top; } catch(_){ return true; } })();
+
+      if (!isSecure && (isIOS || isSafari)) { httpsWarn?.classList.remove('hide'); }
+
+      async function listCameras(){
+        try{ const all=await navigator.mediaDevices.enumerateDevices(); return all.filter(d=>d.kind==='videoinput'); }
+        catch(_){ return[]; }
       }
-    }, true);
-    document.addEventListener('click', function(e){ const a = e.target.closest('a'); if (a && a.matches('[data-loading]') && a.href) showLoading(); }, true);
-    window.addEventListener('beforeunload', showLoading);
-    window.addEventListener('pageshow', function(ev){ if (ev.persisted) { overlay.classList.remove('show'); document.body.removeAttribute('aria-busy'); }});
+      function setWrapRatio(){
+        const vw=videoEl.videoWidth||1280, vh=videoEl.videoHeight||720;
+        videoEl.parentElement?.style.setProperty('--vidratio', (vw/vh));
+      }
 
-    // ===== Camera & Scanner =====
-    const openBtn   = document.getElementById('openCamBtn');
-    const closeBtn  = document.getElementById('closeCamBtn');
-    const stopBtn   = document.getElementById('stopCamBtn');
-    const torchBtn  = document.getElementById('torchBtn');
-    const switchBtn = document.getElementById('switchBtn');
-    const backdrop  = document.getElementById('camBackdrop');
-    const videoEl   = document.getElementById('camVideo');
-    const barcodeInput = document.getElementById('barcodeInput');
-    const noteEl    = document.getElementById('camNote');
+      // ======== Start/Stop Camera ========
+      async function startCamera(preferredDeviceId){
+        stopCamera();
+        // iOS lebih rewel → sederhanakan constraints
+        let constraints = isIOS ? {
+          video: preferredDeviceId ? { deviceId:{ exact: preferredDeviceId } } : { facingMode:{ ideal:'environment' } },
+          audio:false
+        } : {
+          video: preferredDeviceId
+            ? { deviceId:{ exact: preferredDeviceId }, width:{ideal:1920}, height:{ideal:1080} }
+            : { facingMode:{ ideal:'environment' }, width:{ideal:1920}, height:{ideal:1080} },
+          audio:false
+        };
 
-    let stream = null, currentDeviceId = null, devices = [];
-    let torchOn = false;
-
-    function isSafari(){ return /^Apple/.test(navigator.vendor || '') && !/Chrome|Chromium|Edg|Firefox/i.test(navigator.userAgent); }
-    function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent || ''); }
-
-    async function listCameras(){
-      const all = await navigator.mediaDevices.enumerateDevices();
-      return all.filter(d => d.kind === 'videoinput');
-    }
-
-    async function startCamera(preferredDeviceId){
-      stopCamera();
-
-      const useFacing = (isIOS() || isSafari());
-      const base = useFacing
-        ? { facingMode: { ideal: 'environment' } }
-        : (preferredDeviceId ? { deviceId: { exact: preferredDeviceId } } : { facingMode: { ideal: 'environment' } });
-
-      const constraints = {
-        video: Object.assign({}, base, {
-          width:  { ideal: 1280 },
-          height: { ideal: 720 }
-        }),
-        audio: false
-      };
-
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      videoEl.srcObject = stream;
-      videoEl.setAttribute('playsinline','');
-      videoEl.muted = true;
-
-      await new Promise((res)=> {
-        if (videoEl.readyState >= 1) return res();
-        videoEl.onloadedmetadata = () => res();
-      });
-      try { await videoEl.play(); } catch(_) {}
-
-      const track = stream.getVideoTracks()[0];
-      currentDeviceId = track.getSettings().deviceId || preferredDeviceId || null;
-
-      torchBtn.disabled = true;
-      try { const caps = track.getCapabilities?.() || {}; if (caps.torch) torchBtn.disabled = false; } catch(_){}
-    }
-
-    function stopCamera(){
-      if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-      torchOn = false;
-      stopFallback();
-      stopNativeLoop();
-    }
-
-    async function toggleTorch(){
-      if (!stream) return;
-      const track = stream.getVideoTracks()[0];
-      try { torchOn = !torchOn; await track.applyConstraints({ advanced: [{ torch: torchOn }] }); torchBtn.textContent = torchOn ? 'Matikan Lampu' : 'Nyalakan Lampu'; }
-      catch(e){ torchBtn.disabled = true; }
-    }
-
-    async function switchCamera(){
-      if (isIOS() || isSafari()){
-        const curTrack = stream?.getVideoTracks?.()[0];
-        const facing = curTrack?.getSettings?.().facingMode || 'environment';
-        const nextFacing = facing === 'environment' ? 'user' : 'environment';
         try{
-          stopCamera();
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: nextFacing } }, audio:false });
-          videoEl.srcObject = stream;
-          videoEl.setAttribute('playsinline',''); videoEl.muted = true;
-          await new Promise((res)=>{ if (videoEl.readyState>=1) return res(); videoEl.onloadedmetadata=()=>res(); });
-          await videoEl.play();
-          startDecoding();
-        }catch(e){
-          await startCamera(); // fallback
-          startDecoding();
-        }
-        return;
-      }
-      if (!devices.length) devices = await listCameras();
-      if (!devices.length) return;
-      let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
-      idx = (idx + 1) % devices.length;
-      await startCamera(devices[idx].deviceId);
-      startDecoding();
-    }
-
-    // ===== Native BarcodeDetector (jika ada) =====
-    let nativeDetector = null, nativeLoop = false;
-    async function tryNativeDetector(){
-      if (!('BarcodeDetector' in window)) return false;
-      try {
-        nativeDetector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','codabar','data_matrix','pdf417'] });
-        return true;
-      } catch { return false; }
-    }
-    function startNativeLoop(){
-      nativeLoop = true;
-      const tick = () => {
-        if (!nativeLoop || !nativeDetector) return;
-        if (videoEl.readyState >= 2){
-          nativeDetector.detect(videoEl).then(codes=>{
-            if (codes && codes.length){
-              const raw = codes[0].rawValue || '';
-              if (raw){ onScan(raw); return; }
-            }
-            requestAnimationFrame(tick);
-          }).catch(()=>requestAnimationFrame(tick));
-        } else { requestAnimationFrame(tick); }
-      };
-      requestAnimationFrame(tick);
-    }
-    function stopNativeLoop(){ nativeLoop = false; }
-
-    // ===== Fallback decoder (EAN-13/EAN-8/UPC-A) – improved for Safari =====
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently:true });
-    let fbActive = false, fbTimer = null;
-
-    function stopFallback(){ fbActive = false; if (fbTimer) { cancelAnimationFrame(fbTimer); fbTimer=null; } }
-
-    // Threshold dihitung sekali per frame dari band tengah, lalu dipakai untuk beberapa baris
-    function computeThreshold(imgData, w, h){
-      const data = imgData.data;
-      const histogram = new Uint32Array(256);
-      const y0 = Math.floor(h*0.4), y1 = Math.floor(h*0.6);
-      for (let y = y0; y < y1; y++){
-        for (let x = 0; x < w; x++){
-          const i = (y*w + x)*4;
-          const v = (data[i]*0.2126 + data[i+1]*0.7152 + data[i+2]*0.0722)|0;
-          histogram[v]++;
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          wireVideoEl();
+          await ensurePlay();
+          setWrapRatio();
+          const track=stream.getVideoTracks()[0];
+          currentDeviceId = track.getSettings().deviceId || preferredDeviceId || null;
+          try{
+            const caps=track.getCapabilities?.()||{};
+            torchBtn&&(torchBtn.disabled = !(caps.torch || caps.torch !== undefined));
+          }catch(_){ torchBtn&&(torchBtn.disabled=true); }
+          return true;
+        }catch(err){
+          // Fallback untuk Safari (minta video:true polos)
+          if (isSafari){
+            try{
+              stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+              wireVideoEl(); await ensurePlay(); setWrapRatio(); return true;
+            }catch(_){ return false; }
+          }
+          return false;
         }
       }
-      let sum=0, sumB=0, wB=0, max=0, threshold=127, total = (y1-y0)*w;
-      for (let i=0;i<256;i++) sum += i*histogram[i];
-      for (let t=0;t<256;t++){
-        wB += histogram[t]; if (!wB) continue;
-        let wF = total - wB; if (!wF) break;
-        sumB += t*histogram[t];
-        let mB = sumB / wB, mF = (sum - sumB) / wF;
-        let between = wB * wF * (mB - mF) * (mB - mF);
-        if (between > max){ max=between; threshold=t; }
+
+      function wireVideoEl(){
+        videoEl.srcObject = stream;
+        videoEl.setAttribute('playsinline','');
+        videoEl.setAttribute('webkit-playsinline',''); // penting di iOS
+        videoEl.setAttribute('autoplay','');
+        videoEl.muted = true;
       }
-      return threshold|0;
-    }
-
-    function buildRowBits(imgData, w, y, threshold){
-      const data = imgData.data;
-      const row = new Uint8Array(w);
-      for (let x=0; x<w; x++){
-        const i = (y*w + x)*4;
-        const v = (data[i]*0.2126 + data[i+1]*0.7152 + data[i+2]*0.0722)|0;
-        row[x] = v < threshold ? 1 : 0;
+      async function ensurePlay(){
+        await new Promise(r=>{ if(videoEl.readyState>=4) r(); else videoEl.onloadedmetadata=r; });
+        try{ await videoEl.play(); }catch(_){ videoEl.muted=true; await videoEl.play().catch(()=>{}); }
       }
-      return row;
-    }
 
-    function runLengthEncode(bits){
-      const rl = []; let cur = bits[0], cnt = 1;
-      for (let i=1;i<bits.length;i++){ if (bits[i] === cur) cnt++; else { rl.push(cnt); cur = bits[i]; cnt = 1; } }
-      rl.push(cnt); return rl;
-    }
-    function normalizeModules(run, modules){
-      const sum = run.reduce((a,b)=>a+b,0); if (!sum) return null;
-      const scale = modules / sum;
-      const out = run.map(v => Math.round(v * scale));
-      for (let i=0;i<out.length;i++) if (out[i] === 0) out[i] = 1;
-      return out;
-    }
-
-    const L = { '0001101':0,'0011001':1,'0010011':2,'0111101':3,'0100011':4,'0110001':5,'0101111':6,'0111011':7,'0110111':8,'0001011':9 };
-    const G = { '0100111':0,'0110011':1,'0011011':2,'0100001':3,'0011101':4,'0111001':5,'0000101':6,'0010001':7,'0001001':8,'0010111':9 };
-    const R = { '1110010':0,'1100110':1,'1101100':2,'1000010':3,'1011100':4,'1001110':5,'1010000':6,'1000100':7,'1001000':8,'1110100':9 };
-    const PARITY = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
-
-    function decodeEAN(bits){
-      const rl = runLengthEncode(bits);
-      if (bits[0] === 0){ rl.shift(); }
-      for (let s=0; s<Math.max(0, rl.length-59); s++){
-        const slice = rl.slice(s, s+59);
-        const norm = normalizeModules(slice, 95);
-        if (!norm) continue;
-        const modules = []; let color=1;
-        for (let i=0;i<norm.length;i++){ for (let k=0;k<norm[i];k++) modules.push(color); color = 1 - color; }
-        if (modules.length !== 95) continue;
-        const startOk = modules[0]===1 && modules[1]===0 && modules[2]===1;
-        const midOk   = modules[45]===0 && modules[46]===1 && modules[47]===0 && modules[48]===1 && modules[49]===0;
-        const endOk   = modules[92]===1 && modules[93]===0 && modules[94]===1;
-        if (!(startOk && midOk && endOk)) continue;
-        function read7(start){ let s=''; for (let i=0;i<7;i++) s += modules[start+i] ? '1':'0'; return s; }
-        const leftBits = []; for (let i=3;i<45;i+=7) leftBits.push(read7(i));
-        const rightBits = []; for (let i=50;i<92;i+=7) rightBits.push(read7(i));
-        let parity = ''; const leftDigits = [];
-        for (let i=0;i<6;i++){
-          const b = leftBits[i];
-          if (L.hasOwnProperty(b)){ leftDigits.push(L[b]); parity+='L'; }
-          else if (G.hasOwnProperty(b)){ leftDigits.push(G[b]); parity+='G'; }
-          else { parity='?'; break; }
+      function stopCamera(){
+        if(stream){
+          stream.getTracks().forEach(t=>{ try{ t.stop(); t.enabled=false; }catch(_){ } });
+          stream=null;
         }
-        if (parity==='?') continue;
-        const firstDigit = PARITY.indexOf(parity);
-        if (firstDigit < 0) continue;
-        const rightDigits = [];
-        for (let i=0;i<6;i++){ const b = rightBits[i]; if (!R.hasOwnProperty(b)){ parity='?'; break; } rightDigits.push(R[b]); }
-        if (parity==='?') continue;
-        const digits = [firstDigit, ...leftDigits, ...rightDigits];
-        let sum = 0; for (let i=0;i<12;i++){ sum += (i%2===0 ? digits[i] : digits[i]*3); }
-        const check = (10 - (sum%10))%10; if (check !== digits[12]) continue;
-        return digits.join('');
+        torchOn=false;
+        if(torchBtn){ torchBtn.textContent='Nyalakan Lampu'; torchBtn.disabled=true; }
+        stopNativeLoop(); stopFallback();
       }
-      return null;
-    }
-    function decodeUPC_A(ean13){ if (ean13 && ean13.length===13 && ean13[0]==='0') return ean13.slice(1); return null; }
-    function decodeEAN8(bits){
-      const rl = runLengthEncode(bits);
-      if (bits[0]===0) rl.shift();
-      for (let s=0; s<Math.max(0, rl.length-43); s++){
-        const slice = rl.slice(s, s+43);
-        const norm = normalizeModules(slice, 67);
-        if (!norm) continue;
-        const modules=[]; let color=1;
-        for (let i=0;i<norm.length;i++){ for(let k=0;k<norm[i];k++) modules.push(color); color=1-color; }
-        if (modules.length!==67) continue;
-        const startOk = modules[0]===1&&modules[1]===0&&modules[2]===1;
-        const midOk = modules[31]===0&&modules[32]===1&&modules[33]===0&&modules[34]===1&&modules[35]===0;
-        const endOk = modules[64]===1&&modules[65]===0&&modules[66]===1;
-        if (!(startOk&&midOk&&endOk)) continue;
-        function read7(i){ let s=''; for(let k=0;k<7;k++) s+=modules[i+k]?'1':'0'; return s; }
-        const left=[read7(3),read7(10),read7(17),read7(24)];
-        const right=[read7(36),read7(43),read7(50),read7(57)];
-        const leftDigits=[]; for (const b of left){ if (L[b]!=null) leftDigits.push(L[b]); else if (G[b]!=null) leftDigits.push(G[b]); else { leftDigits.length=0; break; } }
-        if (!leftDigits.length) continue;
-        const rightDigits=[]; for (const b of right){ if (R[b]!=null) rightDigits.push(R[b]); else { rightDigits.length=0; break; } }
-        if (!rightDigits.length) continue;
-        const digits=[...leftDigits,...rightDigits];
-        let sum=0; for (let i=0;i<7;i++){ sum += (i%2===0 ? digits[i]*3 : digits[i]); }
-        const check=(10 - (sum%10))%10; if (check!==digits[7]) continue;
-        return digits.join('');
+
+      async function toggleTorch(){
+        if(!stream) return;
+        const track=stream.getVideoTracks()[0];
+        try{ torchOn=!torchOn; await track.applyConstraints({advanced:[{torch:torchOn}]}); torchBtn.textContent=torchOn?'Matikan Lampu':'Nyalakan Lampu'; }
+        catch(_){ torchBtn.disabled=true; }
       }
-      return null;
-    }
 
-    function startFallback(){
-      fbActive = true;
-      const loop = () => {
-        if (!fbActive || !videoEl || videoEl.readyState < 2) { fbTimer = requestAnimationFrame(loop); return; }
-        const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
-        if (vw === 0 || vh === 0){ fbTimer = requestAnimationFrame(loop); return; }
-
-        const cw = Math.min(1280, Math.max(640, vw)); // detail cukup tinggi, cap 1280
-        const ch = Math.round(cw * vh / vw);
-        canvas.width = cw; canvas.height = ch;
-
-        // render apa adanya (hindari transform untuk iOS)
-        ctx.drawImage(videoEl, 0, 0, cw, ch);
-        const img = ctx.getImageData(0, 0, cw, ch);
-
-        // threshold global utk frame ini
-        const thr = computeThreshold(img, cw, ch);
-
-        // scan beberapa garis di band tengah (35%..65%), step 4px
-        const yStart = Math.floor(ch * 0.35);
-        const yEnd   = Math.floor(ch * 0.65);
-        for (let y = yStart; y <= yEnd; y += 4){
-          const row = buildRowBits(img, cw, y, thr);
-
-          // coba 3 decoder + arah normal
-          const ean13 = decodeEAN(row);
-          const res   = ean13 || decodeEAN8(row) || decodeUPC_A(ean13);
-          if (res){ onScan(res); return; }
-
-          // coba arah reverse (antisipasi mirroring)
-          const rev = row.slice().reverse();
-          const ean13r = decodeEAN(rev);
-          const res2   = ean13r || decodeEAN8(rev) || decodeUPC_A(ean13r);
-          if (res2){ onScan(res2); return; }
+      async function switchCamera(){
+        if (isIOS || (isSafari && !isMac)){
+          const track=stream?.getVideoTracks()[0]; if(!track) return;
+          try{
+            const facing=track.getSettings().facingMode||'environment';
+            const next=facing==='environment'?'user':'environment';
+            await startCameraWithFacingMode(next); startDecoding();
+          }catch(_){ await startCamera(); startDecoding(); }
+          return;
         }
-        fbTimer = requestAnimationFrame(loop);
-      };
-      fbTimer = requestAnimationFrame(loop);
-    }
+        if(!devices.length) devices = await listCameras();
+        if(devices.length<2){ alert('Tidak ada kamera lain yang terdeteksi'); return; }
+        let idx=devices.findIndex(d=>d.deviceId===currentDeviceId); idx=(idx+1)%devices.length;
+        const ok=await startCamera(devices[idx].deviceId); if(ok) startDecoding();
+      }
 
-    function onScan(text){
-      barcodeInput.value = text;
-      backdrop.classList.remove('show');
-      stopNativeLoop();
-      stopFallback();
-      stopCamera();
-      // barcodeInput.closest('form')?.submit();
-    }
+      async function startCameraWithFacingMode(facingMode){
+        stopCamera();
+        try{
+          stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ ideal:facingMode }},audio:false});
+          wireVideoEl(); await ensurePlay(); setWrapRatio(); return true;
+        }catch(_){ return false; }
+      }
 
-    async function startDecoding(){
-      if (!videoEl || videoEl.readyState < 2){
-        await new Promise((res)=> {
-          const t = setInterval(()=>{ if (videoEl.readyState >= 2){ clearInterval(t); res(); }}, 50);
+      // ======== BarcodeDetector (Native) vs Fallback ========
+      let nativeDetector=null, nativeLoop=false;
+
+      async function tryNativeDetector(){
+        if(!('BarcodeDetector' in window)) return false;
+        try{
+          const supported = (await BarcodeDetector.getSupportedFormats?.()) || [];
+          // Safari biasanya tidak mendukung linear codes → cek dulu
+          const needFormats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'];
+          const supportsLinear = needFormats.some(f => supported.includes(f));
+          if (!supportsLinear) return false;
+
+          nativeDetector = new BarcodeDetector({
+            formats: ['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']
+          });
+          return true;
+        }catch(_){ return false; }
+      }
+
+      function startNativeLoop(){
+        if(!nativeDetector) return;
+        nativeLoop=true;
+        const tick=()=>{
+          if(!nativeLoop) return;
+          if(videoEl.readyState>=2){
+            nativeDetector.detect(videoEl).then(codes=>{
+              if(codes && codes.length){
+                const raw=codes[0].rawValue||'';
+                if(raw){ onScan(raw); return; }
+              }
+              if(nativeLoop) requestAnimationFrame(tick);
+            }).catch(()=>{ if(nativeLoop) requestAnimationFrame(tick); });
+          }else{
+            if(nativeLoop) requestAnimationFrame(tick);
+          }
+        };
+        requestAnimationFrame(tick);
+      }
+      function stopNativeLoop(){ nativeLoop=false; }
+
+      // ======== Fallback decoder (EAN/UPC) ========
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      let fbActive=false, fbTimer=null;
+
+      function stopFallback(){
+        fbActive=false;
+        if(fbTimer){
+          if(typeof fbTimer==='number') cancelAnimationFrame(fbTimer);
+          else if(videoEl && videoEl.cancelVideoFrameCallback) videoEl.cancelVideoFrameCallback(fbTimer);
+          fbTimer=null;
+        }
+      }
+      function getROIFor(video){
+        const vw=video.videoWidth, vh=video.videoHeight;
+        const sw=Math.floor(vw*.80), sh=Math.floor(vh*.36);
+        const sx=Math.floor((vw-sw)/2), sy=Math.floor((vh-sh)/2);
+        return {sx,sy,sw,sh};
+      }
+      function rowThreshold(data,offset,w){
+        const hist=new Uint16Array(256);
+        for(let x=0;x<w;x++){ const i=offset+x*4; const Y=(data[i]*.2126+data[i+1]*.7152+data[i+2]*.0722)|0; hist[Y]++; }
+        let sum=0,total=0; for(let i=0;i<256;i++){sum+=i*hist[i]; total+=hist[i];}
+        let sumB=0,wB=0,max=0,thr=127;
+        for(let t=0;t<256;t++){
+          wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break;
+          sumB+=t*hist[t]; const mB=sumB/wB, mF=(sum-sumB)/wF;
+          const between=wB*wF*(mB-mF)*(mB-mF);
+          if(between>max){max=between;thr=t;}
+        }
+        return thr;
+      }
+      function startFallback(){
+        fbActive=true;
+        const useRVFC='requestVideoFrameCallback'in HTMLVideoElement.prototype;
+        const step=()=>{
+          if(!fbActive||!videoEl||videoEl.readyState<2){
+            fbTimer=useRVFC?videoEl.requestVideoFrameCallback(()=>step()):requestAnimationFrame(step); return;
+          }
+          const {sx,sy,sw,sh}=getROIFor(videoEl);
+          const scale=Math.min(1600/sw,1.8);
+          const cw=Math.floor(sw*scale), ch=Math.floor(sh*scale);
+          canvas.width=cw; canvas.height=ch; ctx.imageSmoothingEnabled=false;
+          ctx.drawImage(videoEl,sx,sy,sw,sh,0,0,cw,ch);
+          const img=ctx.getImageData(0,0,cw,ch), d=img.data;
+          const y0=Math.floor(ch*.30), y1=Math.floor(ch*.70);
+          for(let y=y0;y<=y1;y+=2){
+            const rowOff=y*cw*4, thr=rowThreshold(d,rowOff,cw);
+            const bits=new Uint8Array(cw);
+            for(let x=0;x<cw;x++){ const i=rowOff+x*4; const Y=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)|0; bits[x]=(Y<thr)?1:0; }
+            const e13=decodeEAN(bits)||decodeEAN(bits.slice().reverse());
+            const upc=e13?decodeUPCA(e13):null;
+            const e8=e13?null:(decodeEAN8(bits)||decodeEAN8(bits.slice().reverse()));
+            const res=e13||upc||e8; if(res){ onScan(res); return; }
+          }
+          fbTimer=useRVFC?videoEl.requestVideoFrameCallback(()=>step()):requestAnimationFrame(step);
+        };
+        step();
+      }
+
+      function onScan(text){
+        barcodeInput && (barcodeInput.value=text);
+        closeCam();
+        // barcodeInput.closest('form')?.submit();
+      }
+
+      async function startDecoding(){
+        if(!videoEl||videoEl.readyState<2){
+          await new Promise(res=>{
+            const t=setInterval(()=>{ if(videoEl.readyState>=2){ clearInterval(t); res(); } },50);
+          });
+        }
+        const hasNative=await tryNativeDetector();
+        if(hasNative) startNativeLoop(); else startFallback();
+      }
+
+      // ===== Foto fallback (file input) =====
+      photoBtn?.addEventListener('click',()=>photoInput.click());
+      photoInput?.addEventListener('change',async(e)=>{
+        const file=e.target.files&&e.target.files[0]; if(!file) return;
+        try{
+          const bmp=('createImageBitmap'in window)?await createImageBitmap(file):await fileToImg(file);
+          const code=await decodeFromImageBitmap(bmp);
+          if(code) onScan(code); else alert('Barcode tidak terdeteksi dari foto. Coba ulangi.');
+        }catch(_){ alert('Gagal membaca gambar.'); }
+        finally{ photoInput.value=''; }
+      });
+
+      function fileToImg(file){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=URL.createObjectURL(file); }); }
+      async function decodeFromImageBitmap(img){
+        const maxW=1600,w=Math.min(maxW,img.width||maxW),h=Math.round(w*(img.height||maxW)/(img.width||maxW));
+        canvas.width=w; canvas.height=h; ctx.drawImage(img,0,0,w,h);
+        const id=ctx.getImageData(0,0,w,h), d=id.data;
+        const y0=Math.floor(h*.35), y1=Math.floor(h*.65);
+        for(let y=y0;y<=y1;y+=2){
+          const off=y*w*4, thr=rowThreshold(d,off,w);
+          const bits=new Uint8Array(w);
+          for(let x=0;x<w;x++){ const i=off+x*4; const Y=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)|0; bits[x]=(Y<thr)?1:0; }
+          const e13=decodeEAN(bits)||decodeEAN(bits.slice().reverse());
+          const upc=e13?decodeUPCA(e13):null;
+          const e8=e13?null:(decodeEAN8(bits)||decodeEAN8(bits.slice().reverse()));
+          const res=e13||upc||e8; if(res) return res;
+        }
+        return null;
+      }
+
+      // ====== Open/Close Modal ======
+      openBtn?.addEventListener('click', async () => {
+        // Penting: Safari/iOS butuh HTTPS atau localhost
+        if ((isIOS || isSafari) && !isSecure) {
+          httpsWarn?.classList.remove('hide');
+          // langsung fallback "Foto"
+          photoBtn?.click();
+          return;
+        }
+        try{
+          devices = await listCameras();
+          document.body.classList.add('scroll-lock');
+          backdrop.classList.add('show');
+          noteEl&&(noteEl.textContent='Arahkan barcode ke dalam kotak. Otomatis terdeteksi.');
+          torchBtn&&(torchBtn.textContent='Nyalakan Lampu');
+          modalOpen=true;
+
+          const back=devices.find(d=>/back|rear|environment/i.test(d.label));
+          const ok=await startCamera(currentDeviceId||(back&&back.deviceId));
+          if(ok) await startDecoding(); else throw new Error('Failed to start camera');
+        }catch(_){
+          alert('Kamera tidak dapat diaktifkan di browser ini. Beralih ke mode Foto.');
+          photoBtn?.click();
+          closeCam();
+        }
+      });
+
+      function closeCam(){
+        backdrop?.classList.remove('show');
+        document.body.classList.remove('scroll-lock');
+        modalOpen=false;
+        stopNativeLoop(); stopFallback(); stopCamera();
+      }
+      closeBtn?.addEventListener('click',closeCam);
+      stopBtn?.addEventListener('click',stopCamera);
+      torchBtn?.addEventListener('click',toggleTorch);
+      switchBtn?.addEventListener('click',switchCamera);
+      backdrop?.addEventListener('click',(e)=>{ if(e.target===backdrop) closeCam(); });
+      document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&backdrop?.classList.contains('show')) closeCam(); });
+
+      document.addEventListener('visibilitychange', async ()=>{
+        if(!modalOpen) return;
+        if(document.visibilityState==='hidden'){ stopNativeLoop(); stopFallback(); }
+        else { try{ await startCamera(currentDeviceId); await startDecoding(); }catch(_){ } }
+      });
+
+      // ======== EAN/UPC decoder utils ========
+      function RLE(bits){ const rl=[]; let cur=bits[0],cnt=1; for(let i=1;i<bits.length;i++){ if(bits[i]===cur) cnt++; else{ rl.push(cnt); cur=bits[i]; cnt=1; } } rl.push(cnt); return rl; }
+      function norm(run,mods){ const sum=run.reduce((a,b)=>a+b,0); if(!sum) return null; const s=mods/sum,out=run.map(v=>Math.round(v*s)); for(let i=0;i<out.length;i++) if(out[i]===0) out[i]=1; return out; }
+      const L={'0001101':0,'0011001':1,'0010011':2,'0111101':3,'0100011':4,'0110001':5,'0101111':6,'0111011':7,'0110111':8,'0001011':9};
+      const G={'0100111':0,'0110011':1,'0011011':2,'0100001':3,'0011101':4,'0111001':5,'0000101':6,'0010001':7,'0001001':8,'0010111':9};
+      const Rm={'1110010':0,'1100110':1,'1101100':2,'1000010':3,'1011100':4,'1001110':5,'1010000':6,'1000100':7,'1001000':8,'1110100':9};
+      const PAR=['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+      function decodeEAN(bits){
+        const rl=RLE(bits); if(bits[0]===0) rl.shift();
+        for(let s=0;s<Math.max(0,rl.length-59);s++){
+          const slice=rl.slice(s,s+59), nm=norm(slice,95); if(!nm) continue;
+          const m=[]; let c=1; for(let i=0;i<nm.length;i++){ for(let k=0;k<nm[i];k++) m.push(c); c=1-c; }
+          if(m.length!==95) continue;
+          const okS=m[0]===1&&m[1]===0&&m[2]===1, okM=m[45]===0&&m[46]===1&&m[47]===0&&m[48]===1&&m[49]===0, okE=m[92]===1&&m[93]===0&&m[94]===1;
+          if(!(okS&&okM&&okE)) continue;
+          const r7=i=>{ let s=''; for(let k=0;k<7;k++) s+=m[i+k]?'1':'0'; return s; }
+          const Lb=[r7(3),r7(10),r7(17),r7(24),r7(31),r7(38)], Rb=[r7(50),r7(57),r7(64),r7(71),r7(78),r7(85)];
+          let par='',left=[]; for(let i=0;i<6;i++){ const b=Lb[i]; if(L[b]!=null){ left.push(L[b]); par+='L'; } else if(G[b]!=null){ left.push(G[b]); par+='G'; } else { par='?'; break; } }
+          if(par==='?') continue;
+          const first=PAR.indexOf(par); if(first<0) continue;
+          const right=[]; for(let i=0;i<6;i++){ const b=Rb[i]; if(Rm[b]==null){ par='?'; break; } right.push(Rm[b]); }
+          if(par==='?') continue;
+          const d=[first,...left,...right];
+          let sum=0; for(let i=0;i<12;i++) sum += (i%2===0? d[i] : d[i]*3);
+          const chk=(10-(sum%10))%10; if(chk!==d[12]) continue;
+          return d.join('');
+        } return null;
+      }
+
+      function decodeEAN8(bits){
+        const rl=RLE(bits); if(bits[0]===0) rl.shift();
+        for(let s=0;s<Math.max(0,rl.length-43);s++){
+          const slice=rl.slice(s,s+43), nm=norm(slice,67); if(!nm) continue;
+          const m=[]; let c=1; for(let i=0;i<nm.length;i++){ for(let k=0;k<nm[i];k++) m.push(c); c=1-c; }
+          if(m.length!==67) continue;
+          const okS=m[0]===1&&m[1]===0&&m[2]===1, okM=m[31]===0&&m[32]===1&&m[33]===0&&m[34]===1&&m[35]===0, okE=m[64]===1&&m[65]===0&&m[66]===1;
+          if(!(okS&&okM&&okE)) continue;
+          const r7=i=>{ let s=''; for(let k=0;k<7;k++) s+=m[i+k]?'1':'0'; return s; }
+          const Lb=[r7(3),r7(10),r7(17),r7(24)], Rb=[r7(36),r7(43),r7(50),r7(57)];
+          const left=[]; for(const b of Lb){ if(L[b]!=null) left.push(L[b]); else if(G[b]!=null) left.push(G[b]); else { left.length=0; break; } }
+          if(!left.length) continue;
+          const right=[]; for(const b of Rb){ if(Rm[b]!=null) right.push(Rm[b]); else { right.length=0; break; } }
+          if(!right.length) continue;
+          const d=[...left,...right];
+          let sum=0; for(let i=0;i<7;i++) sum += (i%2===0? d[i]*3 : d[i]);
+          const chk=(10-(sum%10))%10; if(chk!==d[7]) continue;
+          return d.join('');
+        } return null;
+      }
+      function decodeUPCA(e13){ return (e13 && e13.length===13 && e13[0]==='0') ? e13.slice(1) : null; }
+
+      /* ====== RIWAYAT SKU (per user login) ====== */
+      const USER = (document.querySelector('.userbox .chip')?.textContent || 'guest').trim();
+      const HIST_KEY = 'promis_sku_hist_' + encodeURIComponent(USER);
+      const MAX_ITEMS = 15;
+
+      function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY))||[];}catch(_){return[];} }
+      function saveHist(list){ localStorage.setItem(HIST_KEY, JSON.stringify(list)); }
+      function getCurrentSku(){
+        const p=new URLSearchParams(location.search); const qs=(p.get('sku')||'').trim(); if(qs) return qs;
+        const inpt=document.querySelector('input[name="sku"]'); if(inpt&&inpt.value.trim()) return inpt.value.trim();
+        const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(2) .v'); return el?(el.textContent||'').trim():'';
+      }
+      function getCurrentName(){ const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(1) .v'); return el?(el.textContent||'').trim():''; }
+      function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+      function upsertHist(sku,name){ sku=(sku||'').trim(); if(!sku) return; let list=loadHist().filter(x=>x.sku!==sku); list.unshift({sku,name:(name||'').trim(),user:USER,t:Date.now()}); if(list.length>MAX_ITEMS) list=list.slice(0,MAX_ITEMS); saveHist(list); }
+      function renderHist(){
+        const card=document.querySelector('section.card[aria-labelledby="riwayat-title"]'); if(!card) return;
+        const serverEmpty=card.querySelector('.rows .empty'); let rows=card.querySelector('.rows[data-client]');
+        if(!rows){ rows=document.createElement('div'); rows.className='rows'; rows.setAttribute('data-client',''); if(serverEmpty&&serverEmpty.parentElement){serverEmpty.parentElement.replaceWith(rows);}else{card.appendChild(rows);} }
+        rows.innerHTML='';
+        const list=loadHist();
+        if(!list.length){
+          const em=document.createElement('div'); em.className='empty'; em.textContent='Belum ada riwayat.'; rows.appendChild(em);
+          const clr=card.querySelector('[data-hist-clear]'); if(clr) clr.classList.add('hide');
+          return;
+        }
+        let clearBtn=card.querySelector('[data-hist-clear]');
+        if(!clearBtn){
+          const hdr=card.querySelector('.card-h');
+          clearBtn=document.createElement('button');
+          clearBtn.type='button';
+          clearBtn.className='btn-lite';
+          clearBtn.setAttribute('data-hist-clear','');
+          clearBtn.textContent='Hapus Semua';
+          clearBtn.addEventListener('click',()=>{
+            if(confirm('Hapus semua riwayat SKU untuk '+USER+'?')){ saveHist([]); renderHist(); }
+          });
+          hdr?.appendChild(clearBtn);
+        }
+        clearBtn.classList.remove('hide');
+
+        list.forEach(item=>{
+          const grid=document.createElement('div'); grid.className='hist-grid';
+          const main=document.createElement('div'); main.className='hist-main';
+          main.innerHTML=`<div class="hist-title">${item.name?escapeHtml(item.name):escapeHtml(item.sku)}</div><div class="hist-sub">SKU: <span>${escapeHtml(item.sku)}</span></div>`;
+          const actions=document.createElement('div'); actions.className='hist-actions';
+          actions.innerHTML=`<a class="btn-sm" href="/web/product?sku=${encodeURIComponent(item.sku)}" data-loading>Pakai</a> <button type="button" class="btn-lite" data-del="${encodeURIComponent(item.sku)}">Hapus</button>`;
+          actions.querySelector('[data-del]')?.addEventListener('click',(e)=>{
+            const sku=decodeURIComponent(e.currentTarget.getAttribute('data-del')||'');
+            const next=loadHist().filter(x=>x.sku!==sku); saveHist(next); renderHist();
+          });
+          grid.appendChild(main); grid.appendChild(actions); rows.appendChild(grid);
         });
       }
-      const hasNative = await tryNativeDetector();
-      if (hasNative){ startNativeLoop(); } else { startFallback(); }
-    }
+      (function initHist(){
+        const sku=getCurrentSku(), name=getCurrentName(); if(sku) upsertHist(sku,name);
+        const form=document.querySelector('form.group');
+        form?.addEventListener('submit',()=>{
+          const inSku=(form.querySelector('input[name="sku"]')?.value||'').trim();
+          const nm=(form.querySelector('input[name="name"]')?.value||'').trim();
+          if(inSku) upsertHist(inSku,nm);
+        });
+        renderHist();
+      })();
 
-    async function openCam(){
-      try{
-        devices = await listCameras();
-        backdrop.classList.add('show');
-        noteEl.textContent = 'Arahkan barcode ke dalam kotak. Otomatis terdeteksi.';
-        torchBtn.textContent = 'Nyalakan Lampu';
-
-        const back = devices.find(d=>/back|rear|environment/i.test(d.label));
-        await startCamera(currentDeviceId || (back && back.deviceId));
-        await startDecoding();
-      }catch(err){
-        console.error(err);
-        noteEl.textContent = 'Tidak bisa mengaktifkan kamera. Pastikan HTTPS dan izin kamera.';
-      }
-    }
-    function closeCam(){ backdrop.classList.remove('show'); stopNativeLoop(); stopFallback(); stopCamera(); }
-
-    openBtn.addEventListener('click', openCam);
-    closeBtn.addEventListener('click', closeCam);
-    stopBtn.addEventListener('click', stopCamera);
-    torchBtn.addEventListener('click', toggleTorch);
-    switchBtn.addEventListener('click', switchCamera);
-
-    backdrop.addEventListener('click', (e)=>{ if (e.target === backdrop) closeCam(); });
-    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && backdrop.classList.contains('show')) closeCam(); });
-  })();
+    })();
 </script>
 
 <noscript><style>.loading{display:none!important}</style></noscript>
