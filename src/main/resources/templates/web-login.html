@@ -1,5 +1,18 @@
 <!DOCTYPE html>
 <html lang="id" xmlns:th="http://www.thymeleaf.org">
+<script>
+    window.__deferredPWA = null;
+    // pasang sedini mungkin, agar mobile tidak kelewat
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.__deferredPWA = e;
+      // munculkan tombol/banner kalau ada
+      const b = document.getElementById('pwaBanner');
+      const w = document.getElementById('pwaWrap');
+      if (b && w) { w.setAttribute('aria-hidden','false'); b.classList.add('show'); }
+    }, { once: true });
+</script>
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -189,9 +202,12 @@
 
 <script th:inline="javascript">
     /* ===== Service Worker (sesuaikan path) ===== */
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(/*[[@{/sw.js}]]*/ '/sw.js').catch(()=>{});
-    }
+   if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+}
+
+
+
 
     /* ===== PWA banner cross-browser: Opsi 1 + Patch reload ===== */
     const wrap   = document.getElementById('pwaWrap');
@@ -281,17 +297,19 @@
     }
 
     /* Tombol Install / Instruksi */
-    btnIns?.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        hideBanner();
-      } else if (isSafari) {
-        fillSafariTip();
-        showTip();
-      }
-    });
+   btnIns?.addEventListener('click', async () => {
+  const ev = window.__deferredPWA;
+  if (ev) {
+    btnIns.disabled = true;
+    ev.prompt();
+    await ev.userChoice;       // accepted / dismissed
+    window.__deferredPWA = null;
+    hideBanner();
+  } else if (isSafari) {
+    fillSafariTip(); showTip();
+  }
+});
+
 
     /* Tutup banner → hanya untuk sesi ini (muncul lagi setelah reload) */
     btnX?.addEventListener('click', () => {
