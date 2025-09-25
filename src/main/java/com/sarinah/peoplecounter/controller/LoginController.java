@@ -2,7 +2,6 @@ package com.sarinah.peoplecounter.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.adaptor.SarinahGetModulAdaptor;
 import com.sarinah.peoplecounter.entity.User;
@@ -20,6 +19,7 @@ import org.springframework.web.util.UriUtils;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.stream.Collectors.toCollection;
 
@@ -147,17 +147,64 @@ public class LoginController {
 
         // promo: "promotion_ids" adalah MAP: id -> {name: "..."}
         String promo = "-";
+        double productDiscount = 0;
+        // Asumsi variabel tersedia:
+// JsonNode root;                    // JSON respons produk
+// String sku = /* default_code */;  // contoh: "BEA0016361"
+// String promo = null;              // output gabungan nama promo
+// Double productDiscount = null;    // output diskon produk (persen), null kalau tidak ada
+
         JsonNode promoNode = root.get("promotion_ids");
         if (promoNode != null && promoNode.isObject() && promoNode.size() > 0) {
-            // ambil semua name, gabungkan dengan "; "
             List<String> promos = new ArrayList<>();
+            AtomicReference<Double> maxDisc = new AtomicReference<>(Double.NEGATIVE_INFINITY);
+
             promoNode.fields().forEachRemaining(e -> {
                 JsonNode v = e.getValue();
+
+                // Kumpulkan nama promo
                 String nm = textOrNull(v.get("name"));
                 if (nm != null && !nm.isBlank()) promos.add(nm);
+
+                // Cari diskon produk (hanya dari products_discount) yang match SKU di setiap condition
+                JsonNode conditions = v.path("conditions");
+                if (conditions.isObject() && conditions.size() > 0) {
+                    conditions.fields().forEachRemaining(condEntry -> {
+                        JsonNode cond = condEntry.getValue();
+
+                        JsonNode productIds = cond.path("product_ids");
+                        if (!(productIds.isArray() && productIds.size() > 0)) return;
+
+                        // product_ids berformat: "[<SKU>] Nama Produk ..."
+                        boolean matched = false;
+                        for (JsonNode pidNode : productIds) {
+                            String pid = pidNode.asText("");
+                            if (pid.startsWith("[" + sku + "]") || pid.contains("[" + sku + "]")) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                        if (!matched) return;
+
+                        double dMain = cond.path("products_discount").asDouble(Double.NaN);
+                        if (!Double.isNaN(dMain) && dMain > maxDisc.get()) {
+                            maxDisc.set(dMain);
+                        }
+                    });
+                }
             });
-            if (!promos.isEmpty()) promo = String.join("; ", promos);
+
+            if (!promos.isEmpty()) {
+                promo = String.join("; ", promos);
+            }
+            if (maxDisc.get() != Double.NEGATIVE_INFINITY) {
+                 productDiscount = maxDisc.get(); // contoh: 85.0
+            }
         }
+
+        System.out.println("data promo"+promo);
+        System.out.println("discount"+productDiscount);
+
 
         // stok per lokasi: "stock_by_location" adalah MAP: id -> { location, quantity, price, ... }
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -184,6 +231,7 @@ public class LoginController {
         model.addAttribute("promo", promo);
         model.addAttribute("listPrice", listPrice);
         model.addAttribute("stocks", rows);
+        model.addAttribute("productDiscount", productDiscount);
 
         // link lanjutan kalau ada halaman lain
         model.addAttribute("stockPriceUrl", "/web/product/" + outSku + "/stock");

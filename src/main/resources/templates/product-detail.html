@@ -102,6 +102,61 @@
         .btn-danger{background:#ef4444;color:#fff;border:0}.btn-ok{background:var(--pri);color:#fff;border:0}
         .note{font-size:12px;color:#muted;margin-top:8px}.hide{display:none!important}
         .warn{margin-top:8px;padding:8px 10px;border:1px solid #f59e0b;background:#fffbeb;border-radius:10px;color:#92400e;font-weight:700}
+        /* layout dua kolom yang rapi untuk detail produk */
+.dp-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+@media (min-width: 720px){
+  .dp-grid { grid-template-columns: 1fr 1fr; }
+}
+/* pastikan setiap .kv full-width di grid */
+.dp-grid .kv { border-bottom: 1px solid var(--ring); padding: 12px 0; }
+.dp-grid .kv:last-child { border-bottom: 0; }
+
+/* badge diskon */
+.discount-badge{
+  display:inline-block;
+  padding:8px 12px;
+  border-radius:999px;
+  background:var(--ok-bg);
+  border:1px solid var(--ok-br);
+  color:var(--ok-tx);
+  font-weight:800;
+  letter-spacing:.2px;
+}
+
+/* sku visual */
+.sku-pill{
+  display:inline-block;
+  background:var(--chip);
+  color:var(--chip-tx);
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid var(--ring);
+  font-weight:700;
+}
+
+/* promo wrap & chips */
+.promo-wrap{ display:flex; flex-direction:column; gap:8px; }
+.promo-list{ display:flex; flex-wrap:wrap; gap:8px; }
+.promo-item{
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--chip);
+  border:1px solid var(--ring);
+  color:var(--ink);
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:700; letter-spacing:.2px; line-height:1.2;
+}
+.promo-item .dot{ width:6px; height:6px; border-radius:999px; background:var(--ok-br); flex:0 0 auto }
+.promo-item.is-truncated{ display:none; } /* disembunyikan pada ringkas */
+
+/* details/summary (native, no JS) */
+.promo-more { border:1px dashed var(--ring); border-radius:10px; padding:8px 10px; background:rgba(0,0,0,.02); }
+.promo-more > summary{ cursor:pointer; list-style:none; font-weight:800; color:var(--muted); }
+.promo-more > summary::-webkit-details-marker{ display:none; }
+.promo-more[open] > summary{ color:var(--ink); }
+.promo-more[open]{ background:#fff; border-style:solid; }
+.promo-more .promo-list{ margin-top:10px; }
+
     </style>
 </head>
 <body>
@@ -156,19 +211,67 @@
     </section>
 
     <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
-        <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
-        <div class="rows">
-            <div class="kv"><div class="k">Nama Produk</div><div class="v" th:text="${name}">-</div></div>
-            <div class="kv"><div class="k">SKU</div><div class="v" th:text="${sku}">-</div></div>
-            <div class="kv" th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
+        <div class="card-h">
+            <div class="card-title" id="detail-produk-title">Detail Produk</div>
+        </div>
+
+        <div class="rows dp-grid">
+            <!-- Nama -->
+            <div class="kv">
+                <div class="k">Nama Produk</div>
+                <div class="v" th:text="${name}">-</div>
+            </div>
+
+            <!-- SKU -->
+            <div class="kv">
+                <div class="k">SKU</div>
+                <div class="v sku-pill" th:text="${sku}">-</div>
+            </div>
+
+            <!-- Diskon Produk -->
+            <div class="kv">
+                <div class="k">Diskon Produk</div>
+                <div class="v">
+                    <span th:if="${productDiscount == null}" class="subtle">Tidak ada diskon produk</span>
+                    <span th:if="${productDiscount != null}" class="discount-badge" title="Diskon khusus produk"
+                          th:text="${#numbers.formatDecimal(productDiscount,0,'POINT',0,'COMMA')} + ' %'">0 %</span>
+                </div>
+            </div>
+
+            <!-- Promo (gabungan nama promo) -->
+            <div class="kv"
+                 th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
                 <div class="k">Promo</div>
+
+                <!-- Tanpa promo -->
                 <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
-                <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-list">
-                    <span class="promo-item" th:each="p : ${promoItems}"><span class="dot"></span><span th:text="${#strings.trim(p)}">PROMO</span></span>
+
+                <!-- Dengan promo -->
+                <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-wrap">
+                    <!-- Ringkas (3 chips pertama) -->
+                    <div class="promo-list">
+          <span class="promo-item" th:each="p,stat : ${promoItems}" th:classappend="${stat.index > 2} ? 'is-truncated' : ''">
+            <span class="dot"></span>
+            <span class="promo-text" th:text="${#strings.trim(p)}">PROMO</span>
+          </span>
+                    </div>
+
+                    <!-- Expand (native) bila lebih dari 3 -->
+                    <details class="promo-more" th:if="${#lists.size(promoItems) > 3}">
+                        <summary>Tampilkan semua promo (<span th:text="${#lists.size(promoItems)}">0</span>)</summary>
+                        <div class="promo-list">
+            <span class="promo-item" th:each="p : ${promoItems}">
+              <span class="dot"></span>
+              <span class="promo-text" th:text="${#strings.trim(p)}">PROMO</span>
+            </span>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
     </section>
+
+
 
     <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
         <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
@@ -185,13 +288,7 @@
         <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
         <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
         <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
-            <div class="hist-grid" th:each="h : ${history}">
-                <div class="hist-main">
-                    <div class="hist-title" th:text="${h['name'] != null ? h['name'] : h['sku']}">Nama produk</div>
-                    <div class="hist-sub">SKU: <span th:text="${h['sku']}">FN001</span></div>
-                </div>
-                <div class="hist-actions"><a class="btn-sm" th:href="@{/web/product(sku=${h['sku']})}" data-loading>Pakai</a></div>
-            </div>
+
         </div>
     </section>
 </main>
