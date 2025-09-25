@@ -229,14 +229,14 @@
             </div>
 
             <!-- Diskon Produk -->
-            <div class="kv">
-                <div class="k">Diskon Produk</div>
-                <div class="v">
-                    <span th:if="${productDiscount == null}" class="subtle">Tidak ada diskon produk</span>
-                    <span th:if="${productDiscount != null}" class="discount-badge" title="Diskon khusus produk"
-                          th:text="${#numbers.formatDecimal(productDiscount,0,'POINT',0,'COMMA')} + ' %'">0 %</span>
-                </div>
-            </div>
+<!--            <div class="kv">-->
+<!--                <div class="k">Diskon Produk</div>-->
+<!--                <div class="v">-->
+<!--                    <span th:if="${productDiscount == null}" class="subtle">Tidak ada diskon produk</span>-->
+<!--                    <span th:if="${productDiscount != null}" class="discount-badge" title="Diskon khusus produk"-->
+<!--                          th:text="${#numbers.formatDecimal(productDiscount,0,'POINT',0,'COMMA')} + ' %'">0 %</span>-->
+<!--                </div>-->
+<!--            </div>-->
 
             <!-- Promo (gabungan nama promo) -->
             <div class="kv"
@@ -288,7 +288,6 @@
         <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
         <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
         <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
-
         </div>
     </section>
 </main>
@@ -789,6 +788,8 @@
       })();
 
     })();
+
+
 </script>
 
 <noscript><style>.loading{display:none!important}</style></noscript>

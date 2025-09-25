@@ -142,8 +142,10 @@ public class LoginController {
         String name = textOrDefault(root.get("name"), "-");
 
         // sku: di JSON namanya "default_code"
+        String matchingSku ;
         String outSku = textOrNull(root.get("default_code"));
         if (outSku == null) outSku = "-"; // fallback
+        matchingSku = outSku;
 
         // promo: "promotion_ids" adalah MAP: id -> {name: "..."}
         String promo = "-";
@@ -179,7 +181,7 @@ public class LoginController {
                         boolean matched = false;
                         for (JsonNode pidNode : productIds) {
                             String pid = pidNode.asText("");
-                            if (pid.startsWith("[" + sku + "]") || pid.contains("[" + sku + "]")) {
+                            if (pid.startsWith("[" + matchingSku + "]") || pid.contains("[" + matchingSku + "]")) {
                                 matched = true;
                                 break;
                             }
@@ -198,12 +200,11 @@ public class LoginController {
                 promo = String.join("; ", promos);
             }
             if (maxDisc.get() != Double.NEGATIVE_INFINITY) {
-                 productDiscount = maxDisc.get(); // contoh: 85.0
+                productDiscount = maxDisc.get(); // contoh: 85.0
             }
         }
 
-        System.out.println("data promo"+promo);
-        System.out.println("discount"+productDiscount);
+
 
 
         // stok per lokasi: "stock_by_location" adalah MAP: id -> { location, quantity, price, ... }
