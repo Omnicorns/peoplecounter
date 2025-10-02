@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toCollection;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
+@RequestMapping("/web")
 public class LoginController {
 
     private final UserRepository userRepo;
@@ -41,7 +42,7 @@ public class LoginController {
     public static final String AUTH_FULLNAME = "AUTH_FULLNAME";
     private static final String SESSION_SKU_HISTORY = "SKU_HISTORY";
 
-    @GetMapping("/")
+    @GetMapping("/login")
     public String loginPage(@RequestParam(value = "redirect", required = false) String redirect,
                             Model model,
                             HttpSession session) {
@@ -54,7 +55,7 @@ public class LoginController {
         return "web-login";
     }
 
-    @PostMapping("/web/login")
+    @PostMapping("/login")
     public String doLogin(@RequestParam("usernameOrEmail") String usernameOrEmail,
                           @RequestParam("password") String password,
                           @RequestParam(value = "redirect", required = false) String redirect,
@@ -101,14 +102,14 @@ public class LoginController {
         return "redirect:" + target;
     }
 
-    @PostMapping("/web/logout")
+    @PostMapping("/logout")
     public String doLogout(HttpSession session) {
         session.invalidate();
         return "redirect:/";
     }
 
 
-    @GetMapping("/web/product")
+    @GetMapping("/product")
     public String productPage(@RequestParam(value = "sku", required = false) String sku,
                               @RequestParam(value = "code", required = false) String code,
                               Model model,
@@ -254,7 +255,7 @@ public class LoginController {
         return "product-detail";
     }
 
-    @PostMapping("/web/product/history/clear")
+    @PostMapping("/product/history/clear")
     public String clearHistory(HttpSession session) {
         session.removeAttribute(SESSION_SKU_HISTORY);
         return "redirect:/web/product";
