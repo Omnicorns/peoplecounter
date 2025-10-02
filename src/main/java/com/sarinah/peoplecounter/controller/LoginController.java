@@ -10,6 +10,8 @@ import com.sarinah.peoplecounter.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,9 +25,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.stream.Collectors.toCollection;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/web")
 public class LoginController {
 
     private final UserRepository userRepo;
@@ -39,7 +41,7 @@ public class LoginController {
     public static final String AUTH_FULLNAME = "AUTH_FULLNAME";
     private static final String SESSION_SKU_HISTORY = "SKU_HISTORY";
 
-    @GetMapping("/login")
+    @GetMapping("/")
     public String loginPage(@RequestParam(value = "redirect", required = false) String redirect,
                             Model model,
                             HttpSession session) {
@@ -52,7 +54,7 @@ public class LoginController {
         return "web-login";
     }
 
-    @PostMapping("/login")
+    @PostMapping("/web/login")
     public String doLogin(@RequestParam("usernameOrEmail") String usernameOrEmail,
                           @RequestParam("password") String password,
                           @RequestParam(value = "redirect", required = false) String redirect,
@@ -99,14 +101,14 @@ public class LoginController {
         return "redirect:" + target;
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/web/logout")
     public String doLogout(HttpSession session) {
         session.invalidate();
-        return "redirect:/web/login";
+        return "redirect:/";
     }
 
 
-    @GetMapping("/product")
+    @GetMapping("/web/product")
     public String productPage(@RequestParam(value = "sku", required = false) String sku,
                               @RequestParam(value = "code", required = false) String code,
                               Model model,
@@ -240,17 +242,19 @@ public class LoginController {
         // === PANGGIL INI JIKA DATA VALID ===
         if (outSku != null && !outSku.isBlank()
                 && name != null && !name.isBlank()
+                && !name.trim().equals("-")
                 && rows != null && !rows.isEmpty()) {
             addSkuHistory(session, outSku, name);
         }
+      
 
 // SELALU kirim history ke view
-        model.addAttribute("history", getSkuHistory(session));
+   model.addAttribute("history", getSkuHistory(session));
 
         return "product-detail";
     }
 
-    @PostMapping("/product/history/clear")
+    @PostMapping("/web/product/history/clear")
     public String clearHistory(HttpSession session) {
         session.removeAttribute(SESSION_SKU_HISTORY);
         return "redirect:/web/product";
@@ -274,7 +278,10 @@ public class LoginController {
 
     @SuppressWarnings("unchecked")
     private void addSkuHistory(HttpSession session, String sku, String name) {
-        if (sku == null || sku.isBlank()) return;
+        if (sku == null || sku.isBlank() || name.trim().equals("-")) return;
+
+
+        if (name == null || name.isBlank() || "-".equals(name.trim())) return;
 
         List<Map<String,String>> hist =
                 (List<Map<String,String>>) session.getAttribute(SESSION_SKU_HISTORY);
@@ -288,7 +295,7 @@ public class LoginController {
         // tambah di depan
         Map<String,String> entry = new HashMap<>();
         entry.put("sku", sku);
-        if (name != null && !name.isBlank()) entry.put("name", name);
+        entry.put("name", name.trim());
         hist.add(0, entry);
 
         // batas 10
@@ -299,8 +306,10 @@ public class LoginController {
 
     @SuppressWarnings("unchecked")
     private List<Map<String,String>> getSkuHistory(HttpSession session){
+
         List<Map<String,String>> hist =
                 (List<Map<String,String>>) session.getAttribute(SESSION_SKU_HISTORY);
+
         return hist != null ? hist : Collections.emptyList();
     }
 

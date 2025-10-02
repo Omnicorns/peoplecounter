@@ -28,6 +28,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             // Health & web
             "/api/health/**",
+            "/",
 
             // Web pages kamu
             "/middleware/dashboard",

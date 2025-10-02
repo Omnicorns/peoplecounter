@@ -742,7 +742,34 @@
       }
       function getCurrentName(){ const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(1) .v'); return el?(el.textContent||'').trim():''; }
       function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-      function upsertHist(sku,name){ sku=(sku||'').trim(); if(!sku) return; let list=loadHist().filter(x=>x.sku!==sku); list.unshift({sku,name:(name||'').trim(),user:USER,t:Date.now()}); if(list.length>MAX_ITEMS) list=list.slice(0,MAX_ITEMS); saveHist(list); }
+      function upsertHist(sku, name){
+  sku  = (sku  || '').trim();
+  name = (name || '').trim();
+
+  // 1) Wajib SKU valid
+  if (!sku || sku === '-') return;
+
+  // 2) (Opsional) Wajib NAME valid juga
+  //    Matikan baris ini kalau kamu tetap ingin menyimpan meski name kosong
+  if (!name || name === '-') return;
+
+  let list = loadHist();               // [] kalau belum ada
+
+  // 3) (Opsional) Jangan simpan kalau koleksi masih kosong
+  //    Hidupkan baris ini kalau kamu tidak mau membuat entri pertama.
+  // if (!Array.isArray(list) || list.length === 0) return;
+
+  // 4) Dedup (case-insensitive biar aman)
+  list = list.filter(x => (x?.sku || '').trim().toLowerCase() !== sku.toLowerCase());
+
+  // 5) Masukkan di depan
+  list.unshift({ sku, name, user: USER, t: Date.now() });
+
+  // 6) Batasi panjang
+  if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
+
+  saveHist(list);
+}
       function renderHist(){
         const card=document.querySelector('section.card[aria-labelledby="riwayat-title"]'); if(!card) return;
         const serverEmpty=card.querySelector('.rows .empty'); let rows=card.querySelector('.rows[data-client]');
