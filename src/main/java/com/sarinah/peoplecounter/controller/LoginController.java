@@ -105,7 +105,7 @@ public class LoginController {
     @PostMapping("/logout")
     public String doLogout(HttpSession session) {
         session.invalidate();
-        return "redirect:/";
+        return "redirect:/web/login";
     }
 
 
