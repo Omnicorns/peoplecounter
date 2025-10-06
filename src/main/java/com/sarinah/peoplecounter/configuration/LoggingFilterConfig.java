@@ -3,6 +3,9 @@ package com.sarinah.peoplecounter.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sarinah.peoplecounter.entity.ProductScanLog;
+import com.sarinah.peoplecounter.entity.ScanSource;
+import com.sarinah.peoplecounter.repository.ProductScanLogRepository;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletContext;
@@ -10,6 +13,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -30,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 @Configuration
+@RequiredArgsConstructor
 public class LoggingFilterConfig {
 
     /**
@@ -40,11 +45,18 @@ public class LoggingFilterConfig {
     public static final String ATTR_LAST_SCAN_NAME = "LAST_SCAN_NAME_GLOBAL";   // <<— BARU
     public static final String ATTR_LAST_SCAN_AT = "LAST_SCAN_AT_GLOBAL";
     public static final String ATTR_SCAN_TODAY = "SCAN_TODAY_LIST";
+    private  final ProductScanLogRepository productScanLogRepository;
 
     @Bean
-    public FilterRegistrationBean<ApiLoggingFilter> loggingFilterRegistration() {
+    public ApiLoggingFilter apiLoggingFilter() {
+        return new ApiLoggingFilter(productScanLogRepository);
+    }
+
+
+    @Bean
+    public FilterRegistrationBean<ApiLoggingFilter> loggingFilterRegistration(ApiLoggingFilter filter) {
         FilterRegistrationBean<ApiLoggingFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(new ApiLoggingFilter());
+        reg.setFilter(filter);
         reg.setName("apiLoggingFilter");
         reg.setOrder(Ordered.HIGHEST_PRECEDENCE); // log duluan
         reg.addUrlPatterns("/*");
@@ -56,6 +68,13 @@ public class LoggingFilterConfig {
         private static final Logger log = LoggerFactory.getLogger(ApiLoggingFilter.class);
         private static final ObjectMapper OM = new ObjectMapper();
         private static final int MAX = 4096;
+
+        private final ProductScanLogRepository productScanLogRepository; // ← DI via ctor
+
+        ApiLoggingFilter(ProductScanLogRepository repo) {
+            this.productScanLogRepository = repo;
+        }
+
 
         /**
          * Ambil {"value":"..."} dari request body
@@ -158,6 +177,23 @@ public class LoggingFilterConfig {
                             buf.remove(buf.size() - 1);
                         }
                     }
+                    try {
+                        String pname = (productName == null || productName.isBlank()) ? "-" : productName;
+
+                        // Gunakan SETTER agar tidak tergantung konstruktor
+                        ProductScanLog logRow = new ProductScanLog();
+                        logRow.setUsername(username);
+                        logRow.setValue(scanVal);
+                        logRow.setProductName(pname);
+                        logRow.setSource(resolveSource(request));
+
+                        // Jika entitas punya kolom 'source' (enum):
+                        // logRow.setSource(resolveSource(request));
+
+                        productScanLogRepository.save(logRow);
+                    } catch (Exception e) {
+                        log.warn("Gagal simpan product_scan_log: {}", e.toString());
+                    }
                 }
 
                 // Ringkasan
@@ -215,6 +251,19 @@ public class LoggingFilterConfig {
             }
 
             return username;
+        }
+
+        private ScanSource resolveSource(HttpServletRequest req) {
+            String hdr = req.getHeader("X-Client-Source");
+            if (hdr != null && hdr.equalsIgnoreCase("ANDROID")) return ScanSource.ANDROID;
+
+            String src = req.getParameter("src");
+            if (src != null && src.equalsIgnoreCase("ANDROID")) return ScanSource.ANDROID;
+
+            String ua = req.getHeader("User-Agent");
+            if (ua != null && ua.toLowerCase().contains("android")) return ScanSource.ANDROID;
+
+            return ScanSource.WEB;
         }
 
         private static String clientIpFromXffOrRemote(HttpServletRequest req) {
@@ -275,4 +324,6 @@ public class LoggingFilterConfig {
         }
 
     }
+
+
 }

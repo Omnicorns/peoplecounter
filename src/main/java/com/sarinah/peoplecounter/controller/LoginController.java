@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.adaptor.SarinahGetModulAdaptor;
+import com.sarinah.peoplecounter.entity.ProductScanLog;
+import com.sarinah.peoplecounter.entity.ScanSource;
 import com.sarinah.peoplecounter.entity.User;
 import com.sarinah.peoplecounter.entity.UserStatus;
+import com.sarinah.peoplecounter.repository.ProductScanLogRepository;
 import com.sarinah.peoplecounter.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -33,7 +36,8 @@ public class LoginController {
 
     private final UserRepository userRepo;
     private final SarinahGetModulAdaptor sarinahGetModulAdaptor;
-    private final ObjectMapper om;                                // untuk bikin ObjectNode
+    private final ObjectMapper om;// untuk bikin ObjectNode
+    private final ProductScanLogRepository productScanLogRepository;
 
 
     // Nama atribut session untuk menandai user sudah login
@@ -240,12 +244,15 @@ public class LoginController {
         // link lanjutan kalau ada halaman lain
         model.addAttribute("stockPriceUrl", "/web/product/" + outSku + "/stock");
 
+        String inputValue = (code != null && !code.isBlank()) ? code :
+                (sku  != null && !sku.isBlank())  ? sku  : "";
         // === PANGGIL INI JIKA DATA VALID ===
         if (outSku != null && !outSku.isBlank()
                 && name != null && !name.isBlank()
                 && !name.trim().equals("-")
                 && rows != null && !rows.isEmpty()) {
             addSkuHistory(session, outSku, name);
+            saveScan(request, session, inputValue, name);
         }
       
 
@@ -312,6 +319,30 @@ public class LoginController {
                 (List<Map<String,String>>) session.getAttribute(SESSION_SKU_HISTORY);
 
         return hist != null ? hist : Collections.emptyList();
+    }
+
+    private ScanSource resolveSource(HttpServletRequest request) {
+        String src = request.getParameter("src");
+        if (src != null) {
+            src = src.trim().toUpperCase();
+            if ("ANDROID".equals(src)) return ScanSource.ANDROID;
+            if ("WEB".equals(src))     return ScanSource.WEB;
+        }
+        // fallback deteksi User-Agent
+        String ua = request.getHeader("User-Agent");
+        if (ua != null && ua.toLowerCase().contains("android")) return ScanSource.ANDROID;
+        return ScanSource.WEB;
+    }
+
+    private void saveScan(HttpServletRequest request, HttpSession session,
+                          String inputValue, String productName) {
+        String username = (String) session.getAttribute(AUTH_USERNAME);
+        if (username == null || username.isBlank()) return;
+        if (inputValue == null || inputValue.isBlank()) return;
+        if (productName == null || productName.isBlank()) return;
+
+        ScanSource source = resolveSource(request);
+        productScanLogRepository.save(new ProductScanLog(username, inputValue, productName, source));
     }
 
 
