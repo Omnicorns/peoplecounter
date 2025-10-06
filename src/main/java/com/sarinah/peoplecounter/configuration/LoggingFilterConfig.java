@@ -260,8 +260,19 @@ public class LoggingFilterConfig {
             String src = req.getParameter("src");
             if (src != null && src.equalsIgnoreCase("ANDROID")) return ScanSource.ANDROID;
 
+
             String ua = req.getHeader("User-Agent");
-            if (ua != null && ua.toLowerCase().contains("android")) return ScanSource.ANDROID;
+            if (ua != null) {
+                String ual = ua.toLowerCase();
+                if (ual.contains("android") || ual.contains("okhttp") || ual.contains("dalvik"))
+                    return ScanSource.ANDROID;
+            }
+
+            String uri = req.getRequestURI();
+            if ("/api/auth/login".equals(uri)) {
+                // UA bisa null di beberapa stack => treat as ANDROID untuk endpoint ini
+                return ScanSource.ANDROID;
+            }
 
             return ScanSource.WEB;
         }
