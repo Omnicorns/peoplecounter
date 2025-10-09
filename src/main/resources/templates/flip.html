@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>PDF Pro Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        :root{ --ui:#111; --page:#222; }
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--page);height:100vh;display:flex;align-items:center;justify-content:center;color:#fff;font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
+        #viewer{width:90vw;height:90vh;background:var(--ui);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+        #top{display:flex;gap:8px;justify-content:center;align-items:center;padding:8px 10px;border-bottom:1px solid #333;background:rgba(0,0,0,.5);backdrop-filter:blur(6px)}
+        button,.btn{background:#444;border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;transition:transform .08s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        button:active,.btn:active{transform:scale(.98)}
+        #stage{position:relative;flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%, #1a1a1a, #0d0d0d 72%)}
+        .layer{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transition:transform .45s ease, opacity .35s ease; will-change:transform, opacity;}
+        .active{transform:translateX(0);opacity:1; z-index:2}
+        .in-right{transform:translateX(100%);opacity:0; z-index:3}
+        .in-left{transform:translateX(-100%);opacity:0; z-index:3}
+        .out-left{transform:translateX(-100%);opacity:0; z-index:1}
+        .out-right{transform:translateX(100%);opacity:0; z-index:1}
+        canvas{max-width:100%;max-height:100%;background:#fff}
+        .nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.25);border:none;color:#fff;font-size:26px;line-height:1;padding:10px 14px;border-radius:12px;cursor:pointer;z-index:10}
+        #prev{left:10px} #next{right:10px}
+        #indicator{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.45);padding:4px 10px;border-radius:10px;font-size:.9rem;z-index:10}
+        #thumbs{display:none;gap:8px;overflow-x:auto;padding:8px;border-top:1px solid #333;background:rgba(0,0,0,.55)}
+        #thumbs canvas{position:static;width:64px;height:auto;opacity:.7;cursor:pointer;transition:opacity .2s,transform .2s;border-radius:4px}
+        #thumbs canvas.active{opacity:1;transform:scale(1.05);outline:2px solid #fff}
+    </style>
+</head>
+<body>
+<div id="viewer">
+    <div id="top">
+        <button id="playBtn">▶️ Play</button>
+        <button id="fsBtn">⛶ Fullscreen</button>
+        <button id="thumbBtn">🖼 Thumbnails</button>
+        <a id="dlBtn" class="btn" href="#" download>⬇️ Download</a>
+    </div>
+
+    <div id="stage">
+        <button class="nav" id="prev">❮</button>
+        <div id="L1" class="layer active"><canvas id="c1"></canvas></div>
+        <div id="L2" class="layer"><canvas id="c2"></canvas></div>
+        <button class="nav" id="next">❯</button>
+        <div id="indicator">Page 1 / 1</div>
+    </div>
+
+    <div id="thumbs"></div>
+</div>
+
+<!-- Thymeleaf: URL default PDF (ikut context-path) -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+      // jika pdfUrl ada di model → pakai itu; kalau tidak → /file.pdf
+      const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
+    /*]]>*/
+</script>
+
+<script>
+    // === FIX: set worker + matikan createImageBitmap/ObjectURL ===
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    pdfjsLib.disableCreateObjectURL = true;
+    if (pdfjsLib.RenderingPrefs && 'disableCreateImageBitmap' in pdfjsLib.RenderingPrefs) {
+      pdfjsLib.RenderingPrefs.disableCreateImageBitmap = true;
+    }
+
+    // URL PDF (bisa override via ?pdf=/docs/x.pdf)
+    const params   = new URLSearchParams(location.search);
+    const PDF_URL  = params.get('pdf') || (typeof DEFAULT_PDF !== 'undefined' ? DEFAULT_PDF : '/file.pdf');
+    const SLIDE_MS = 10000;
+
+    let pdfDoc=null, pageNum=1, numPages=0;
+    let active=1, auto=false, timer=null, animating=false;
+
+    const stage=document.getElementById('stage');
+    const L1=document.getElementById('L1'), L2=document.getElementById('L2');
+    const c1=document.getElementById('c1'), c2=document.getElementById('c2');
+    const ctx1=c1.getContext('2d'), ctx2=c2.getContext('2d');
+    const indicator=document.getElementById('indicator');
+
+    document.getElementById('dlBtn').href = PDF_URL;
+
+    function resetClasses(el){ el.classList.remove('active','in-right','in-left','out-left','out-right'); }
+    function waitTransition(el){
+      return new Promise(res=>{
+        const done=()=>{ el.removeEventListener('transitionend',done); res(); };
+        el.addEventListener('transitionend',done,{once:true});
+      });
+    }
+
+    // Render halaman yang tahan banting
+    async function renderFit(p, canvas, ctx){
+      const page = await pdfDoc.getPage(p);
+      const base = page.getViewport({ scale: 1 });
+
+      let W = stage.clientWidth, H = stage.clientHeight;
+      if (!W || !H) { await new Promise(r=>setTimeout(r,0)); W = stage.clientWidth; H = stage.clientHeight; }
+      W = Math.max(1, W); H = Math.max(1, H);
+
+      const scaleCss = Math.max(0.1, Math.min(W / base.width, H / base.height));
+      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+
+      const vp = page.getViewport({ scale: scaleCss * dpr });
+
+      canvas.width  = Math.floor(vp.width);
+      canvas.height = Math.floor(vp.height);
+      canvas.style.width  = Math.floor(vp.width  / dpr) + 'px';
+      canvas.style.height = Math.floor(vp.height / dpr) + 'px';
+
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.restore();
+
+      await page.render({
+        canvasContext: ctx,
+        viewport: vp,
+        intent: 'print' // paksa raster → hindari halaman putih pada PDF bergambar CMYK/JPX
+      }).promise;
+    }
+
+    async function show(p, dir='right'){
+      if (animating) return;
+      animating = true;
+
+      const curL=(active===1)?L1:L2;
+      const nxtL=(active===1)?L2:L1;
+      const nxtCanvas=(active===1)?c2:c1;
+      const nxtCtx=(active===1)?ctx2:ctx1;
+
+      resetClasses(curL); resetClasses(nxtL);
+      nxtL.classList.add(dir==='right' ? 'in-left' : 'in-right');
+      await renderFit(p, nxtCanvas, nxtCtx);
+      void nxtL.offsetWidth;
+
+      curL.classList.add(dir==='right' ? 'out-right' : 'out-left');
+      await new Promise(r=>requestAnimationFrame(()=>{ nxtL.classList.remove('in-right','in-left'); nxtL.classList.add('active'); r(); }));
+      await waitTransition(nxtL);
+
+      active=(active===1)?2:1;
+      indicator.textContent=`Page ${pageNum} / ${numPages}`;
+      document.querySelectorAll('#thumbs canvas').forEach((t,i)=>t.classList.toggle('active', i+1===pageNum));
+      animating=false;
+    }
+
+    function prev(){ if(pageNum>1){ pageNum--; show(pageNum,'left'); } }
+    function next(){ if(pageNum<numPages){ pageNum++; show(pageNum,'right'); } }
+    document.getElementById('prev').onclick=prev;
+    document.getElementById('next').onclick=next;
+    document.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') prev(); if(e.key==='ArrowRight') next(); });
+
+    function startAuto(){ stopAuto(); timer=setInterval(()=>{ if(pageNum<numPages){ pageNum++; show(pageNum,'right'); } else { pageNum=1; show(pageNum,'right'); } }, SLIDE_MS); }
+    function stopAuto(){ if(timer){ clearInterval(timer); timer=null; } }
+    document.getElementById('playBtn').onclick=()=>{ auto=!auto; document.getElementById('playBtn').textContent= auto ? '⏸ Pause' : '▶️ Play'; auto?startAuto():stopAuto(); };
+    document.getElementById('fsBtn').onclick=()=>{ const el=document.getElementById('viewer'); if(!document.fullscreenElement) el.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); };
+    document.getElementById('thumbBtn').onclick=()=>{ const el=document.getElementById('thumbs'); el.style.display=(el.style.display==='flex')?'none':'flex'; };
+
+    async function renderThumbs(){
+      const wrap=document.getElementById('thumbs');
+      for(let i=1;i<=numPages;i++){
+        const t=document.createElement('canvas');
+        const tctx=t.getContext('2d');
+        const page=await pdfDoc.getPage(i);
+        const vp=page.getViewport({scale:0.22});
+        t.width=vp.width; t.height=vp.height;
+        await page.render({canvasContext:tctx, viewport:vp, intent:'print'}).promise;
+        t.onclick=()=>{ if(animating) return; const dir=(i>pageNum)?'right':'left'; pageNum=i; show(pageNum,dir); };
+        wrap.appendChild(t);
+      }
+      if(wrap.firstChild) wrap.firstChild.classList.add('active');
+    }
+
+    let rT;
+    window.addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(async()=>{ const canvas=(active===1)?c1:c2; const ctx=(active===1)?ctx1:ctx2; await renderFit(pageNum, canvas, ctx); },120); });
+
+    // === Load dokumen dengan opsi lengkap (CMap & standard fonts) ===
+    const loadingTask = pdfjsLib.getDocument({
+      url: PDF_URL,
+      cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/",
+      cMapPacked: true,
+      standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
+      useSystemFonts: true
+    });
+
+    loadingTask.promise.then(async pdf=>{
+      pdfDoc=pdf; numPages=pdf.numPages;
+      await renderFit(pageNum, c1, ctx1);
+      document.getElementById('L1').classList.add('active');
+      indicator.textContent=`Page ${pageNum} / ${numPages}`;
+      requestAnimationFrame(()=> renderFit(pageNum, c1, ctx1)); // antisipasi layout awal
+      renderThumbs();
+    }).catch(err=>{
+      alert('Gagal memuat PDF: ' + err.message + '\nURL: ' + PDF_URL);
+    });
+</script>
+</body>
+</html>

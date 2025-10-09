@@ -29,6 +29,7 @@ public class SecurityConfig {
             // Health & web
             "/api/health/**",
             "/",
+            "/catalogue",
 
             // Web pages kamu
             "/middleware/dashboard",
@@ -45,12 +46,15 @@ public class SecurityConfig {
 
             // API tertentu (kalau memang publik)
             "/api/admin/users/import-csv",
+            "/api/admin/users/pdf",
+            "/api/admin/users/pdf/**",
 
             // PWA files (root)
             "/manifest.webmanifest",
             "/sw.js",
             "/promis.png",// <- perbaiki dari /static/promis.png
             "/login.png",
+            "/file.pdf",
             "icons/promis-512.png",
             "icons/promis-192.png",
             "icons/promis-maskable-512.png",
@@ -78,7 +82,7 @@ public class SecurityConfig {
                         // 2) Izinkan file statis di ROOT (kalau kamu taruh di /static, di-serve di /)
                         .requestMatchers(
                                 "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.ico",
-                                "/*.webmanifest", "/*.json", "/*.js","/icons/**", "/*.png", "/*.css"
+                                "/*.webmanifest","/file.pdf", "/*.json", "/*.js","/icons/**", "/*.png", "/*.css"
                         ).permitAll()
 
                         // 3) Endpoint publik lain
