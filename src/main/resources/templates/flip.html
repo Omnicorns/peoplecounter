@@ -2,109 +2,116 @@
 <html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
-    <title>PDF Pro Viewer — Mobile Tap Fix + High Contrast</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PDF Pro Viewer — Slide & Baca (No Gesture)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
-          --bg:#07080b; --panel:#0f1218; --muted:#1a1f28;
-          --acc:#2db36d; --acc2:#24a461; --text:#eaf0ff; --sub:#9aa3b2; --ring:#2a2f3a;
-          --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+          --bg:#07080b; --panel:#0f1218; --muted:#1a1f28; --acc:#2db36d; --acc2:#42c18b; --text:#eaf0ff; --sub:#9aa3b2;
+          --ring:#2a2f3a; --danger:#ff5468; --warn:#f6c445; --ok:#2ecc71;
+          --safe-top: env(safe-area-inset-top, 0px);
+          --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         *{box-sizing:border-box}
         html,body{height:100%}
-        body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+        body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
 
-        /* background */
-        .bgfx{position:fixed;inset:0;pointer-events:none;z-index:0}
+        .bgfx{position:fixed;inset:0;pointer-events:none;z-index:0;}
         .bg-gradient{position:absolute;inset:-20%;filter:blur(70px);opacity:.6;background:
           radial-gradient(900px 500px at 10% 10%, #1a2d5a55, transparent 60%),
           radial-gradient(900px 500px at 90% 20%, #1d6d4e55, transparent 60%),
-          radial-gradient(900px 600px at 50% 100%, #2b1a4a55, transparent 60%)}
+          radial-gradient(900px 600px at 50% 100%, #2b1a4a55, transparent 60%);}
         .grid{position:absolute;inset:0;background:
           linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px,
           linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px;
-          mask: radial-gradient(ellipse at 50% 30%, #000 55%, transparent 68%); opacity:.35}
+          mask: radial-gradient(ellipse at 50% 30%, #000 55%, transparent 68%);
+          opacity:.35;}
 
-        /* viewer */
         #viewer{
-          --pad:12px; width:min(100vw,1400px); height:min(100vh,900px);
+          --pad:12px;
+          width:min(100vw,1400px);
+          height:min(100vh,900px);
           margin:auto; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
           background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
           backdrop-filter:blur(2px)
         }
-        @supports (height:100svh){
-          #viewer{ width:min(100svw,1400px); height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px) }
+        @supports (height: 100svh){
+          #viewer{ width:min(100svw,1400px); height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px); }
         }
 
-        /* pseudo fullscreen (fallback iOS) */
-        .pseudo-fs{ position:fixed !important; inset:0 !important; margin:0 !important;
-          width:100vw !important; height:100vh !important; border-radius:0 !important; z-index:9999 !important; }
-        body.lock-scroll{overflow:hidden}
-
-        /* header */
         #top{
           display:flex; gap:8px; justify-content:flex-end; align-items:center;
           padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
-          background:rgba(16,18,24,.92); backdrop-filter:blur(12px);
-          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:1000; /* tinggi supaya selalu di atas */
-          pointer-events:auto;
+          background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
+          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
         }
+
+        /* Tombol seragam + link tidak biru */
         a{color:inherit; text-decoration:none}
         button,.btn,a.btn{
-          height:38px; border:none; border-radius:12px; padding:0 12px;
-          display:inline-flex; align-items:center; gap:8px; cursor:pointer;
-          color:#fff; background:#212733; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.55)
+          height:36px;border:none;border-radius:12px;background:#212733;color:var(--text);
+          padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+          text-decoration:none;
         }
-        .btn-ico{width:18px;height:18px;flex:0 0 18px;opacity:.95}
-        .ghost{
-          background:rgba(255,255,255,.22);            /* lebih solid */
-          border:1px solid rgba(255,255,255,.40);
-          backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-        }
-        .ghost:hover{ background:rgba(255,255,255,.28) }
-        .primary{ background:linear-gradient(180deg,var(--acc),var(--acc2)); border:1px solid rgba(0,0,0,.18) }
-        .primary:hover{ filter:brightness(1.02) }
+        .ghost{ background:transparent; border:1px solid var(--ring); }
+        .primary{ background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700; }
+        .btn-ico{ width:18px; height:18px; flex:0 0 18px; opacity:.9; }
+        .ghost:hover{ background:#1a1f28; }
+        .primary:hover{ filter:brightness(1.02); }
 
-        /* stage */
-        #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center; z-index:1}
-        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; z-index:1; pointer-events:none;}  /* <-- tidak serap tap */
-        .layer{position:absolute; inset:0; display:grid; place-items:center; z-index:1; pointer-events:none;}
-        .layer.active{z-index:2}
-        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block; pointer-events:none;}
+        #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
+        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px}
+        .layer{position:absolute; inset:0; display:grid; place-items:center}
+        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block}
 
-        /* nav (klik jelas & di atas segalanya) */
+        /* kelas gesture lama (tetap ada, tapi dimatikan saat no-gesture) */
+        .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
+        .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
+        .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
+        .out-left  {transform:translateX(-26%) rotateY(-16deg);  opacity:0;   z-index:1}
+        .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1}
+        .layer{will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
+
+        /* Glass Nav Buttons */
         .nav{
-          position:absolute; top:50%; transform:translateY(-50%); z-index:2000; width:52px; height:52px;
-          display:grid; place-items:center; border-radius:999px; pointer-events:auto;
-          background:rgba(255,255,255,.26); border:1px solid rgba(255,255,255,.48);
-          backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-          color:#fff; box-shadow:0 3px 14px rgba(0,0,0,.45);
-          transition:background .18s ease, border-color .18s ease, transform .08s ease
+          position:absolute; top:50%; transform:translateY(-50%);
+          z-index:10; width:48px; height:48px; display:grid; place-items:center; border-radius:999px;
+          background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+          backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+          color:#cfd7e6; box-shadow:0 2px 12px rgba(0,0,0,.35);
+          transition: background .18s ease, border-color .18s ease, color .18s ease, transform .08s ease;
         }
-        .nav:hover{ background:rgba(255,255,255,.32); border-color:rgba(255,255,255,.58) }
+        .nav:hover{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#ffffff }
         .nav:active{ transform:translateY(-50%) scale(.97) }
-        .nav:disabled{ opacity:.45; pointer-events:none }
-        .nav svg{ width:22px; height:22px }
+        .nav:disabled{ opacity:.35; pointer-events:none }
+        .nav svg{ width:22px; height:22px; }
         #prev{left:14px} #next{right:14px}
 
-        /* footer */
-        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.88); padding-bottom:calc(8px + var(--safe-bottom)); z-index:900; pointer-events:auto;}
+        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
         #indicator{font-variant-numeric:tabular-nums; color:var(--sub)}
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
 
-        /* read mode */
+        #thumbs{display:none; gap:8px; overflow-x:auto; padding:10px; background:rgba(0,0,0,.42); border-top:1px solid #1d2330}
+        #thumbs canvas{width:92px; height:auto; opacity:.7; cursor:pointer; border-radius:8px}
+
+        /* READ MODE */
         #read{display:none; flex:1; background:#0b0f15; overflow:auto}
-        #doc{margin:0 auto; padding:16px; width:min(100%,1100px)}
+        #doc{margin:0 auto; padding:16px; width:min(100%, 1100px)}
         .page{margin:0 auto 16px auto; display:block; background:#fff; border-radius:12px; box-shadow:0 12px 26px rgba(0,0,0,.45)}
         .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
 
-        @media (max-width:560px){
-          button,.btn,a.btn{height:38px; padding:0 10px; font-size:13.5px}
-          .btn-ico{width:17px;height:17px}
+        @media (max-width: 860px){
+          #footer{gap:8px}
         }
+
+        /* NO GESTURE MODE (tanpa animasi) */
+        .no-gesture .layer{transition:none !important; transform:none !important; opacity:1 !important}
+        .no-gesture .prep-right,
+        .no-gesture .prep-left,
+        .no-gesture .out-left,
+        .no-gesture .out-right{transform:none !important; opacity:0 !important}
     </style>
 </head>
 <body>
@@ -112,19 +119,25 @@
 
 <div id="viewer" aria-label="PDF Pro Viewer">
     <div id="top">
-        <a id="dlBtn" class="btn ghost" href="#" title="Unduh PDF">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>
+        <a id="dlBtn" class="btn ghost" href="#" download title="Unduh PDF">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/>
+            </svg>
             Download
         </a>
-        <button id="fsBtn" class="btn ghost" title="Layar Penuh">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/></svg>
+        <button id="fsBtn" class="ghost" title="Layar Penuh">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/>
+            </svg>
             Full
         </button>
-        <button id="modeBtn" class="btn primary" title="Mode Baca">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg>
+        <button id="modeBtn" class="primary" title="Mode Baca">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/>
+            </svg>
             Mode Baca
         </button>
-        <button id="playBtn" class="btn ghost" title="Putar otomatis">
+        <button id="playBtn" class="ghost" title="Putar otomatis">
             <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg>
             Play
         </button>
@@ -135,10 +148,12 @@
         <button class="nav" id="prev" aria-label="Sebelumnya">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6 9 12l6 6"/></svg>
         </button>
+
         <div class="deck">
             <div id="L1" class="layer active"><canvas id="c1"></canvas></div>
             <div id="L2" class="layer"><canvas id="c2"></canvas></div>
         </div>
+
         <button class="nav" id="next" aria-label="Berikutnya">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
         </button>
@@ -151,6 +166,8 @@
         <div id="indicator">Page 1 / 1</div>
         <div class="bar" id="progress" aria-label="Progress"><i id="prog"></i></div>
     </div>
+
+    <div id="thumbs" aria-label="Thumbnails"></div>
 </div>
 
 <script th:inline="javascript">
@@ -160,77 +177,72 @@
 </script>
 
 <script>
-    // ===== utilities: tap handler agar klik mobile mantap =====
-    function onTap(el, handler){
-      if(!el) return;
-      let touching=false;
-      el.addEventListener('touchend', (e)=>{ touching=true; e.preventDefault(); handler(e); setTimeout(()=>touching=false, 0); }, {passive:false});
-      el.addEventListener('click', (e)=>{ if(touching){ return; } handler(e); });
-    }
-
-    const hasFS = document.fullscreenEnabled;
-
     // ===== PDF.js =====
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
+
+    // ===== Config =====
+    const NO_GESTURE = true; // tidak ada animasi/gesture
 
     // ===== State =====
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100;
-    const MAX_DPR_SLIDE=3, MAX_DPR_READ=3.5;
-    let inReadMode=false, auto=false, timer=null, SLIDE_MS=8000;
+    let MAX_DPR_SLIDE = 2, MAX_DPR_READ = 3;
+    let inReadMode = false;
+
+    // autoplay
+    let auto = false, timer = null, SLIDE_MS = 8000;
 
     const viewer=document.getElementById('viewer');
-    const stage=document.getElementById('stage');
-    const read=document.getElementById('read');
-    const docEl=document.getElementById('doc');
+    const stage =document.getElementById('stage');
+    const read  =document.getElementById('read');
+    const docEl =document.getElementById('doc');
     const L1=document.getElementById('L1'), L2=document.getElementById('L2');
     const c1=document.getElementById('c1'), c2=document.getElementById('c2');
     const ctx1=c1.getContext('2d'), ctx2=c2.getContext('2d');
-    const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+    const prevBtn=document.getElementById('prev');
+    const nextBtn=document.getElementById('next');
     const indicator=document.getElementById('indicator');
     const progressBar=document.getElementById('progress'), prog=document.getElementById('prog');
-    const playBtn=document.getElementById('playBtn'), modeBtn=document.getElementById('modeBtn');
-    const fsBtn=document.getElementById('fsBtn'), dlBtn=document.getElementById('dlBtn');
+    const playBtn=document.getElementById('playBtn');
+    const modeBtn=document.getElementById('modeBtn');
 
-    function effDPR(cap){
-      const vv = window.visualViewport;
-      const z = vv && vv.scale ? vv.scale : 1;
-      const base = window.devicePixelRatio || 1;
-      return Math.min(cap, Math.max(1, base * z));
-    }
+    if (NO_GESTURE) viewer.classList.add('no-gesture');
 
+    document.getElementById('dlBtn').href = PDF_URL;
+    document.getElementById('fsBtn').onclick=()=>{ if(!document.fullscreenElement) viewer.requestFullscreen?.(); else document.exitFullscreen?.(); };
+
+    // ==== VisualViewport fix Android ====
     function applyViewportSize(){
       const vv = window.visualViewport;
       const w = Math.min(1400, Math.round((vv?.width || innerWidth)));
       const h = Math.min(900,  Math.round((vv?.height || innerHeight)));
-      viewer.style.width = w + 'px';
+      viewer.style.width  = w + 'px';
       viewer.style.height = h + 'px';
     }
     applyViewportSize();
+    (visualViewport||window).addEventListener('resize', applyViewportSize);
+    (visualViewport||window).addEventListener('scroll', applyViewportSize);
 
-    let zoomTimer=0;
-    function scheduleRerender(){ if(inReadMode) return; clearTimeout(zoomTimer); zoomTimer=setTimeout(()=>show(pageNum,true), 80); }
-    if (window.visualViewport){ visualViewport.addEventListener('resize', ()=>{ applyViewportSize(); scheduleRerender(); }); }
-    window.addEventListener('orientationchange', ()=> setTimeout(()=>{ applyViewportSize(); show(pageNum,true); }, 220));
-
+    // ===== Helpers =====
     function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
     function resetClasses(el){ el.className='layer'; }
 
-    async function calcViewport(page, cap){
+    async function calcViewport(page, dprCap){
       const base = page.getViewport({scale:1});
-      const W = Math.max(1, stage.clientWidth-24), H = Math.max(1, stage.clientHeight-24);
-      const dpr = effDPR(cap);
-      const fitScale = (fitMode==='width') ? (W/base.width) : Math.min(W/base.width, H/base.height);
-      const scale = Math.max(0.1, fitScale*(zoomPct/100)*dpr);
-      return { viewport: page.getViewport({scale}), dpr };
+      const W = Math.max(1, stage.clientWidth  - 24);
+      const H = Math.max(1, stage.clientHeight - 24);
+      const dpr = Math.min(dprCap, Math.max(1, devicePixelRatio||1));
+      const fitScale = (fitMode==='width') ? (W / base.width) : Math.min(W/base.width, H/base.height);
+      const scale = Math.max(0.1, fitScale * (zoomPct/100) * dpr);
+      return { viewport: page.getViewport({ scale }), cssScale: scale/dpr, dpr };
     }
 
     async function renderFit(p, canvas, ctx){
       const page = await pdfDoc.getPage(p);
-      const { viewport, dpr } = await calcViewport(page, MAX_DPR_SLIDE);
+      const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE);
       const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
       canvas.width=w; canvas.height=h;
       canvas.style.width  = Math.floor(w/dpr)+'px';
@@ -241,15 +253,16 @@
     }
 
     function updateIndicator(){
-      indicator.textContent=`Page ${pageNum} / ${numPages}`;
-      const pct=Math.round(((pageNum-1)/(numPages-1||1))*100);
-      progressBar.style.setProperty('--p', pct + '%'); prog.style.inset=`0 ${100-pct}% 0 0`;
+      indicator.textContent = `Page ${pageNum} / ${numPages}`;
+      const pct = Math.round(((pageNum-1)/(numPages-1||1))*100);
+      progressBar.style.setProperty('--p', pct + '%');
+      prog.style.inset = `0 ${100-pct}% 0 0`;
     }
 
-    // SHOW tanpa gesture + fix layer swap
+    // ===== Show halaman (instan, tanpa animasi) =====
     async function show(p, forward=true){
       if(inReadMode) return;
-      if(animating) return; animating=true; setNavDisabled(true);
+      if (animating) return; animating=true; setNavDisabled(true);
 
       const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
       const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
@@ -257,95 +270,98 @@
       resetClasses(curL); resetClasses(nxtL);
       await renderFit(p, nxtC, nxtCtx);
 
-      curL.style.display='none';          // layer lama tetap tersembunyi
+      curL.style.display='none';
       nxtL.style.display='grid';
       nxtL.classList.add('active');
+      setTimeout(()=>{ curL.style.display='grid'; }, 0);
 
       active=(active===1)?2:1; pageNum=p; updateIndicator(); setNavDisabled(false); animating=false;
     }
 
-    // === TAP BINDINGS (klik + touchend) ===
-    onTap(prevBtn, ()=>{ if(pageNum>1) show(pageNum-1,false); });
-    onTap(nextBtn, ()=>{ if(pageNum<numPages) show(pageNum+1,true); });
+    prevBtn.onclick=()=>{ if(pageNum>1) show(pageNum-1,false); };
+    nextBtn.onclick=()=>{ if(pageNum<numPages) show(pageNum+1,true); };
 
     progressBar.addEventListener('click', (e)=>{
-      const r=progressBar.getBoundingClientRect(); const pct=Math.max(0, Math.min(1,(e.clientX-r.left)/r.width));
-      const target=Math.max(1, Math.round(1 + pct*(numPages-1)));
+      const rect = progressBar.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX-rect.left)/rect.width));
+      const target = Math.max(1, Math.round(1 + pct*(numPages-1)));
       if(target!==pageNum) show(target, target>pageNum);
     });
 
+    // ====== AUTOPLAY ======
     function startAuto(){
-      if(inReadMode || auto) return;
-      auto=true;
-      playBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
-      timer=setInterval(()=>{ pageNum<numPages ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
+      if (inReadMode || auto) return;
+      auto = true;
+      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
+      timer = setInterval(()=>{ (pageNum < numPages) ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
     }
     function stopAuto(){
-      auto=false;
-      playBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
-      if(timer){clearInterval(timer); timer=null;}
+      auto = false;
+      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
+      if (timer){ clearInterval(timer); timer=null; }
     }
-    onTap(playBtn, ()=> auto?stopAuto():startAuto());
-    document.addEventListener('keydown', (e)=>{ if(!inReadMode && e.code==='Space'){ e.preventDefault(); auto?stopAuto():startAuto(); } });
+    playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
-    const io=new IntersectionObserver(async entries=>{
+    // Spacebar toggle auto (slide mode)
+    document.addEventListener('keydown', (e)=>{
+      if (inReadMode) return;
+      if (e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
+    });
+
+    // ===== Read Mode (lazy render) =====
+    const io = new IntersectionObserver(async (entries)=>{
       for(const ent of entries){
         if(ent.isIntersecting){
-          const cnv=ent.target; if(cnv.dataset.rendered) continue;
-          const i=+cnv.dataset.page, page=await pdfDoc.getPage(i), base=page.getViewport({scale:1});
-          const containerW = docEl.clientWidth-2, dpr=effDPR(MAX_DPR_READ);
-          const scale=(containerW*dpr)/base.width, vp=page.getViewport({scale});
-          cnv.width=Math.floor(vp.width); cnv.height=Math.floor(vp.height);
-          cnv.style.width=Math.floor(vp.width/dpr)+'px'; cnv.style.height=Math.floor(vp.height/dpr)+'px';
-          const cctx=cnv.getContext('2d',{alpha:false}); cctx.imageSmoothingEnabled=false;
+          const cnv = ent.target;
+          if(cnv.dataset.rendered) continue;
+          const i = +cnv.dataset.page;
+          const page = await pdfDoc.getPage(i);
+          const base = page.getViewport({scale:1});
+          const containerW = docEl.clientWidth - 2;
+          const dpr = Math.min(MAX_DPR_READ, Math.max(1, devicePixelRatio||1));
+          const scale = (containerW * dpr) / base.width;
+          const vp = page.getViewport({scale});
+          cnv.width  = Math.floor(vp.width);
+          cnv.height = Math.floor(vp.height);
+          cnv.style.width  = Math.floor(vp.width/dpr)+'px';
+          cnv.style.height = Math.floor(vp.height/dpr)+'px';
+          const cctx = cnv.getContext('2d', {alpha:false});
+          cctx.imageSmoothingEnabled=false;
           await page.render({canvasContext:cctx, viewport:vp, intent:'print'}).promise;
-          cnv.dataset.rendered='1';
+          cnv.dataset.rendered = '1';
         }
       }
-    }, {root:read, rootMargin:'200px 0px', threshold:0.01});
+    }, {root: read, rootMargin:'200px 0px', threshold:0.01});
 
     function enterReadMode(){
-      stopAuto(); inReadMode=true; stage.style.display='none'; read.style.display='block'; docEl.innerHTML='';
+      stopAuto();
+      inReadMode=true;
+      stage.style.display='none';
+      read.style.display='block';
+      docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
-        const cnv=document.createElement('canvas'); cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
-        const info=document.createElement('div'); info.className='pinfo'; info.textContent=`Halaman ${i}`;
-        docEl.appendChild(cnv); docEl.appendChild(info); io.observe(cnv);
+        const cnv=document.createElement('canvas');
+        cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
+        const pinfo=document.createElement('div'); pinfo.className='pinfo'; pinfo.textContent=`Halaman ${i}`;
+        docEl.appendChild(cnv); docEl.appendChild(pinfo);
+        io.observe(cnv);
       }
-      modeBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
-      playBtn.disabled=true; playBtn.title='Play hanya di Mode Slide';
+      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
+      playBtn.disabled = true; playBtn.title = 'Play hanya di Mode Slide';
     }
     function exitReadMode(){
-      inReadMode=false; read.style.display='none'; stage.style.display='grid';
-      modeBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
-      playBtn.disabled=false; playBtn.title='Putar otomatis';
+      inReadMode=false;
+      read.style.display='none';
+      stage.style.display='grid';
+      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
+      playBtn.disabled = false; playBtn.title = 'Putar otomatis';
       show(pageNum,true);
     }
-    onTap(document.getElementById('modeBtn'), ()=> inReadMode?exitReadMode():enterReadMode());
+    modeBtn.onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
 
-    // fullscreen + pseudo fallback
-    async function toggleFullscreen(){
-      try{
-        if (document.fullscreenElement){ await document.exitFullscreen(); document.body.classList.remove('lock-scroll'); viewer.classList.remove('pseudo-fs'); }
-        else{ if (document.fullscreenEnabled){ await viewer.requestFullscreen(); document.body.classList.add('lock-scroll'); }
-              else { viewer.classList.add('pseudo-fs'); document.body.classList.add('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50); } }
-      }catch(e){ viewer.classList.toggle('pseudo-fs'); document.body.classList.toggle('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50); }
-    }
-    onTap(fsBtn, toggleFullscreen);
-
-    // safe download (iOS/Android)
-    async function safeDownload(url){
-      try{
-        const res = await fetch(url, {mode:'cors'}); if(!res.ok) throw new Error('HTTP '+res.status);
-        const blob = await res.blob(); const name = (url.split('/').pop()||'file.pdf').split('?')[0];
-        const a=document.createElement('a'); const obj=URL.createObjectURL(blob); a.href=obj; a.download=name;
-        document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(obj), 2000);
-      }catch{ window.open(url, '_blank', 'noopener'); }
-    }
-    onTap(dlBtn, (e)=>{ e.preventDefault?.(); safeDownload(PDF_URL); });
-
-    // load PDF
+    // ===== Load PDF =====
     (async function(){
-      const task = pdfjsLib.getDocument({url:PDF_URL,
+      const task = pdfjsLib.getDocument({url: PDF_URL,
         cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
         standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/", useSystemFonts:true
       });
