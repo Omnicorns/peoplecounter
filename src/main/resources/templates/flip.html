@@ -31,11 +31,14 @@
         /* ===== Shell ===== */
         #viewer{
           --pad:12px;
-          width:min(100vw,1400px); height:min(100vh,900px); margin:auto;
+          width:min(100dvw,1400px); height:min(100dvh,900px); margin:auto;
           display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
           background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
           backdrop-filter:blur(2px)
+        }
+        @supports not (height: 100dvh){
+          #viewer{ width:min(100vw,1400px); height:min(100vh,900px); }
         }
 
         /* ===== Top bar (responsive) ===== */
@@ -77,13 +80,17 @@
 
         .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px}
         .layer{position:absolute; inset:0; display:grid; place-items:center; will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
-        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.05) inset}
+        canvas{
+          max-width:100%; max-height:100%; background:#fff; border-radius:14px;
+          box-shadow:0 28px 60px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.05) inset;
+          display:block; /* penting untuk hilangkan baseline-gap */
+        }
 
         .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
         .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
         .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
         .out-left  {transform:translateX(-26%) rotateY(-16deg);  opacity:0;   z-index:1}
-        .out-right {transform:translateX(26%)  rotateY(16%);     opacity:0;   z-index:1}
+        .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1} /* <= fix % -> deg */
 
         /* Arrows */
         .nav{position:absolute; top:50%; transform:translateY(-50%); z-index:10; background:rgba(0,0,0,.35); border:1px solid var(--ring); width:46px; aspect-ratio:1/1; display:grid; place-items:center; font-size:18px; border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.35)}
@@ -104,22 +111,17 @@
 
         /* ===== Mobile tweaks ===== */
         @media (max-width: 860px){
-          /* Dua baris: baris1 brand+aksi, baris2 kontrol */
           #top{gap:8px}
           .brand b{display:none}
           .row.wrap{flex-basis:100%; justify-content:space-between}
           .row.grow{flex:1; min-width:0}
-          /* tombol icon */
           .icon-btn{width:40px; height:40px; padding:0; justify-content:center}
-          .icon-btn .label{display:none} /* sembunyikan teks di mobile */
-          /* input & slider */
+          .icon-btn .label{display:none}
           input[type=number]{height:40px}
-          #zoomVal{display:none}           /* sembunyikan angka zoom */
+          #zoomVal{display:none}
           .range{width:120px}
-          /* fit chips lebih rapat */
           .seg{height:36px}
           .seg button{height:34px; padding:0 8px}
-          /* progress clickable lebih mudah */
           #footer{gap:8px}
         }
 
@@ -127,6 +129,13 @@
         @media (prefers-reduced-motion: reduce){
           .layer{transition:none}
         }
+
+        /* Toast & Loader (simple) */
+        #loader{position:absolute; inset:0; display:none; place-items:center}
+        #loader::after{content:""; width:40px; height:40px; border-radius:50%; border:4px solid #2a2f3a; border-top-color:var(--acc); animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .toast{position:absolute; left:50%; bottom:18px; transform:translateX(-50%); background:#141a22; border:1px solid #2a2f3a; padding:8px 12px; border-radius:10px; opacity:0; pointer-events:none}
+        .toast.show{opacity:1; transition:opacity .2s}
     </style>
 </head>
 <body>
@@ -188,7 +197,7 @@
     <div id="thumbs" aria-label="Thumbnails"></div>
 </div>
 
-<!-- Thymeleaf default URL -->
+<!-- Thymeleaf default URL (aman kalau tanpa Thymeleaf juga) -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
