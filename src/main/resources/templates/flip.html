@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
-    <title>PDF Pro Viewer — Fix Swap & High-Contrast Buttons</title>
+    <title>PDF Pro Viewer — Mobile Tap Fix + High Contrast</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
@@ -39,59 +39,58 @@
         }
 
         /* pseudo fullscreen (fallback iOS) */
-        .pseudo-fs{
-          position:fixed !important; inset:0 !important; margin:0 !important;
-          width:100vw !important; height:100vh !important; border-radius:0 !important; z-index:9999 !important;
-        }
+        .pseudo-fs{ position:fixed !important; inset:0 !important; margin:0 !important;
+          width:100vw !important; height:100vh !important; border-radius:0 !important; z-index:9999 !important; }
         body.lock-scroll{overflow:hidden}
 
         /* header */
         #top{
           display:flex; gap:8px; justify-content:flex-end; align-items:center;
           padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
-          background:rgba(16,18,24,.9); backdrop-filter:blur(12px);
-          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
+          background:rgba(16,18,24,.92); backdrop-filter:blur(12px);
+          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:1000; /* tinggi supaya selalu di atas */
+          pointer-events:auto;
         }
         a{color:inherit; text-decoration:none}
         button,.btn,a.btn{
-          height:36px; border:none; border-radius:12px; padding:0 12px;
+          height:38px; border:none; border-radius:12px; padding:0 12px;
           display:inline-flex; align-items:center; gap:8px; cursor:pointer;
           color:#fff; background:#212733; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.55)
         }
         .btn-ico{width:18px;height:18px;flex:0 0 18px;opacity:.95}
         .ghost{
-          background:rgba(255,255,255,.16);            /* lebih solid */
-          border:1px solid rgba(255,255,255,.30);      /* border lebih jelas */
+          background:rgba(255,255,255,.22);            /* lebih solid */
+          border:1px solid rgba(255,255,255,.40);
           backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
         }
-        .ghost:hover{ background:rgba(255,255,255,.22) }
+        .ghost:hover{ background:rgba(255,255,255,.28) }
         .primary{ background:linear-gradient(180deg,var(--acc),var(--acc2)); border:1px solid rgba(0,0,0,.18) }
         .primary:hover{ filter:brightness(1.02) }
 
         /* stage */
-        #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
-        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center}
-        .layer{position:absolute; inset:0; display:grid; place-items:center; z-index:1}
-        .layer.active{z-index:2}                       /* memastikan layer aktif di atas */
-        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block}
+        #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center; z-index:1}
+        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; z-index:1; pointer-events:none;}  /* <-- tidak serap tap */
+        .layer{position:absolute; inset:0; display:grid; place-items:center; z-index:1; pointer-events:none;}
+        .layer.active{z-index:2}
+        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block; pointer-events:none;}
 
-        /* nav (lebih kontras) */
+        /* nav (klik jelas & di atas segalanya) */
         .nav{
-          position:absolute; top:50%; transform:translateY(-50%); z-index:10; width:50px; height:50px;
-          display:grid; place-items:center; border-radius:999px;
-          background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.38);
+          position:absolute; top:50%; transform:translateY(-50%); z-index:2000; width:52px; height:52px;
+          display:grid; place-items:center; border-radius:999px; pointer-events:auto;
+          background:rgba(255,255,255,.26); border:1px solid rgba(255,255,255,.48);
           backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-          color:#fff; box-shadow:0 3px 14px rgba(0,0,0,.4);
+          color:#fff; box-shadow:0 3px 14px rgba(0,0,0,.45);
           transition:background .18s ease, border-color .18s ease, transform .08s ease
         }
-        .nav:hover{ background:rgba(255,255,255,.28); border-color:rgba(255,255,255,.5) }
+        .nav:hover{ background:rgba(255,255,255,.32); border-color:rgba(255,255,255,.58) }
         .nav:active{ transform:translateY(-50%) scale(.97) }
-        .nav:disabled{ opacity:.4; pointer-events:none }
+        .nav:disabled{ opacity:.45; pointer-events:none }
         .nav svg{ width:22px; height:22px }
         #prev{left:14px} #next{right:14px}
 
         /* footer */
-        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.8); padding-bottom:calc(8px + var(--safe-bottom))}
+        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.88); padding-bottom:calc(8px + var(--safe-bottom)); z-index:900; pointer-events:auto;}
         #indicator{font-variant-numeric:tabular-nums; color:var(--sub)}
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
@@ -103,7 +102,7 @@
         .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
 
         @media (max-width:560px){
-          button,.btn,a.btn{height:36px; padding:0 10px; font-size:13.5px}
+          button,.btn,a.btn{height:38px; padding:0 10px; font-size:13.5px}
           .btn-ico{width:17px;height:17px}
         }
     </style>
@@ -161,14 +160,21 @@
 </script>
 
 <script>
-    // ==== platform ====
+    // ===== utilities: tap handler agar klik mobile mantap =====
+    function onTap(el, handler){
+      if(!el) return;
+      let touching=false;
+      el.addEventListener('touchend', (e)=>{ touching=true; e.preventDefault(); handler(e); setTimeout(()=>touching=false, 0); }, {passive:false});
+      el.addEventListener('click', (e)=>{ if(touching){ return; } handler(e); });
+    }
+
     const hasFS = document.fullscreenEnabled;
 
-    // ==== PDF.js ====
+    // ===== PDF.js =====
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
 
-    // ==== State ====
+    // ===== State =====
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
@@ -189,13 +195,12 @@
     const playBtn=document.getElementById('playBtn'), modeBtn=document.getElementById('modeBtn');
     const fsBtn=document.getElementById('fsBtn'), dlBtn=document.getElementById('dlBtn');
 
-    // DPR efektif mengikuti zoom
     function effDPR(cap){
       const vv = window.visualViewport;
       const z = vv && vv.scale ? vv.scale : 1;
       const base = window.devicePixelRatio || 1;
       return Math.min(cap, Math.max(1, base * z));
-      }
+    }
 
     function applyViewportSize(){
       const vv = window.visualViewport;
@@ -206,16 +211,9 @@
     }
     applyViewportSize();
 
-    // debounce re-render saat zoom/orient
     let zoomTimer=0;
-    function scheduleRerender(){
-      if(inReadMode) return;
-      clearTimeout(zoomTimer);
-      zoomTimer = setTimeout(()=> show(pageNum,true), 80);
-    }
-    if (window.visualViewport){
-      visualViewport.addEventListener('resize', ()=>{ applyViewportSize(); scheduleRerender(); });
-    }
+    function scheduleRerender(){ if(inReadMode) return; clearTimeout(zoomTimer); zoomTimer=setTimeout(()=>show(pageNum,true), 80); }
+    if (window.visualViewport){ visualViewport.addEventListener('resize', ()=>{ applyViewportSize(); scheduleRerender(); }); }
     window.addEventListener('orientationchange', ()=> setTimeout(()=>{ applyViewportSize(); show(pageNum,true); }, 220));
 
     function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
@@ -223,12 +221,11 @@
 
     async function calcViewport(page, cap){
       const base = page.getViewport({scale:1});
-      const W = Math.max(1, stage.clientWidth-24);
-      const H = Math.max(1, stage.clientHeight-24);
+      const W = Math.max(1, stage.clientWidth-24), H = Math.max(1, stage.clientHeight-24);
       const dpr = effDPR(cap);
       const fitScale = (fitMode==='width') ? (W/base.width) : Math.min(W/base.width, H/base.height);
       const scale = Math.max(0.1, fitScale*(zoomPct/100)*dpr);
-      return { viewport: page.getViewport({scale}), dpr, scale };
+      return { viewport: page.getViewport({scale}), dpr };
     }
 
     async function renderFit(p, canvas, ctx){
@@ -245,69 +242,58 @@
 
     function updateIndicator(){
       indicator.textContent=`Page ${pageNum} / ${numPages}`;
-      const pct = Math.round(((pageNum-1)/(numPages-1||1))*100);
-      progressBar.style.setProperty('--p', pct + '%');
-      prog.style.inset = `0 ${100-pct}% 0 0`;
+      const pct=Math.round(((pageNum-1)/(numPages-1||1))*100);
+      progressBar.style.setProperty('--p', pct + '%'); prog.style.inset=`0 ${100-pct}% 0 0`;
     }
 
-    // ==== FIXED SHOW (swap bersih, layer lama tetap disembunyikan) ====
+    // SHOW tanpa gesture + fix layer swap
     async function show(p, forward=true){
-      if (inReadMode) return;
-      if (animating) return; animating=true; setNavDisabled(true);
+      if(inReadMode) return;
+      if(animating) return; animating=true; setNavDisabled(true);
 
-      const curL = (active===1)?L1:L2;
-      const nxtL = (active===1)?L2:L1;
-      const nxtC = (active===1)?c2:c1;
-      const nxtCtx = (active===1)?ctx2:ctx1;
+      const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
+      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
 
-      resetClasses(curL);                 // hapus 'active' dari layer lama
-      resetClasses(nxtL);
+      resetClasses(curL); resetClasses(nxtL);
+      await renderFit(p, nxtC, nxtCtx);
 
-      await renderFit(p, nxtC, nxtCtx);   // render halaman baru ke buffer
+      curL.style.display='none';          // layer lama tetap tersembunyi
+      nxtL.style.display='grid';
+      nxtL.classList.add('active');
 
-      curL.style.display = 'none';        // JANGAN restore lagi — biar benar2 tersembunyi
-      nxtL.style.display = 'grid';
-      nxtL.classList.add('active');       // naikin z-index layer baru
-
-      active = (active===1)?2:1;
-      pageNum = p;
-      updateIndicator();
-      setNavDisabled(false);
-      animating=false;
+      active=(active===1)?2:1; pageNum=p; updateIndicator(); setNavDisabled(false); animating=false;
     }
 
-    prevBtn.onclick = ()=>{ if(pageNum>1) show(pageNum-1,false); };
-    nextBtn.onclick = ()=>{ if(pageNum<numPages) show(pageNum+1,true); };
+    // === TAP BINDINGS (klik + touchend) ===
+    onTap(prevBtn, ()=>{ if(pageNum>1) show(pageNum-1,false); });
+    onTap(nextBtn, ()=>{ if(pageNum<numPages) show(pageNum+1,true); });
 
     progressBar.addEventListener('click', (e)=>{
-      const r = progressBar.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (e.clientX-r.left)/r.width));
-      const target = Math.max(1, Math.round(1 + pct*(numPages-1)));
-      if (target!==pageNum) show(target, target>pageNum);
+      const r=progressBar.getBoundingClientRect(); const pct=Math.max(0, Math.min(1,(e.clientX-r.left)/r.width));
+      const target=Math.max(1, Math.round(1 + pct*(numPages-1)));
+      if(target!==pageNum) show(target, target>pageNum);
     });
 
-    // autoplay
     function startAuto(){
-      if (inReadMode || auto) return;
+      if(inReadMode || auto) return;
       auto=true;
-      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
-      timer = setInterval(()=>{ pageNum<numPages ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
+      playBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
+      timer=setInterval(()=>{ pageNum<numPages ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
     }
     function stopAuto(){
       auto=false;
-      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
-      if (timer){ clearInterval(timer); timer=null; }
+      playBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
+      if(timer){clearInterval(timer); timer=null;}
     }
-    playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
+    onTap(playBtn, ()=> auto?stopAuto():startAuto());
     document.addEventListener('keydown', (e)=>{ if(!inReadMode && e.code==='Space'){ e.preventDefault(); auto?stopAuto():startAuto(); } });
 
-    // read mode (lazy render, tajam mengikuti DPR efektif)
-    const io = new IntersectionObserver(async entries=>{
+    const io=new IntersectionObserver(async entries=>{
       for(const ent of entries){
         if(ent.isIntersecting){
           const cnv=ent.target; if(cnv.dataset.rendered) continue;
           const i=+cnv.dataset.page, page=await pdfDoc.getPage(i), base=page.getViewport({scale:1});
-          const containerW = docEl.clientWidth-2, dpr = effDPR(MAX_DPR_READ);
+          const containerW = docEl.clientWidth-2, dpr=effDPR(MAX_DPR_READ);
           const scale=(containerW*dpr)/base.width, vp=page.getViewport({scale});
           cnv.width=Math.floor(vp.width); cnv.height=Math.floor(vp.height);
           cnv.style.width=Math.floor(vp.width/dpr)+'px'; cnv.style.height=Math.floor(vp.height/dpr)+'px';
@@ -319,46 +305,32 @@
     }, {root:read, rootMargin:'200px 0px', threshold:0.01});
 
     function enterReadMode(){
-      stopAuto();
-      inReadMode=true;
-      stage.style.display='none';
-      read.style.display='block';
-      docEl.innerHTML='';
+      stopAuto(); inReadMode=true; stage.style.display='none'; read.style.display='block'; docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
-        const cnv=document.createElement('canvas');
-        cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
+        const cnv=document.createElement('canvas'); cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
         const info=document.createElement('div'); info.className='pinfo'; info.textContent=`Halaman ${i}`;
         docEl.appendChild(cnv); docEl.appendChild(info); io.observe(cnv);
       }
-      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
+      modeBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
       playBtn.disabled=true; playBtn.title='Play hanya di Mode Slide';
     }
     function exitReadMode(){
-      inReadMode=false;
-      read.style.display='none';
-      stage.style.display='grid';
-      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
+      inReadMode=false; read.style.display='none'; stage.style.display='grid';
+      modeBtn.innerHTML=`<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
       playBtn.disabled=false; playBtn.title='Putar otomatis';
       show(pageNum,true);
     }
-    modeBtn.onclick = ()=> inReadMode ? exitReadMode() : enterReadMode();
+    onTap(document.getElementById('modeBtn'), ()=> inReadMode?exitReadMode():enterReadMode());
 
     // fullscreen + pseudo fallback
     async function toggleFullscreen(){
       try{
-        if (document.fullscreenElement){
-          await document.exitFullscreen();
-          document.body.classList.remove('lock-scroll'); viewer.classList.remove('pseudo-fs');
-        }else{
-          if (hasFS){ await viewer.requestFullscreen(); document.body.classList.add('lock-scroll'); }
-          else { viewer.classList.add('pseudo-fs'); document.body.classList.add('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50); }
-        }
-      }catch(e){
-        viewer.classList.toggle('pseudo-fs'); document.body.classList.toggle('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50);
-      }
+        if (document.fullscreenElement){ await document.exitFullscreen(); document.body.classList.remove('lock-scroll'); viewer.classList.remove('pseudo-fs'); }
+        else{ if (document.fullscreenEnabled){ await viewer.requestFullscreen(); document.body.classList.add('lock-scroll'); }
+              else { viewer.classList.add('pseudo-fs'); document.body.classList.add('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50); } }
+      }catch(e){ viewer.classList.toggle('pseudo-fs'); document.body.classList.toggle('lock-scroll'); setTimeout(()=>window.scrollTo(0,1),50); }
     }
-    fsBtn.onclick = toggleFullscreen;
-    document.addEventListener('fullscreenchange', ()=>{ if(!document.fullscreenElement){ document.body.classList.remove('lock-scroll'); viewer.classList.remove('pseudo-fs'); } });
+    onTap(fsBtn, toggleFullscreen);
 
     // safe download (iOS/Android)
     async function safeDownload(url){
@@ -369,7 +341,7 @@
         document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(obj), 2000);
       }catch{ window.open(url, '_blank', 'noopener'); }
     }
-    dlBtn.addEventListener('click', e=>{ e.preventDefault(); safeDownload(PDF_URL); });
+    onTap(dlBtn, (e)=>{ e.preventDefault?.(); safeDownload(PDF_URL); });
 
     // load PDF
     (async function(){
