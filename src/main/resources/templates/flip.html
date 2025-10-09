@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>PDF Pro Viewer — Slide & Baca</title>
+    <title>PDF Pro Viewer — Slide & Baca (No Gesture)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
@@ -37,38 +37,55 @@
           backdrop-filter:blur(2px)
         }
         @supports (height: 100svh){
-          #viewer{
-            width:min(100svw,1400px);
-            height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px);
-          }
+          #viewer{ width:min(100svw,1400px); height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px); }
         }
 
         #top{
-          display:flex; flex-wrap:wrap; gap:10px 8px;
+          display:flex; gap:8px; justify-content:flex-end; align-items:center;
           padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
           background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
           border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
         }
-        .brand{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:linear-gradient(180deg,#151923,#0e1219)}
-        .row{display:flex; align-items:center; gap:8px}
 
-        button,.btn,input{
-          height:36px; border:none; border-radius:12px; background:#212733; color:var(--text); padding:0 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer
+        /* Tombol seragam + link tidak biru */
+        a{color:inherit; text-decoration:none}
+        button,.btn,a.btn{
+          height:36px;border:none;border-radius:12px;background:#212733;color:var(--text);
+          padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+          text-decoration:none;
         }
-        .ghost{background:transparent; border:1px solid var(--ring)}
-        .primary{background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700}
+        .ghost{ background:transparent; border:1px solid var(--ring); }
+        .primary{ background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700; }
+        .btn-ico{ width:18px; height:18px; flex:0 0 18px; opacity:.9; }
+        .ghost:hover{ background:#1a1f28; }
+        .primary:hover{ filter:brightness(1.02); }
 
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
         .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px}
-        .layer{position:absolute; inset:0; display:grid; place-items:center; will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
+        .layer{position:absolute; inset:0; display:grid; place-items:center}
         canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block}
+
+        /* kelas gesture lama (tetap ada, tapi dimatikan saat no-gesture) */
         .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
         .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
         .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
         .out-left  {transform:translateX(-26%) rotateY(-16deg);  opacity:0;   z-index:1}
         .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1}
+        .layer{will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
 
-        .nav{position:absolute; top:50%; transform:translateY(-50%); z-index:10; background:rgba(0,0,0,.35); border:1px solid var(--ring); width:46px; aspect-ratio:1/1; display:grid; place-items:center; border-radius:50%}
+        /* Glass Nav Buttons */
+        .nav{
+          position:absolute; top:50%; transform:translateY(-50%);
+          z-index:10; width:48px; height:48px; display:grid; place-items:center; border-radius:999px;
+          background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+          backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+          color:#cfd7e6; box-shadow:0 2px 12px rgba(0,0,0,.35);
+          transition: background .18s ease, border-color .18s ease, color .18s ease, transform .08s ease;
+        }
+        .nav:hover{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#ffffff }
+        .nav:active{ transform:translateY(-50%) scale(.97) }
+        .nav:disabled{ opacity:.35; pointer-events:none }
+        .nav svg{ width:22px; height:22px; }
         #prev{left:14px} #next{right:14px}
 
         #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
@@ -86,9 +103,15 @@
         .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
 
         @media (max-width: 860px){
-          .brand b{display:none}
           #footer{gap:8px}
         }
+
+        /* NO GESTURE MODE (tanpa animasi) */
+        .no-gesture .layer{transition:none !important; transform:none !important; opacity:1 !important}
+        .no-gesture .prep-right,
+        .no-gesture .prep-left,
+        .no-gesture .out-left,
+        .no-gesture .out-right{transform:none !important; opacity:0 !important}
     </style>
 </head>
 <body>
@@ -96,29 +119,48 @@
 
 <div id="viewer" aria-label="PDF Pro Viewer">
     <div id="top">
-        <div class="brand"><span>📄</span><b>PDF Pro Viewer</b></div>
-        <div class="row" style="margin-left:auto; gap:8px">
-            <button id="playBtn" class="ghost" title="Putar otomatis">▶️ Play</button>
-            <button id="modeBtn" class="primary">📖 Mode Baca</button>
-            <button id="fsBtn"  class="ghost">⛶ Full</button>
-            <a id="dlBtn" class="ghost" href="#" download>⬇️ Download</a>
-        </div>
+        <a id="dlBtn" class="btn ghost" href="#" download title="Unduh PDF">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/>
+            </svg>
+            Download
+        </a>
+        <button id="fsBtn" class="ghost" title="Layar Penuh">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/>
+            </svg>
+            Full
+        </button>
+        <button id="modeBtn" class="primary" title="Mode Baca">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/>
+            </svg>
+            Mode Baca
+        </button>
+        <button id="playBtn" class="ghost" title="Putar otomatis">
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg>
+            Play
+        </button>
     </div>
 
     <!-- SLIDE MODE -->
     <div id="stage" aria-live="polite">
-        <button class="nav" id="prev" aria-label="Sebelumnya">❮</button>
+        <button class="nav" id="prev" aria-label="Sebelumnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6 9 12l6 6"/></svg>
+        </button>
+
         <div class="deck">
             <div id="L1" class="layer active"><canvas id="c1"></canvas></div>
             <div id="L2" class="layer"><canvas id="c2"></canvas></div>
         </div>
-        <button class="nav" id="next" aria-label="Berikutnya">❯</button>
+
+        <button class="nav" id="next" aria-label="Berikutnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
     </div>
 
     <!-- READ MODE -->
-    <div id="read" aria-label="Read Mode">
-        <div id="doc"></div>
-    </div>
+    <div id="read" aria-label="Read Mode"><div id="doc"></div></div>
 
     <div id="footer">
         <div id="indicator">Page 1 / 1</div>
@@ -139,13 +181,15 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
 
+    // ===== Config =====
+    const NO_GESTURE = true; // tidak ada animasi/gesture
+
     // ===== State =====
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100;
-    let MAX_DPR_SLIDE = 2;
-    let MAX_DPR_READ  = 3;
+    let MAX_DPR_SLIDE = 2, MAX_DPR_READ = 3;
     let inReadMode = false;
 
     // autoplay
@@ -165,10 +209,12 @@
     const playBtn=document.getElementById('playBtn');
     const modeBtn=document.getElementById('modeBtn');
 
+    if (NO_GESTURE) viewer.classList.add('no-gesture');
+
     document.getElementById('dlBtn').href = PDF_URL;
     document.getElementById('fsBtn').onclick=()=>{ if(!document.fullscreenElement) viewer.requestFullscreen?.(); else document.exitFullscreen?.(); };
 
-    // ==== VisualViewport fix tinggi Android ====
+    // ==== VisualViewport fix Android ====
     function applyViewportSize(){
       const vv = window.visualViewport;
       const w = Math.min(1400, Math.round((vv?.width || innerWidth)));
@@ -180,10 +226,9 @@
     (visualViewport||window).addEventListener('resize', applyViewportSize);
     (visualViewport||window).addEventListener('scroll', applyViewportSize);
 
-    // ===== Slide rendering =====
+    // ===== Helpers =====
     function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
     function resetClasses(el){ el.className='layer'; }
-    function waitTransition(el){ return new Promise(res=>el.addEventListener('transitionend',res,{once:true})); }
 
     async function calcViewport(page, dprCap){
       const base = page.getViewport({scale:1});
@@ -214,22 +259,25 @@
       prog.style.inset = `0 ${100-pct}% 0 0`;
     }
 
+    // ===== Show halaman (instan, tanpa animasi) =====
     async function show(p, forward=true){
       if(inReadMode) return;
       if (animating) return; animating=true; setNavDisabled(true);
+
       const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
       const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
 
       resetClasses(curL); resetClasses(nxtL);
-      nxtL.classList.add(forward ? 'prep-right':'prep-left');
       await renderFit(p, nxtC, nxtCtx);
-      void nxtL.offsetWidth;
-      curL.classList.add(forward ? 'out-left':'out-right');
-      nxtL.classList.remove('prep-right','prep-left'); nxtL.classList.add('active');
-      await waitTransition(nxtL);
+
+      curL.style.display='none';
+      nxtL.style.display='grid';
+      nxtL.classList.add('active');
+      setTimeout(()=>{ curL.style.display='grid'; }, 0);
 
       active=(active===1)?2:1; pageNum=p; updateIndicator(); setNavDisabled(false); animating=false;
     }
+
     prevBtn.onclick=()=>{ if(pageNum>1) show(pageNum-1,false); };
     nextBtn.onclick=()=>{ if(pageNum<numPages) show(pageNum+1,true); };
 
@@ -240,33 +288,27 @@
       if(target!==pageNum) show(target, target>pageNum);
     });
 
-    // ====== AUTOPLAY (Play/Pause) hanya untuk Slide Mode ======
+    // ====== AUTOPLAY ======
     function startAuto(){
       if (inReadMode || auto) return;
       auto = true;
-      playBtn.textContent = '⏸ Pause';
-      timer = setInterval(()=>{
-        if(pageNum < numPages) show(pageNum+1,true);
-        else show(1,true);
-      }, SLIDE_MS);
+      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
+      timer = setInterval(()=>{ (pageNum < numPages) ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
     }
     function stopAuto(){
       auto = false;
-      playBtn.textContent = '▶️ Play';
+      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
       if (timer){ clearInterval(timer); timer=null; }
     }
     playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
-    // toggle via keyboard (spacebar) saat di slide mode
+    // Spacebar toggle auto (slide mode)
     document.addEventListener('keydown', (e)=>{
       if (inReadMode) return;
-      if (e.code === 'Space'){
-        e.preventDefault();
-        auto ? stopAuto() : startAuto();
-      }
+      if (e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
     });
 
-    // ===== Read Mode (continuous fit-width + lazy render) =====
+    // ===== Read Mode (lazy render) =====
     const io = new IntersectionObserver(async (entries)=>{
       for(const ent of entries){
         if(ent.isIntersecting){
@@ -292,7 +334,6 @@
     }, {root: read, rootMargin:'200px 0px', threshold:0.01});
 
     function enterReadMode(){
-      // matikan autoplay saat masuk baca
       stopAuto();
       inReadMode=true;
       stage.style.display='none';
@@ -305,16 +346,14 @@
         docEl.appendChild(cnv); docEl.appendChild(pinfo);
         io.observe(cnv);
       }
-      modeBtn.textContent='🎞️ Mode Slide';
-      // nonaktifkan tombol play di read mode
+      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
       playBtn.disabled = true; playBtn.title = 'Play hanya di Mode Slide';
-      setTimeout(()=>{ const target = docEl.querySelector(`canvas[data-page="${pageNum}"]`); target?.scrollIntoView({block:'center'}); }, 50);
     }
     function exitReadMode(){
       inReadMode=false;
       read.style.display='none';
       stage.style.display='grid';
-      modeBtn.textContent='📖 Mode Baca';
+      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
       playBtn.disabled = false; playBtn.title = 'Putar otomatis';
       show(pageNum,true);
     }
@@ -329,6 +368,7 @@
       pdfDoc = await task.promise;
       numPages = pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum, c1, ctx1);
+      L1.style.display='grid'; L2.style.display='none';
     })();
 </script>
 </body>
