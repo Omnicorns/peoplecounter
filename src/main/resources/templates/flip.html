@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>PDF Pro Viewer</title>
+    <title>PDF Pro Viewer — Slide & Baca</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
@@ -16,7 +16,6 @@
         html,body{height:100%}
         body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
 
-        /* ===== Background FX ===== */
         .bgfx{position:fixed;inset:0;pointer-events:none;z-index:0;}
         .bg-gradient{position:absolute;inset:-20%;filter:blur(70px);opacity:.6;background:
           radial-gradient(900px 500px at 10% 10%, #1a2d5a55, transparent 60%),
@@ -28,114 +27,68 @@
           mask: radial-gradient(ellipse at 50% 30%, #000 55%, transparent 68%);
           opacity:.35;}
 
-        /* ===== Shell ===== */
         #viewer{
           --pad:12px;
-          width:min(100dvw,1400px); height:min(100dvh,900px); margin:auto;
-          display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
+          width:min(100vw,1400px);
+          height:min(100vh,900px);
+          margin:auto; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
           background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
           backdrop-filter:blur(2px)
         }
-        @supports not (height: 100dvh){
-          #viewer{ width:min(100vw,1400px); height:min(100vh,900px); }
+        @supports (height: 100svh){
+          #viewer{
+            width:min(100svw,1400px);
+            height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px);
+          }
         }
 
-        /* ===== Top bar (responsive) ===== */
         #top{
           display:flex; flex-wrap:wrap; gap:10px 8px;
           padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
           background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
           border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
         }
-        .brand{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px;
-          background:linear-gradient(180deg,#151923,#0e1219); box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-        .brand b{letter-spacing:.25px}
+        .brand{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:linear-gradient(180deg,#151923,#0e1219)}
+        .row{display:flex; align-items:center; gap:8px}
 
-        .row{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
-
-        button,.btn,input,select{
-          height:36px; border:none; outline:none; border-radius:12px;
-          background:#212733; color:var(--text); padding:0 12px;
-          display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-          box-shadow:inset 0 -1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
-          transition:transform .12s ease, filter .12s ease, background .2s
+        button,.btn,input{
+          height:36px; border:none; border-radius:12px; background:#212733; color:var(--text); padding:0 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer
         }
-        button:hover,.btn:hover{filter:brightness(1.06)}
-        button:active{transform:translateY(1px)}
         .ghost{background:transparent; border:1px solid var(--ring)}
-        .primary{background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700; box-shadow:0 6px 20px #2db36d40}
-        .seg{display:inline-flex; background:#161b25; border:1px solid var(--ring); border-radius:14px; overflow:hidden}
-        .seg button{background:transparent; border-radius:0; height:32px; padding:0 10px}
-        .seg button.active{background:#262e3a}
-        input[type=number]{width:5.2rem; background:#141923; border:1px solid #202534}
+        .primary{background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700}
 
-        /* Slider */
-        .range{appearance:none; height:6px; border-radius:999px; background:#10141b; outline:none; width:160px; border:1px solid #232a39}
-        .range::-webkit-slider-thumb{appearance:none; width:18px; height:18px; border-radius:50%; background:linear-gradient(180deg,var(--acc),#249a58); border:0; box-shadow:0 1px 0 #fff4 inset, 0 0 0 3px #1a2a22}
-
-        /* ===== Stage ===== */
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
-        #stage::before{content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 44%)}
-
         .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px}
         .layer{position:absolute; inset:0; display:grid; place-items:center; will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
-        canvas{
-          max-width:100%; max-height:100%; background:#fff; border-radius:14px;
-          box-shadow:0 28px 60px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.05) inset;
-          display:block; /* penting untuk hilangkan baseline-gap */
-        }
-
+        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block}
         .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
         .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
         .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
         .out-left  {transform:translateX(-26%) rotateY(-16deg);  opacity:0;   z-index:1}
-        .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1} /* <= fix % -> deg */
+        .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1}
 
-        /* Arrows */
-        .nav{position:absolute; top:50%; transform:translateY(-50%); z-index:10; background:rgba(0,0,0,.35); border:1px solid var(--ring); width:46px; aspect-ratio:1/1; display:grid; place-items:center; font-size:18px; border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.35)}
-        .nav:hover{background:rgba(0,0,0,.48)}
+        .nav{position:absolute; top:50%; transform:translateY(-50%); z-index:10; background:rgba(0,0,0,.35); border:1px solid var(--ring); width:46px; aspect-ratio:1/1; display:grid; place-items:center; border-radius:50%}
         #prev{left:14px} #next{right:14px}
 
-        /* Footer */
         #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
         #indicator{font-variant-numeric:tabular-nums; color:var(--sub)}
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
 
-        /* Thumbs */
         #thumbs{display:none; gap:8px; overflow-x:auto; padding:10px; background:rgba(0,0,0,.42); border-top:1px solid #1d2330}
-        #thumbs canvas{width:92px; height:auto; opacity:.7; cursor:pointer; transition:transform .18s, opacity .18s; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.35)}
-        #thumbs canvas:hover{opacity:.96; transform:translateY(-2px)}
-        #thumbs canvas.active{opacity:1; outline:2px solid var(--acc)}
+        #thumbs canvas{width:92px; height:auto; opacity:.7; cursor:pointer; border-radius:8px}
 
-        /* ===== Mobile tweaks ===== */
+        /* READ MODE */
+        #read{display:none; flex:1; background:#0b0f15; overflow:auto}
+        #doc{margin:0 auto; padding:16px; width:min(100%, 1100px)}
+        .page{margin:0 auto 16px auto; display:block; background:#fff; border-radius:12px; box-shadow:0 12px 26px rgba(0,0,0,.45)}
+        .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
+
         @media (max-width: 860px){
-          #top{gap:8px}
           .brand b{display:none}
-          .row.wrap{flex-basis:100%; justify-content:space-between}
-          .row.grow{flex:1; min-width:0}
-          .icon-btn{width:40px; height:40px; padding:0; justify-content:center}
-          .icon-btn .label{display:none}
-          input[type=number]{height:40px}
-          #zoomVal{display:none}
-          .range{width:120px}
-          .seg{height:36px}
-          .seg button{height:34px; padding:0 8px}
           #footer{gap:8px}
         }
-
-        /* Reduced motion */
-        @media (prefers-reduced-motion: reduce){
-          .layer{transition:none}
-        }
-
-        /* Toast & Loader (simple) */
-        #loader{position:absolute; inset:0; display:none; place-items:center}
-        #loader::after{content:""; width:40px; height:40px; border-radius:50%; border:4px solid #2a2f3a; border-top-color:var(--acc); animation:spin 1s linear infinite}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        .toast{position:absolute; left:50%; bottom:18px; transform:translateX(-50%); background:#141a22; border:1px solid #2a2f3a; padding:8px 12px; border-radius:10px; opacity:0; pointer-events:none}
-        .toast.show{opacity:1; transition:opacity .2s}
     </style>
 </head>
 <body>
@@ -143,41 +96,16 @@
 
 <div id="viewer" aria-label="PDF Pro Viewer">
     <div id="top">
-        <!-- Baris 1: Brand + Aksi -->
-        <div class="row">
-            <div class="brand"><span>📄</span><b>PDF Pro Viewer</b></div>
-        </div>
-
-        <div class="row grow" style="margin-left:auto">
-            <button id="playBtn" class="icon-btn" title="Auto-play" aria-label="Auto-play">▶️ <span class="label">Play</span></button>
-            <button id="fsBtn" class="icon-btn" title="Layar Penuh" aria-label="Fullscreen">⛶ <span class="label">Full</span></button>
-            <button id="thumbBtn" class="icon-btn" title="Thumbnails" aria-label="Thumbnails">🖼 <span class="label">Thumbs</span></button>
-            <a id="dlBtn" class="btn ghost icon-btn" href="#" download title="Download PDF" aria-label="Download">⬇️ <span class="label">Download</span></a>
-        </div>
-
-        <!-- Baris 2: Fit + Zoom + Goto -->
-        <div class="row wrap">
-            <div class="row">
-                <div class="seg" role="radiogroup" aria-label="Fit mode">
-                    <button id="fitPage" class="active" title="Fit Page" aria-pressed="true">↕ <span class="label">Fit</span></button>
-                    <button id="fitWidth" title="Fit Width" aria-pressed="false">↔ <span class="label">Width</span></button>
-                </div>
-            </div>
-
-            <div class="row">
-                <button id="zoomOut" class="icon-btn" title="Zoom out" aria-label="Zoom out">−</button>
-                <input id="zoomVal" type="number" step="10" min="10" max="500" value="100" aria-label="Zoom %"/>
-                <input id="zoomRange" class="range" type="range" min="10" max="500" step="1" value="100" title="Zoom" />
-                <button id="zoomIn"  class="icon-btn" title="Zoom in" aria-label="Zoom in">+</button>
-            </div>
-
-            <div class="row" style="margin-left:auto">
-                <input id="goto" type="number" min="1" value="1" aria-label="Go to page"/>
-                <button id="goBtn" class="primary">Go</button>
-            </div>
+        <div class="brand"><span>📄</span><b>PDF Pro Viewer</b></div>
+        <div class="row" style="margin-left:auto; gap:8px">
+            <button id="playBtn" class="ghost" title="Putar otomatis">▶️ Play</button>
+            <button id="modeBtn" class="primary">📖 Mode Baca</button>
+            <button id="fsBtn"  class="ghost">⛶ Full</button>
+            <a id="dlBtn" class="ghost" href="#" download>⬇️ Download</a>
         </div>
     </div>
 
+    <!-- SLIDE MODE -->
     <div id="stage" aria-live="polite">
         <button class="nav" id="prev" aria-label="Sebelumnya">❮</button>
         <div class="deck">
@@ -185,8 +113,11 @@
             <div id="L2" class="layer"><canvas id="c2"></canvas></div>
         </div>
         <button class="nav" id="next" aria-label="Berikutnya">❯</button>
-        <div id="loader"><i class="spin" aria-hidden="true"></i></div>
-        <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- READ MODE -->
+    <div id="read" aria-label="Read Mode">
+        <div id="doc"></div>
     </div>
 
     <div id="footer">
@@ -197,7 +128,6 @@
     <div id="thumbs" aria-label="Thumbnails"></div>
 </div>
 
-<!-- Thymeleaf default URL (aman kalau tanpa Thymeleaf juga) -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
@@ -205,64 +135,61 @@
 </script>
 
 <script>
-    /* ====== PDF.js init ====== */
+    // ===== PDF.js =====
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
-    if (pdfjsLib.RenderingPrefs && 'disableCreateImageBitmap' in pdfjsLib.RenderingPrefs) {
-      pdfjsLib.RenderingPrefs.disableCreateImageBitmap = true;
-    }
 
-    /* ====== State & Elements ====== */
-    const params   = new URLSearchParams(location.search);
-    let PDF_URL    = params.get('pdf') || (typeof DEFAULT_PDF !== 'undefined' ? DEFAULT_PDF : '/file.pdf');
-    let SLIDE_MS   = 8000;
-    let MAX_DPR    = 2;
-    let RTL_TURN   = true; // kanan→kiri saat forward
-
+    // ===== State =====
+    const params = new URLSearchParams(location.search);
+    let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
-    let active=1, auto=false, timer=null, animating=false;
-    let fitMode='page'; // 'page' | 'width'
-    let zoomPct=100;    // user zoom override (persen)
+    let active=1, animating=false, fitMode='page', zoomPct=100;
+    let MAX_DPR_SLIDE = 2;
+    let MAX_DPR_READ  = 3;
+    let inReadMode = false;
 
-    const stage=document.getElementById('stage');
-    const deck =document.querySelector('.deck');
+    // autoplay
+    let auto = false, timer = null, SLIDE_MS = 8000;
+
+    const viewer=document.getElementById('viewer');
+    const stage =document.getElementById('stage');
+    const read  =document.getElementById('read');
+    const docEl =document.getElementById('doc');
     const L1=document.getElementById('L1'), L2=document.getElementById('L2');
     const c1=document.getElementById('c1'), c2=document.getElementById('c2');
     const ctx1=c1.getContext('2d'), ctx2=c2.getContext('2d');
     const prevBtn=document.getElementById('prev');
     const nextBtn=document.getElementById('next');
-    const playBtn=document.getElementById('playBtn');
     const indicator=document.getElementById('indicator');
-    const thumbs=document.getElementById('thumbs');
-    const loader=document.getElementById('loader');
-    const toast =document.getElementById('toast');
-    const prog  =document.getElementById('prog');
-    const progressBar=document.getElementById('progress');
-    const zoomIn=document.getElementById('zoomIn');
-    const zoomOut=document.getElementById('zoomOut');
-    const zoomVal=document.getElementById('zoomVal');
-    const zoomRange=document.getElementById('zoomRange');
-    const fitPage=document.getElementById('fitPage');
-    const fitWidth=document.getElementById('fitWidth');
-    const gotoInp=document.getElementById('goto');
-    const goBtn  =document.getElementById('goBtn');
+    const progressBar=document.getElementById('progress'), prog=document.getElementById('prog');
+    const playBtn=document.getElementById('playBtn');
+    const modeBtn=document.getElementById('modeBtn');
 
     document.getElementById('dlBtn').href = PDF_URL;
+    document.getElementById('fsBtn').onclick=()=>{ if(!document.fullscreenElement) viewer.requestFullscreen?.(); else document.exitFullscreen?.(); };
 
-    function showToast(msg, ms=1800){
-      toast.textContent=msg; toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'), ms);
+    // ==== VisualViewport fix tinggi Android ====
+    function applyViewportSize(){
+      const vv = window.visualViewport;
+      const w = Math.min(1400, Math.round((vv?.width || innerWidth)));
+      const h = Math.min(900,  Math.round((vv?.height || innerHeight)));
+      viewer.style.width  = w + 'px';
+      viewer.style.height = h + 'px';
     }
-    function resetClasses(el){ el.className='layer'; }
-    function waitTransition(el){ return new Promise(res=>{ el.addEventListener('transitionend',res,{once:true}); }); }
-    function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
+    applyViewportSize();
+    (visualViewport||window).addEventListener('resize', applyViewportSize);
+    (visualViewport||window).addEventListener('scroll', applyViewportSize);
 
-    /* ====== Rendering ====== */
-    async function calcViewport(page){
+    // ===== Slide rendering =====
+    function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
+    function resetClasses(el){ el.className='layer'; }
+    function waitTransition(el){ return new Promise(res=>el.addEventListener('transitionend',res,{once:true})); }
+
+    async function calcViewport(page, dprCap){
       const base = page.getViewport({scale:1});
-      const W = Math.max(1, deck.clientWidth);
-      const H = Math.max(1, deck.clientHeight);
-      const dpr = Math.min(MAX_DPR, Math.max(1, window.devicePixelRatio||1));
+      const W = Math.max(1, stage.clientWidth  - 24);
+      const H = Math.max(1, stage.clientHeight - 24);
+      const dpr = Math.min(dprCap, Math.max(1, devicePixelRatio||1));
       const fitScale = (fitMode==='width') ? (W / base.width) : Math.min(W/base.width, H/base.height);
       const scale = Math.max(0.1, fitScale * (zoomPct/100) * dpr);
       return { viewport: page.getViewport({ scale }), cssScale: scale/dpr, dpr };
@@ -270,150 +197,139 @@
 
     async function renderFit(p, canvas, ctx){
       const page = await pdfDoc.getPage(p);
-      const { viewport, cssScale, dpr } = await calcViewport(page);
-      const w = Math.max(1, Math.floor(viewport.width));
-      const h = Math.max(1, Math.floor(viewport.height));
-      if (canvas.width !== w) canvas.width = w;
-      if (canvas.height !== h) canvas.height = h;
-      const sw = Math.floor(viewport.width / dpr);
-      const sh = Math.floor(viewport.height / dpr);
-      canvas.style.width  = sw + 'px';
-      canvas.style.height = sh + 'px';
-
-      ctx.save(); ctx.setTransform(1,0,0,1,0,0);
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.restore();
-
+      const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE);
+      const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
+      canvas.width=w; canvas.height=h;
+      canvas.style.width  = Math.floor(w/dpr)+'px';
+      canvas.style.height = Math.floor(h/dpr)+'px';
+      ctx.imageSmoothingEnabled=false;
+      ctx.clearRect(0,0,w,h);
       await page.render({ canvasContext: ctx, viewport, intent:'print' }).promise;
     }
 
     function updateIndicator(){
       indicator.textContent = `Page ${pageNum} / ${numPages}`;
-      gotoInp.max = numPages; gotoInp.value = pageNum;
       const pct = Math.round(((pageNum-1)/(numPages-1||1))*100);
       progressBar.style.setProperty('--p', pct + '%');
       prog.style.inset = `0 ${100-pct}% 0 0`;
-      document.querySelectorAll('#thumbs canvas').forEach((t,i)=>t.classList.toggle('active', i+1===pageNum));
     }
 
-    /* ====== Animated show ====== */
     async function show(p, forward=true){
+      if(inReadMode) return;
       if (animating) return; animating=true; setNavDisabled(true);
-      const curL=(active===1)?L1:L2;
-      const nxtL=(active===1)?L2:L1;
-      const nxtCanvas=(active===1)?c2:c1;
-      const nxtCtx=(active===1)?ctx2:ctx1;
+      const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
+      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
 
       resetClasses(curL); resetClasses(nxtL);
-      const enteringFromRight = forward ? RTL_TURN : !RTL_TURN;
-      nxtL.classList.add(enteringFromRight ? 'prep-right' : 'prep-left');
+      nxtL.classList.add(forward ? 'prep-right':'prep-left');
+      await renderFit(p, nxtC, nxtCtx);
+      void nxtL.offsetWidth;
+      curL.classList.add(forward ? 'out-left':'out-right');
+      nxtL.classList.remove('prep-right','prep-left'); nxtL.classList.add('active');
+      await waitTransition(nxtL);
 
-      await renderFit(p, nxtCanvas, nxtCtx);
-
-      void nxtL.offsetWidth; // reflow
-      curL.classList.add(enteringFromRight ? 'out-left' : 'out-right');
-      nxtL.classList.remove('prep-right','prep-left');
-      nxtL.classList.add('active');
-
-      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!reduced) await waitTransition(nxtL);
-
-      active=(active===1)?2:1;
-      updateIndicator();
-      setNavDisabled(false); animating=false;
+      active=(active===1)?2:1; pageNum=p; updateIndicator(); setNavDisabled(false); animating=false;
     }
+    prevBtn.onclick=()=>{ if(pageNum>1) show(pageNum-1,false); };
+    nextBtn.onclick=()=>{ if(pageNum<numPages) show(pageNum+1,true); };
 
-    /* ====== Controls ====== */
-    function prev(){ if(pageNum>1){ pageNum--; show(pageNum,false); } }
-    function next(){ if(pageNum<numPages){ pageNum++; show(pageNum,true); } }
-
-    prevBtn.onclick=prev; nextBtn.onclick=next;
-    document.addEventListener('keydown',e=>{
-      if(e.key==='ArrowLeft') prev();
-      if(e.key==='ArrowRight') next();
-    });
-
-    function startAuto(){ stopAuto(); timer=setInterval(()=>{ if(pageNum<numPages){ pageNum++; show(pageNum,true);} else { pageNum=1; show(pageNum,true);} }, SLIDE_MS); playBtn.textContent='⛸'; auto=true; }
-    function stopAuto(){ if(timer){ clearInterval(timer); timer=null; } playBtn.textContent='▶️'; auto=false; }
-    playBtn.onclick=()=> auto?stopAuto():startAuto();
-
-    document.getElementById('fsBtn').onclick=()=>{
-      const el=document.getElementById('viewer');
-      if(!document.fullscreenElement) el.requestFullscreen?.(); else document.exitFullscreen?.();
-    };
-    document.getElementById('thumbBtn').onclick=()=>{
-      const t=document.getElementById('thumbs');
-      t.style.display = (t.style.display==='flex')?'none':'flex';
-    };
-
-    // Zoom & Fit
-    function syncZoomInputs(){ zoomVal.value=zoomPct; zoomRange.value=zoomPct; }
-    function applyZoom(val){ zoomPct = Math.min(500, Math.max(10, val|0)); syncZoomInputs(); renderFit(pageNum, active===1?c1:c2, active===1?ctx1:ctx2); }
-    zoomIn.onclick = ()=>applyZoom(zoomPct+10);
-    zoomOut.onclick= ()=>applyZoom(zoomPct-10);
-    zoomVal.onchange = ()=>applyZoom(parseInt(zoomVal.value,10)||100);
-    zoomRange.oninput= ()=>applyZoom(parseInt(zoomRange.value,10)||100);
-
-    function setFit(mode){ fitMode=mode; fitPage.classList.toggle('active', mode==='page'); fitWidth.classList.toggle('active', mode==='width'); renderFit(pageNum, active===1?c1:c2, active===1?ctx1:ctx2); }
-    fitPage.onclick = ()=>setFit('page');
-    fitWidth.onclick= ()=>setFit('width');
-
-    goBtn.onclick = ()=>{ const n=+gotoInp.value|0; if(n>=1 && n<=numPages){ const forward = n>pageNum; pageNum=n; show(pageNum, forward); } };
-
-    // Resize
-    let rT; window.addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(()=> renderFit(pageNum, active===1?c1:c2, active===1?ctx1:ctx2), 120); });
-
-    // Progress scrub
     progressBar.addEventListener('click', (e)=>{
       const rect = progressBar.getBoundingClientRect();
-      const x = e.clientX - rect.left; const pct = Math.max(0, Math.min(1, x/rect.width));
+      const pct = Math.max(0, Math.min(1, (e.clientX-rect.left)/rect.width));
       const target = Math.max(1, Math.round(1 + pct*(numPages-1)));
-      if (target !== pageNum){ const forward = target>pageNum; pageNum = target; show(pageNum, forward); }
+      if(target!==pageNum) show(target, target>pageNum);
     });
 
-    /* ====== Load PDF ====== */
-    (async function(){
-      try{
-        loader.style.display='grid';
-        const loadingTask = pdfjsLib.getDocument({
-          url: PDF_URL,
-          cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/",
-          cMapPacked:true,
-          standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
-          useSystemFonts:true
-        });
-        pdfDoc = await loadingTask.promise;
-        afterLoaded();
-      }catch(err){
-        showToast('Gagal memuat PDF: '+ err.message);
-        console.error(err);
-      }finally{
-        loader.style.display='none';
-      }
-    })();
-
-    async function afterLoaded(name){
-      numPages = pdfDoc.numPages; pageNum=1; active=1; auto=false; stopAuto();
-      await renderFit(pageNum, c1, ctx1);
-      updateIndicator();
-      renderThumbs();
-      document.getElementById('dlBtn').href = PDF_URL;
-      if(name) showToast('Dibuka: '+name);
+    // ====== AUTOPLAY (Play/Pause) hanya untuk Slide Mode ======
+    function startAuto(){
+      if (inReadMode || auto) return;
+      auto = true;
+      playBtn.textContent = '⏸ Pause';
+      timer = setInterval(()=>{
+        if(pageNum < numPages) show(pageNum+1,true);
+        else show(1,true);
+      }, SLIDE_MS);
     }
+    function stopAuto(){
+      auto = false;
+      playBtn.textContent = '▶️ Play';
+      if (timer){ clearInterval(timer); timer=null; }
+    }
+    playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
-    // Thumbnails
-    async function renderThumbs(){
-      thumbs.innerHTML='';
+    // toggle via keyboard (spacebar) saat di slide mode
+    document.addEventListener('keydown', (e)=>{
+      if (inReadMode) return;
+      if (e.code === 'Space'){
+        e.preventDefault();
+        auto ? stopAuto() : startAuto();
+      }
+    });
+
+    // ===== Read Mode (continuous fit-width + lazy render) =====
+    const io = new IntersectionObserver(async (entries)=>{
+      for(const ent of entries){
+        if(ent.isIntersecting){
+          const cnv = ent.target;
+          if(cnv.dataset.rendered) continue;
+          const i = +cnv.dataset.page;
+          const page = await pdfDoc.getPage(i);
+          const base = page.getViewport({scale:1});
+          const containerW = docEl.clientWidth - 2;
+          const dpr = Math.min(MAX_DPR_READ, Math.max(1, devicePixelRatio||1));
+          const scale = (containerW * dpr) / base.width;
+          const vp = page.getViewport({scale});
+          cnv.width  = Math.floor(vp.width);
+          cnv.height = Math.floor(vp.height);
+          cnv.style.width  = Math.floor(vp.width/dpr)+'px';
+          cnv.style.height = Math.floor(vp.height/dpr)+'px';
+          const cctx = cnv.getContext('2d', {alpha:false});
+          cctx.imageSmoothingEnabled=false;
+          await page.render({canvasContext:cctx, viewport:vp, intent:'print'}).promise;
+          cnv.dataset.rendered = '1';
+        }
+      }
+    }, {root: read, rootMargin:'200px 0px', threshold:0.01});
+
+    function enterReadMode(){
+      // matikan autoplay saat masuk baca
+      stopAuto();
+      inReadMode=true;
+      stage.style.display='none';
+      read.style.display='block';
+      docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
-        const t=document.createElement('canvas'); const tctx=t.getContext('2d'); const page=await pdfDoc.getPage(i);
-        const vp=page.getViewport({scale:0.22}); t.width=vp.width; t.height=vp.height;
-        await page.render({canvasContext:tctx, viewport:vp, intent:'print'}).promise;
-        t.onclick=()=>{ if(animating||i===pageNum) return; const forward=i>pageNum; pageNum=i; show(pageNum, forward); };
-        thumbs.appendChild(t);
+        const cnv=document.createElement('canvas');
+        cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
+        const pinfo=document.createElement('div'); pinfo.className='pinfo'; pinfo.textContent=`Halaman ${i}`;
+        docEl.appendChild(cnv); docEl.appendChild(pinfo);
+        io.observe(cnv);
       }
-      thumbs.firstChild?.classList.add('active');
+      modeBtn.textContent='🎞️ Mode Slide';
+      // nonaktifkan tombol play di read mode
+      playBtn.disabled = true; playBtn.title = 'Play hanya di Mode Slide';
+      setTimeout(()=>{ const target = docEl.querySelector(`canvas[data-page="${pageNum}"]`); target?.scrollIntoView({block:'center'}); }, 50);
     }
+    function exitReadMode(){
+      inReadMode=false;
+      read.style.display='none';
+      stage.style.display='grid';
+      modeBtn.textContent='📖 Mode Baca';
+      playBtn.disabled = false; playBtn.title = 'Putar otomatis';
+      show(pageNum,true);
+    }
+    modeBtn.onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
+
+    // ===== Load PDF =====
+    (async function(){
+      const task = pdfjsLib.getDocument({url: PDF_URL,
+        cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
+        standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/", useSystemFonts:true
+      });
+      pdfDoc = await task.promise;
+      numPages = pdfDoc.numPages; pageNum=1; updateIndicator();
+      await renderFit(pageNum, c1, ctx1);
+    })();
 </script>
 </body>
 </html>
