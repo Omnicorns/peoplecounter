@@ -2,13 +2,15 @@
 <html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>PDF Pro Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
           --bg:#07080b; --panel:#0f1218; --muted:#1a1f28; --acc:#2db36d; --acc2:#42c18b; --text:#eaf0ff; --sub:#9aa3b2;
           --ring:#2a2f3a; --danger:#ff5468; --warn:#f6c445; --ok:#2ecc71;
+          --safe-top: env(safe-area-inset-top, 0px);
+          --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         *{box-sizing:border-box}
         html,body{height:100%}
@@ -16,9 +18,10 @@
 
         /* ===== Background FX ===== */
         .bgfx{position:fixed;inset:0;pointer-events:none;z-index:0;}
-        .bg-gradient{position:absolute;inset:-20%;filter:blur(70px);opacity:.6;background:radial-gradient(900px 500px at 10% 10%, #1a2d5a55, transparent 60%),
-                                            radial-gradient(900px 500px at 90% 20%, #1d6d4e55, transparent 60%),
-                                            radial-gradient(900px 600px at 50% 100%, #2b1a4a55, transparent 60%);}
+        .bg-gradient{position:absolute;inset:-20%;filter:blur(70px);opacity:.6;background:
+          radial-gradient(900px 500px at 10% 10%, #1a2d5a55, transparent 60%),
+          radial-gradient(900px 500px at 90% 20%, #1d6d4e55, transparent 60%),
+          radial-gradient(900px 600px at 50% 100%, #2b1a4a55, transparent 60%);}
         .grid{position:absolute;inset:0;background:
           linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px,
           linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px;
@@ -26,18 +29,35 @@
           opacity:.35;}
 
         /* ===== Shell ===== */
-        #viewer{--pad:12px; width:min(100vw,1400px); height:min(100vh,900px); margin:auto; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
+        #viewer{
+          --pad:12px;
+          width:min(100vw,1400px); height:min(100vh,900px); margin:auto;
+          display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
           background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
-          backdrop-filter:blur(2px)}
+          backdrop-filter:blur(2px)
+        }
 
-        /* ===== Top bar ===== */
-        #top{display:flex; align-items:center; gap:10px; padding:10px var(--pad); background:rgba(16,18,24,.72); backdrop-filter:blur(12px); border-bottom:1px solid var(--ring); position:relative}
-        .brand{display:flex; align-items:center; gap:10px; padding:6px 12px; border-radius:12px; background:linear-gradient(180deg,#151923,#0e1219); box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+        /* ===== Top bar (responsive) ===== */
+        #top{
+          display:flex; flex-wrap:wrap; gap:10px 8px;
+          padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
+          background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
+          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
+        }
+        .brand{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px;
+          background:linear-gradient(180deg,#151923,#0e1219); box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
         .brand b{letter-spacing:.25px}
-        .row{display:flex; align-items:center; gap:8px}
 
-        button,.btn,input,select{height:36px; border:none; outline:none; border-radius:12px; background:#212733; color:var(--text); padding:0 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:inset 0 -1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); transition:transform .12s ease, filter .12s ease, background .2s}
+        .row{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
+
+        button,.btn,input,select{
+          height:36px; border:none; outline:none; border-radius:12px;
+          background:#212733; color:var(--text); padding:0 12px;
+          display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+          box-shadow:inset 0 -1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+          transition:transform .12s ease, filter .12s ease, background .2s
+        }
         button:hover,.btn:hover{filter:brightness(1.06)}
         button:active{transform:translateY(1px)}
         .ghost{background:transparent; border:1px solid var(--ring)}
@@ -71,9 +91,8 @@
         #prev{left:14px} #next{right:14px}
 
         /* Footer */
-        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7)}
+        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
         #indicator{font-variant-numeric:tabular-nums; color:var(--sub)}
-
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
 
@@ -83,18 +102,25 @@
         #thumbs canvas:hover{opacity:.96; transform:translateY(-2px)}
         #thumbs canvas.active{opacity:1; outline:2px solid var(--acc)}
 
-        /* Loader / toast */
-        #loader{position:absolute; inset:0; display:grid; place-items:center; background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.25)); z-index:20; backdrop-filter:blur(2px)}
-        .spin{width:48px; height:48px; border-radius:50%; border:3px solid rgba(255,255,255,.15); border-top-color:var(--acc); animation:spin 1s linear infinite}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        .toast{position:absolute; left:50%; bottom:18px; transform:translateX(-50%); background:#0f141d; border:1px solid var(--ring); padding:10px 14px; border-radius:12px; color:#dfe6f3; z-index:30; display:none}
-        .toast.show{display:block}
-
-        /* Small */
+        /* ===== Mobile tweaks ===== */
         @media (max-width: 860px){
-          #top{flex-wrap:wrap}
-          input[type=number]{width:4.2rem}
+          /* Dua baris: baris1 brand+aksi, baris2 kontrol */
+          #top{gap:8px}
           .brand b{display:none}
+          .row.wrap{flex-basis:100%; justify-content:space-between}
+          .row.grow{flex:1; min-width:0}
+          /* tombol icon */
+          .icon-btn{width:40px; height:40px; padding:0; justify-content:center}
+          .icon-btn .label{display:none} /* sembunyikan teks di mobile */
+          /* input & slider */
+          input[type=number]{height:40px}
+          #zoomVal{display:none}           /* sembunyikan angka zoom */
+          .range{width:120px}
+          /* fit chips lebih rapat */
+          .seg{height:36px}
+          .seg button{height:34px; padding:0 8px}
+          /* progress clickable lebih mudah */
+          #footer{gap:8px}
         }
 
         /* Reduced motion */
@@ -104,41 +130,42 @@
     </style>
 </head>
 <body>
-<div class="bgfx">
-    <div class="bg-gradient"></div>
-    <div class="grid"></div>
-</div>
+<div class="bgfx"><div class="bg-gradient"></div><div class="grid"></div></div>
 
 <div id="viewer" aria-label="PDF Pro Viewer">
     <div id="top">
-        <div class="brand"><span>📄</span><b>PDF Pro Viewer</b></div>
-
-        <!-- Fit -->
-        <div class="row seg" role="radiogroup" aria-label="Fit mode">
-            <button id="fitPage" class="active" title="Fit Page" aria-pressed="true">↕ Fit</button>
-            <button id="fitWidth" title="Fit Width" aria-pressed="false">↔ Fit</button>
-        </div>
-
-        <!-- Zoom -->
+        <!-- Baris 1: Brand + Aksi -->
         <div class="row">
-            <button id="zoomOut" title="Zoom out">−</button>
-            <input id="zoomVal" type="number" step="10" min="10" max="500" value="100" aria-label="Zoom %"/>
-            <input id="zoomRange" class="range" type="range" min="10" max="500" step="1" value="100" title="Zoom" />
-            <button id="zoomIn"  title="Zoom in">+</button>
+            <div class="brand"><span>📄</span><b>PDF Pro Viewer</b></div>
         </div>
 
-        <!-- Actions (Open, Settings, Help REMOVED) -->
-        <div class="row">
-            <button id="playBtn" title="Auto-play">▶️ Play</button>
-            <button id="fsBtn" title="Fullscreen">⛶</button>
-            <button id="thumbBtn" title="Thumbnails">🖼 Thumbs</button>
-            <a id="dlBtn" class="btn ghost" href="#" download title="Download PDF">⬇️ Download</a>
+        <div class="row grow" style="margin-left:auto">
+            <button id="playBtn" class="icon-btn" title="Auto-play" aria-label="Auto-play">▶️ <span class="label">Play</span></button>
+            <button id="fsBtn" class="icon-btn" title="Layar Penuh" aria-label="Fullscreen">⛶ <span class="label">Full</span></button>
+            <button id="thumbBtn" class="icon-btn" title="Thumbnails" aria-label="Thumbnails">🖼 <span class="label">Thumbs</span></button>
+            <a id="dlBtn" class="btn ghost icon-btn" href="#" download title="Download PDF" aria-label="Download">⬇️ <span class="label">Download</span></a>
         </div>
 
-        <!-- Go to -->
-        <div class="row" style="margin-left:auto">
-            <input id="goto" type="number" min="1" value="1" aria-label="Go to page"/>
-            <button id="goBtn" class="primary">Go</button>
+        <!-- Baris 2: Fit + Zoom + Goto -->
+        <div class="row wrap">
+            <div class="row">
+                <div class="seg" role="radiogroup" aria-label="Fit mode">
+                    <button id="fitPage" class="active" title="Fit Page" aria-pressed="true">↕ <span class="label">Fit</span></button>
+                    <button id="fitWidth" title="Fit Width" aria-pressed="false">↔ <span class="label">Width</span></button>
+                </div>
+            </div>
+
+            <div class="row">
+                <button id="zoomOut" class="icon-btn" title="Zoom out" aria-label="Zoom out">−</button>
+                <input id="zoomVal" type="number" step="10" min="10" max="500" value="100" aria-label="Zoom %"/>
+                <input id="zoomRange" class="range" type="range" min="10" max="500" step="1" value="100" title="Zoom" />
+                <button id="zoomIn"  class="icon-btn" title="Zoom in" aria-label="Zoom in">+</button>
+            </div>
+
+            <div class="row" style="margin-left:auto">
+                <input id="goto" type="number" min="1" value="1" aria-label="Go to page"/>
+                <button id="goBtn" class="primary">Go</button>
+            </div>
         </div>
     </div>
 
@@ -169,14 +196,14 @@
 </script>
 
 <script>
-    // ====== PDF.js init ======
+    /* ====== PDF.js init ====== */
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
     if (pdfjsLib.RenderingPrefs && 'disableCreateImageBitmap' in pdfjsLib.RenderingPrefs) {
       pdfjsLib.RenderingPrefs.disableCreateImageBitmap = true;
     }
 
-    // ====== State & Elements ======
+    /* ====== State & Elements ====== */
     const params   = new URLSearchParams(location.search);
     let PDF_URL    = params.get('pdf') || (typeof DEFAULT_PDF !== 'undefined' ? DEFAULT_PDF : '/file.pdf');
     let SLIDE_MS   = 8000;
@@ -221,13 +248,12 @@
     function waitTransition(el){ return new Promise(res=>{ el.addEventListener('transitionend',res,{once:true}); }); }
     function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
 
-    // ====== Rendering ======
+    /* ====== Rendering ====== */
     async function calcViewport(page){
       const base = page.getViewport({scale:1});
       const W = Math.max(1, deck.clientWidth);
       const H = Math.max(1, deck.clientHeight);
       const dpr = Math.min(MAX_DPR, Math.max(1, window.devicePixelRatio||1));
-
       const fitScale = (fitMode==='width') ? (W / base.width) : Math.min(W/base.width, H/base.height);
       const scale = Math.max(0.1, fitScale * (zoomPct/100) * dpr);
       return { viewport: page.getViewport({ scale }), cssScale: scale/dpr, dpr };
@@ -236,7 +262,6 @@
     async function renderFit(p, canvas, ctx){
       const page = await pdfDoc.getPage(p);
       const { viewport, cssScale, dpr } = await calcViewport(page);
-
       const w = Math.max(1, Math.floor(viewport.width));
       const h = Math.max(1, Math.floor(viewport.height));
       if (canvas.width !== w) canvas.width = w;
@@ -246,11 +271,9 @@
       canvas.style.width  = sw + 'px';
       canvas.style.height = sh + 'px';
 
-      ctx.save();
-      ctx.setTransform(1,0,0,1,0,0);
+      ctx.save(); ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.restore();
 
       await page.render({ canvasContext: ctx, viewport, intent:'print' }).promise;
@@ -265,24 +288,21 @@
       document.querySelectorAll('#thumbs canvas').forEach((t,i)=>t.classList.toggle('active', i+1===pageNum));
     }
 
-    // ====== Animated show ======
+    /* ====== Animated show ====== */
     async function show(p, forward=true){
       if (animating) return; animating=true; setNavDisabled(true);
-
       const curL=(active===1)?L1:L2;
       const nxtL=(active===1)?L2:L1;
       const nxtCanvas=(active===1)?c2:c1;
       const nxtCtx=(active===1)?ctx2:ctx1;
 
       resetClasses(curL); resetClasses(nxtL);
-
       const enteringFromRight = forward ? RTL_TURN : !RTL_TURN;
       nxtL.classList.add(enteringFromRight ? 'prep-right' : 'prep-left');
 
       await renderFit(p, nxtCanvas, nxtCtx);
 
-      // Force reflow then animate
-      void nxtL.offsetWidth;
+      void nxtL.offsetWidth; // reflow
       curL.classList.add(enteringFromRight ? 'out-left' : 'out-right');
       nxtL.classList.remove('prep-right','prep-left');
       nxtL.classList.add('active');
@@ -295,7 +315,7 @@
       setNavDisabled(false); animating=false;
     }
 
-    // ====== Controls ======
+    /* ====== Controls ====== */
     function prev(){ if(pageNum>1){ pageNum--; show(pageNum,false); } }
     function next(){ if(pageNum<numPages){ pageNum++; show(pageNum,true); } }
 
@@ -305,8 +325,8 @@
       if(e.key==='ArrowRight') next();
     });
 
-    function startAuto(){ stopAuto(); timer=setInterval(()=>{ if(pageNum<numPages){ pageNum++; show(pageNum,true);} else { pageNum=1; show(pageNum,true);} }, SLIDE_MS); playBtn.textContent='⏸ Pause'; auto=true; }
-    function stopAuto(){ if(timer){ clearInterval(timer); timer=null; } playBtn.textContent='▶️ Play'; auto=false; }
+    function startAuto(){ stopAuto(); timer=setInterval(()=>{ if(pageNum<numPages){ pageNum++; show(pageNum,true);} else { pageNum=1; show(pageNum,true);} }, SLIDE_MS); playBtn.textContent='⛸'; auto=true; }
+    function stopAuto(){ if(timer){ clearInterval(timer); timer=null; } playBtn.textContent='▶️'; auto=false; }
     playBtn.onclick=()=> auto?stopAuto():startAuto();
 
     document.getElementById('fsBtn').onclick=()=>{
@@ -314,7 +334,8 @@
       if(!document.fullscreenElement) el.requestFullscreen?.(); else document.exitFullscreen?.();
     };
     document.getElementById('thumbBtn').onclick=()=>{
-      thumbs.style.display = (thumbs.style.display==='flex')?'none':'flex';
+      const t=document.getElementById('thumbs');
+      t.style.display = (t.style.display==='flex')?'none':'flex';
     };
 
     // Zoom & Fit
@@ -342,7 +363,7 @@
       if (target !== pageNum){ const forward = target>pageNum; pageNum = target; show(pageNum, forward); }
     });
 
-    // ====== Load remote only ======
+    /* ====== Load PDF ====== */
     (async function(){
       try{
         loader.style.display='grid';
