@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Sarinah Catalogue</title>
+    <title>Sarinah Catalogue — Fast PDF Viewer</title>
+
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <!-- CDN warmup -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
     <style>
         :root{
           --bg:#07080b; --panel:#0f1218; --muted:#1a1f28; --acc:#2db36d; --acc2:#42c18b; --text:#eaf0ff; --sub:#9aa3b2;
@@ -188,8 +195,17 @@
 
 <script>
     // ===== PDF.js =====
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
+
+    // Prewarm worker (kurangi cold start)
+    try {
+      if (!pdfjsLib.GlobalWorkerOptions.workerPort) {
+        const warm = new Worker(pdfjsLib.GlobalWorkerOptions.workerSrc);
+        pdfjsLib.GlobalWorkerOptions.workerPort = warm;
+      }
+    } catch(e) { /* no-op */ }
 
     // ===== Config =====
     const NO_GESTURE = true; // non-animasi
@@ -202,6 +218,15 @@
     const ZMIN=25, ZMAX=400, ZSTEP=10;
     let MAX_DPR_SLIDE = 3, MAX_DPR_READ = 3; // ketajaman tinggi
     let inReadMode = false;
+
+    // anti double-render
+    let renderToken = 0;
+    async function safeRender(fn){
+      const token = ++renderToken;
+      const ret = await fn();
+      if (token !== renderToken) return; // abaikan render lama
+      return ret;
+    }
 
     // autoplay
     let auto = false, timer = null, SLIDE_MS = 8000;
@@ -253,6 +278,10 @@
       const pct = inReadMode ? readZoomPct : zoomPct;
       zoomReadout.textContent = Math.round(pct) + '%';
     }
+    function renderIntentFor(pct, dpr){
+      // "display" cepat, "print" super tajam (lebih berat)
+      return (pct >= 150 || dpr >= 2.5) ? 'print' : 'display';
+    }
 
     async function calcViewport(page, dprCap, mode){
       const base = page.getViewport({scale:1});
@@ -264,7 +293,7 @@
       } else {
         const containerW = docEl.clientWidth - 2;
         W = containerW; H = Infinity;
-        scalePct = readZoomPct; // untuk Read Mode
+        scalePct = readZoomPct; // Read Mode
       }
       const dpr = Math.min(dprCap, Math.max(1, devicePixelRatio||1));
       const fitScale = (fitMode==='width' || mode==='read')
@@ -283,12 +312,15 @@
       canvas.style.width  = Math.floor(w/dpr)+'px';
       canvas.style.height = Math.floor(h/dpr)+'px';
 
-      // KUNCI: tajam & tidak transparan
       ctx.imageSmoothingEnabled=false;
       ctx.fillStyle = '#fff';
       ctx.fillRect(0,0,w,h);
 
-      await page.render({ canvasContext: ctx, viewport, intent:'print' }).promise;
+      await page.render({
+        canvasContext: ctx,
+        viewport,
+        intent: renderIntentFor(zoomPct, devicePixelRatio||1)
+      }).promise;
     }
 
     function updateIndicator(){
@@ -306,11 +338,9 @@
       const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
       const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
 
-      // render layar berikutnya TANPA ditampilkan (hindari nimpa/blend)
       nxtL.style.display='none';
-      await renderFit(p, nxtC, nxtCtx);
+      await safeRender(() => renderFit(p, nxtC, nxtCtx)); // anti double render
 
-      // switch cepat: hanya satu layer yang tampil
       curL.style.display='none';
       nxtL.style.display='grid';
       resetClasses(nxtL); nxtL.classList.add('active');
@@ -344,19 +374,16 @@
     playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
     document.addEventListener('keydown', (e)=>{
-      // Play/Pause hanya di slide mode
       if (!inReadMode && e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
 
       // Zoom shortcuts
       const plus = (e.key === '=' || e.key === '+');
       const minus = (e.key === '-' || e.key === '_');
       const reset = (e.key === '0');
-      if (plus || minus || reset || e.ctrlKey || e.metaKey){
-        if (plus){ e.preventDefault(); doZoom(+1); }
-        if (minus){ e.preventDefault(); doZoom(-1); }
-        if (reset){ e.preventDefault(); setZoom(100); }
-        if ((e.ctrlKey||e.metaKey) && (plus||minus||reset)) e.preventDefault();
-      }
+      if (plus){ e.preventDefault(); doZoom(+1); }
+      if (minus){ e.preventDefault(); doZoom(-1); }
+      if (reset){ e.preventDefault(); setZoom(100); }
+      if ((e.ctrlKey||e.metaKey) && (plus||minus||reset)) e.preventDefault();
     });
 
     // ===== Read Mode (lazy render) =====
@@ -377,7 +404,11 @@
           const cctx = cnv.getContext('2d', {alpha:false});
           cctx.imageSmoothingEnabled=false;
           cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
-          await page.render({canvasContext:cctx, viewport, intent:'print'}).promise;
+          await page.render({
+            canvasContext:cctx,
+            viewport,
+            intent: renderIntentFor(readZoomPct, devicePixelRatio||1)
+          }).promise;
           cnv.dataset.rendered = '1';
         }
       }
@@ -420,30 +451,25 @@
       if (inReadMode){
         readZoomPct = clamp(pct, ZMIN, ZMAX);
         updateZoomReadout();
-        // rebuild visible canvases (preserve scroll ratio)
         const ratio = read.scrollTop / Math.max(1, read.scrollHeight - read.clientHeight);
-        buildReadPages();
-        // restore approx position
+        buildReadPages(); // render ulang sesuai zoom
         requestAnimationFrame(()=>{ read.scrollTop = Math.round(ratio * (read.scrollHeight - read.clientHeight)); });
       } else {
         zoomPct = clamp(pct, ZMIN, ZMAX);
         updateZoomReadout();
-        // re-render current page sharply
-        show(pageNum, true);
+        safeRender(() => show(pageNum, true)); // re-render tajam halaman aktif
       }
     }
-    function doZoom(dir){ // dir: +1 / -1
+    function doZoom(dir){
       const base = inReadMode ? readZoomPct : zoomPct;
       setZoom(base + dir*ZSTEP);
     }
     function fitWidth(){
       if (inReadMode){
-        // Hitung zoom yang bikin lebar pas container
-        // read mode sudah by width; gunakan 100% sebagai "fit width".
-        setZoom(100);
+        setZoom(100); // read mode memang fit-width pada 100%
       } else {
         fitMode='width';
-        show(pageNum,true);
+        safeRender(() => show(pageNum,true));
       }
     }
 
@@ -452,13 +478,20 @@
     zoomResetBtn.onclick= ()=>setZoom(100);
     fitWidthBtn.onclick = ()=>fitWidth();
 
-    // ===== Load PDF =====
+    // ===== Load PDF (optimized) =====
     (async function(){
       const task = pdfjsLib.getDocument({
         url: PDF_URL,
         cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
         standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
-        useSystemFonts:true
+        useSystemFonts:true,
+
+        // ==== TUNING ====
+        disableAutoFetch: true,     // kurangi banyak fetch chunk otomatis
+        disableStream: false,       // izinkan streaming (first page cepat)
+        rangeChunkSize: 524288,     // 512KB (setel 256k~1MB sesuai latency)
+        isEvalSupported: true,
+        enableXfa: false
       });
       pdfDoc = await task.promise;
       numPages = pdfDoc.numPages; pageNum=1; updateIndicator();

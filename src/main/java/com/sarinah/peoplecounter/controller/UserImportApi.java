@@ -15,9 +15,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,41 +55,89 @@ public class UserImportApi {
     }
 
 
-    @GetMapping("/pdf/{id}")
-    public ResponseEntity<Resource> streamPdf(
+    @GetMapping(value="/pdf/{id}", produces=MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> stream(
             @PathVariable Long id,
             @RequestHeader HttpHeaders headers) {
 
-        PdfDocs doc = pdfDocRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        byte[] bytes = doc.getData();
-        long length = bytes.length;
+        // --- Ambil sekali dari DB tiap request (tanpa cache) ---
+        PdfDocs doc = pdfDocRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        byte[] data = Objects.requireNonNull(doc.getData(), "PDF kosong");
+        long len = data.length;
 
-        List<HttpRange> ranges = headers.getRange();
-        if (ranges == null || ranges.isEmpty()) {
-            // full content
-            ByteArrayResource res = new ByteArrayResource(bytes);
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .contentLength(length)
+        // ETag sederhana dari isi (tanpa kolom tambahan)
+        String etag = "\"" + Integer.toHexString(Arrays.hashCode(data)) + "\"";
+
+        // 304 Not Modified (ETag)
+        if (headers.getIfNoneMatch() != null && headers.getIfNoneMatch().contains(etag)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .eTag(etag)
+                    .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic())
                     .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .cacheControl(CacheControl.noCache()) // atur sesuai kebutuhan
-                    .body(res);
+                    .build();
         }
 
-        // partial content (ambil range pertama saja)
-        HttpRange range = ranges.get(0);
-        long start = range.getRangeStart(length);
-        long end   = range.getRangeEnd(length);
-        long chunkLen = end - start + 1;
+        // Header umum
+        String filename = (doc.getFilename()!=null && !doc.getFilename().isBlank())
+                ? doc.getFilename() : (id + ".pdf");
 
-        InputStreamResource res = new InputStreamResource(new ByteArrayInputStream(bytes, (int) start, (int) chunkLen));
+        HttpHeaders base = new HttpHeaders();
+        base.setContentType(MediaType.APPLICATION_PDF);
+        base.setContentDisposition(ContentDisposition.inline()
+                .filename(filename, StandardCharsets.UTF_8).build());
+        base.setCacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic());
+        base.setETag(etag);
+        base.set(HttpHeaders.ACCEPT_RANGES, "bytes");
 
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                .contentType(MediaType.APPLICATION_PDF)
-                .contentLength(chunkLen)
-                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + length)
-                .body(res);
+        // If-Range berbasis ETag (opsional, aman)
+        boolean ignoreRange = false;
+        String ifRange = headers.getFirst(HttpHeaders.IF_RANGE);
+        if (ifRange != null && ifRange.startsWith("\"") && !etag.equals(ifRange)) {
+            ignoreRange = true;
+        }
+
+        List<HttpRange> ranges = ignoreRange ? Collections.emptyList() : headers.getRange();
+
+        if (ranges == null || ranges.isEmpty()) {
+            // Full content 200
+            ByteArrayResource body = new ByteArrayResource(data);
+            base.setContentLength(len);
+            return new ResponseEntity<>(body, base, HttpStatus.OK);
+        }
+
+        // Partial content 206 (ambil satu range)
+        HttpRange r = ranges.get(0);
+        long start = r.getRangeStart(len);
+        long end   = r.getRangeEnd(len);
+
+        if (start < 0 || start >= len) {
+            return new ResponseEntity<>(base, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+        }
+        if (end < 0 || end >= len) end = len - 1;
+        if (end < start) {
+            return new ResponseEntity<>(base, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+        }
+
+        long chunk = end - start + 1;
+        if (chunk > Integer.MAX_VALUE) { // jaga2 file super besar
+            end = start + Integer.MAX_VALUE - 1;
+            chunk = end - start + 1;
+        }
+
+        InputStreamResource body =
+                new InputStreamResource(new ByteArrayInputStream(data, (int) start, (int) chunk));
+
+        HttpHeaders part = new HttpHeaders();
+        part.addAll(base);
+        part.setContentLength(chunk);
+        part.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + len);
+
+        return new ResponseEntity<>(body, part, HttpStatus.PARTIAL_CONTENT);
     }
+
+    // ====== sesuai schema kamu (tanpa ubah tabel) ======
+
+
 
 }
