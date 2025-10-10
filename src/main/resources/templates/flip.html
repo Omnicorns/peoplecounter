@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>PDF Pro Viewer — Slide & Baca (No Gesture)</title>
+    <title>Sarinah Catalogue</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         :root{
@@ -47,12 +47,10 @@
           border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
         }
 
-        /* Tombol seragam + link tidak biru */
         a{color:inherit; text-decoration:none}
         button,.btn,a.btn{
           height:36px;border:none;border-radius:12px;background:#212733;color:var(--text);
-          padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
-          text-decoration:none;
+          padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none;
         }
         .ghost{ background:transparent; border:1px solid var(--ring); }
         .primary{ background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700; }
@@ -61,11 +59,13 @@
         .primary:hover{ filter:brightness(1.02); }
 
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
-        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px}
+        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px; isolation:isolate;}
         .layer{position:absolute; inset:0; display:grid; place-items:center}
-        canvas{max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block}
+        canvas{
+          max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block;
+          image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
+        }
 
-        /* kelas gesture lama (tetap ada, tapi dimatikan saat no-gesture) */
         .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
         .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
         .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
@@ -73,7 +73,6 @@
         .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1}
         .layer{will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
 
-        /* Glass Nav Buttons */
         .nav{
           position:absolute; top:50%; transform:translateY(-50%);
           z-index:10; width:48px; height:48px; display:grid; place-items:center; border-radius:999px;
@@ -96,17 +95,13 @@
         #thumbs{display:none; gap:8px; overflow-x:auto; padding:10px; background:rgba(0,0,0,.42); border-top:1px solid #1d2330}
         #thumbs canvas{width:92px; height:auto; opacity:.7; cursor:pointer; border-radius:8px}
 
-        /* READ MODE */
         #read{display:none; flex:1; background:#0b0f15; overflow:auto}
         #doc{margin:0 auto; padding:16px; width:min(100%, 1100px)}
         .page{margin:0 auto 16px auto; display:block; background:#fff; border-radius:12px; box-shadow:0 12px 26px rgba(0,0,0,.45)}
         .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
 
-        @media (max-width: 860px){
-          #footer{gap:8px}
-        }
+        @media (max-width: 860px){ #footer{gap:8px} }
 
-        /* NO GESTURE MODE (tanpa animasi) */
         .no-gesture .layer{transition:none !important; transform:none !important; opacity:1 !important}
         .no-gesture .prep-right,
         .no-gesture .prep-left,
@@ -122,24 +117,20 @@
         <a id="dlBtn" class="btn ghost" href="#" download title="Unduh PDF">
             <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/>
-            </svg>
-            Download
+            </svg> Download
         </a>
         <button id="fsBtn" class="ghost" title="Layar Penuh">
             <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/>
-            </svg>
-            Full
+            </svg> Full
         </button>
         <button id="modeBtn" class="primary" title="Mode Baca">
             <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/>
-            </svg>
-            Mode Baca
+            </svg> Mode Baca
         </button>
         <button id="playBtn" class="ghost" title="Putar otomatis">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg>
-            Play
+            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play
         </button>
     </div>
 
@@ -182,14 +173,14 @@
     pdfjsLib.disableCreateObjectURL = true;
 
     // ===== Config =====
-    const NO_GESTURE = true; // tidak ada animasi/gesture
+    const NO_GESTURE = true; // non-animasi
 
     // ===== State =====
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100;
-    let MAX_DPR_SLIDE = 2, MAX_DPR_READ = 3;
+    let MAX_DPR_SLIDE = 3, MAX_DPR_READ = 3; // naikkan ketajaman
     let inReadMode = false;
 
     // autoplay
@@ -201,7 +192,9 @@
     const docEl =document.getElementById('doc');
     const L1=document.getElementById('L1'), L2=document.getElementById('L2');
     const c1=document.getElementById('c1'), c2=document.getElementById('c2');
-    const ctx1=c1.getContext('2d'), ctx2=c2.getContext('2d');
+    // KANVAS OPAQUE (anti ngeblur saat nimpa)
+    const ctx1=c1.getContext('2d', { alpha:false, desynchronized:true });
+    const ctx2=c2.getContext('2d', { alpha:false, desynchronized:true });
     const prevBtn=document.getElementById('prev');
     const nextBtn=document.getElementById('next');
     const indicator=document.getElementById('indicator');
@@ -244,11 +237,16 @@
       const page = await pdfDoc.getPage(p);
       const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE);
       const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
+
       canvas.width=w; canvas.height=h;
       canvas.style.width  = Math.floor(w/dpr)+'px';
       canvas.style.height = Math.floor(h/dpr)+'px';
+
+      // KUNCI: tajam & tidak transparan
       ctx.imageSmoothingEnabled=false;
-      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,w,h);
+
       await page.render({ canvasContext: ctx, viewport, intent:'print' }).promise;
     }
 
@@ -259,23 +257,25 @@
       prog.style.inset = `0 ${100-pct}% 0 0`;
     }
 
-    // ===== Show halaman (instan, tanpa animasi) =====
+    // ===== Show halaman (instan, tanpa overlap) =====
     async function show(p, forward=true){
-      if(inReadMode) return;
-      if (animating) return; animating=true; setNavDisabled(true);
+      if(inReadMode || animating) return;
+      animating=true; setNavDisabled(true);
 
       const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
       const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
 
-      resetClasses(curL); resetClasses(nxtL);
+      // render layar berikutnya TANPA ditampilkan (hindari nimpa/blend)
+      nxtL.style.display='none';
       await renderFit(p, nxtC, nxtCtx);
 
+      // switch cepat: hanya satu layer yang tampil
       curL.style.display='none';
       nxtL.style.display='grid';
-      nxtL.classList.add('active');
-      setTimeout(()=>{ curL.style.display='grid'; }, 0);
+      resetClasses(nxtL); nxtL.classList.add('active');
 
-      active=(active===1)?2:1; pageNum=p; updateIndicator(); setNavDisabled(false); animating=false;
+      active=(active===1)?2:1; pageNum=p; updateIndicator();
+      setNavDisabled(false); animating=false;
     }
 
     prevBtn.onclick=()=>{ if(pageNum>1) show(pageNum-1,false); };
@@ -302,7 +302,6 @@
     }
     playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
-    // Spacebar toggle auto (slide mode)
     document.addEventListener('keydown', (e)=>{
       if (inReadMode) return;
       if (e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
@@ -327,6 +326,7 @@
           cnv.style.height = Math.floor(vp.height/dpr)+'px';
           const cctx = cnv.getContext('2d', {alpha:false});
           cctx.imageSmoothingEnabled=false;
+          cctx.fillStyle='#fff'; cctx.fillRect(0,0,cnv.width,cnv.height);
           await page.render({canvasContext:cctx, viewport:vp, intent:'print'}).promise;
           cnv.dataset.rendered = '1';
         }
@@ -357,13 +357,15 @@
       playBtn.disabled = false; playBtn.title = 'Putar otomatis';
       show(pageNum,true);
     }
-    modeBtn.onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
+    document.getElementById('modeBtn').onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
 
     // ===== Load PDF =====
     (async function(){
-      const task = pdfjsLib.getDocument({url: PDF_URL,
+      const task = pdfjsLib.getDocument({
+        url: PDF_URL,
         cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
-        standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/", useSystemFonts:true
+        standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
+        useSystemFonts:true
       });
       pdfDoc = await task.promise;
       numPages = pdfDoc.numPages; pageNum=1; updateIndicator();
