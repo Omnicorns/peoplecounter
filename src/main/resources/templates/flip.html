@@ -5,37 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sarinah Catalogue — Fast PDF Viewer</title>
 
-    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-
-    <!-- CDN warmup -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
     <style>
         :root{
-          --bg:#07080b; --panel:#0f1218; --muted:#1a1f28; --acc:#2db36d; --acc2:#42c18b; --text:#eaf0ff; --sub:#9aa3b2;
-          --ring:#2a2f3a; --danger:#ff5468; --warn:#f6c445; --ok:#2ecc71;
-          --safe-top: env(safe-area-inset-top, 0px);
-          --safe-bottom: env(safe-area-inset-bottom, 0px);
+          --bg:#07080b; --ring:#2a2f3a; --acc:#2db36d; --acc2:#42c18b; --text:#eaf0ff; --sub:#9aa3b2;
+          --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         *{box-sizing:border-box}
         html,body{height:100%}
         body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
 
-        .bgfx{position:fixed;inset:0;pointer-events:none;z-index:0;}
-        .bg-gradient{position:absolute;inset:-20%;filter:blur(70px);opacity:.6;background:
-          radial-gradient(900px 500px at 10% 10%, #1a2d5a55, transparent 60%),
-          radial-gradient(900px 500px at 90% 20%, #1d6d4e55, transparent 60%),
-          radial-gradient(900px 600px at 50% 100%, #2b1a4a55, transparent 60%);}
-        .grid{position:absolute;inset:0;background:
-          linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px,
-          linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0/ 32px 32px;
-          mask: radial-gradient(ellipse at 50% 30%, #000 55%, transparent 68%);
-          opacity:.35;}
-
         #viewer{
-          --pad:12px;
           width:min(100vw,1400px);
           height:min(100vh,900px);
           margin:auto; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
@@ -43,150 +26,89 @@
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
           backdrop-filter:blur(2px)
         }
-        @supports (height: 100svh){
-          #viewer{ width:min(100svw,1400px); height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px); }
-        }
+        @supports(height:100svh){#viewer{width:min(100svw,1400px);height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)}}
 
-        #top{
-          display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap;
-          padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
-          background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
-          border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
-        }
-
-        a{color:inherit; text-decoration:none}
-        button,.btn,a.btn{
-          height:36px;border:none;border-radius:12px;background:#212733;color:var(--text);
-          padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none;
-        }
-        .ghost{ background:transparent; border:1px solid var(--ring); }
-        .primary{ background:linear-gradient(180deg,var(--acc),#24a461); color:#082114; font-weight:700; }
-        .btn-ico{ width:18px; height:18px; flex:0 0 18px; opacity:.9; }
-        .ghost:hover{ background:#1a1f28; }
-        .primary:hover{ filter:brightness(1.02); }
-
-        .seg{display:inline-flex;align-items:center;border:1px solid var(--ring);border-radius:12px;overflow:hidden}
-        .seg button{background:transparent;border:0;height:36px;padding:0 10px}
-        .seg .sep{width:1px;height:20px;background:var(--ring);margin:0 4px;opacity:.8}
-        .seg .ro{min-width:64px;text-align:center;color:var(--sub);pointer-events:none}
+        /* Top bar & kebab */
+        #top{position:absolute; inset:0 0 auto 0; height:56px; display:flex; align-items:center; justify-content:flex-end;
+             padding:calc(8px + var(--safe-top)) 10px 8px; z-index:50;
+             background:rgba(16,18,24,.6); backdrop-filter:blur(10px); border-bottom:1px solid var(--ring)}
+        .iconbtn{height:36px; width:36px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+                 display:grid; place-items:center; color:#eaf0ff; cursor:pointer}
+        .iconbtn:hover{background:rgba(255,255,255,.12)}
+        .kebab{font:700 18px/0 system-ui; letter-spacing:2px}
+        .popover{position:absolute; top:calc(48px + var(--safe-top)); right:10px; width:220px; background:#0f1218;
+                 border:1px solid #232a39; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.45); padding:6px; z-index:60; display:none}
+        .popover.show{display:block}
+        .popitem{width:100%; text-align:left; background:transparent; border:0; color:#cfd7e6; cursor:pointer;
+                 display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px}
+        .popitem:hover{background:#1a1f28}
+        .sep{height:1px; background:#232a39; margin:6px 0; border:0}
 
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
-        .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px; isolation:isolate;}
+        .deck{position:absolute; inset:12px; display:grid; place-items:center; isolation:isolate}
         .layer{position:absolute; inset:0; display:grid; place-items:center}
+        .pageWrap{position:relative; will-change:transform; touch-action:none;}
         canvas{
           max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block;
           image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
         }
 
-        .prep-right{transform:translateX(100%) rotateY(-14deg); opacity:.55; z-index:3}
-        .prep-left {transform:translateX(-100%) rotateY(14deg);  opacity:.55; z-index:3}
-        .active    {transform:translateX(0) rotateY(0deg);       opacity:1;   z-index:2}
-        .out-left  {transform:translateX(-26%) rotateY(-16deg);  opacity:0;   z-index:1}
-        .out-right {transform:translateX(26%)  rotateY(16deg);   opacity:0;   z-index:1}
-        .layer{will-change:transform,opacity; transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease; transform-style:preserve-3d}
-
         .nav{
           position:absolute; top:50%; transform:translateY(-50%);
-          z-index:10; width:48px; height:48px; display:grid; place-items:center; border-radius:999px;
-          background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
-          backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-          color:#cfd7e6; box-shadow:0 2px 12px rgba(0,0,0,.35);
-          transition: background .18s ease, border-color .18s ease, color .18s ease, transform .08s ease;
+          z-index:20; width:44px; height:44px; display:grid; place-items:center; border-radius:999px;
+          background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+          backdrop-filter:blur(8px); color:#cfd7e6; box-shadow:0 2px 12px rgba(0,0,0,.35);
         }
-        .nav:hover{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#ffffff }
-        .nav:active{ transform:translateY(-50%) scale(.97) }
-        .nav:disabled{ opacity:.35; pointer-events:none }
-        .nav svg{ width:22px; height:22px; }
+        .nav:active{transform:translateY(-50%) scale(.97)}
+        .nav:disabled{opacity:.35; pointer-events:none}
         #prev{left:14px} #next{right:14px}
 
-        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px var(--pad); border-top:1px solid var(--ring); background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
-        #indicator{font-variant-numeric:tabular-nums; color:var(--sub)}
+        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px; border-top:1px solid var(--ring);
+                background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
+        #indicator{font-variant-numeric:tabular-nums; color:#9aa3b2}
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
-
-        #thumbs{display:none; gap:8px; overflow-x:auto; padding:10px; background:rgba(0,0,0,.42); border-top:1px solid #1d2330}
-        #thumbs canvas{width:92px; height:auto; opacity:.7; cursor:pointer; border-radius:8px}
-
-        #read{display:none; flex:1; background:#0b0f15; overflow:auto}
-        #doc{margin:0 auto; padding:16px; width:min(100%, 1100px)}
-        .page{margin:0 auto 16px auto; display:block; background:#fff; border-radius:12px; box-shadow:0 12px 26px rgba(0,0,0,.45)}
-        .pinfo{color:#94a0b3; font-size:12px; text-align:center; margin-top:-6px; margin-bottom:10px}
-
-        @media (max-width: 860px){ #footer{gap:8px} }
-
-        .no-gesture .layer{transition:none !important; transform:none !important; opacity:1 !important}
-        .no-gesture .prep-right,
-        .no-gesture .prep-left,
-        .no-gesture .out-left,
-        .no-gesture .out-right{transform:none !important; opacity:0 !important}
     </style>
 </head>
 <body>
-<div class="bgfx"><div class="bg-gradient"></div><div class="grid"></div></div>
-
 <div id="viewer" aria-label="PDF Pro Viewer">
+    <!-- TOP -->
     <div id="top">
-        <a id="dlBtn" class="btn ghost" href="#" download title="Unduh PDF">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/>
-            </svg> Download
-        </a>
-        <button id="fsBtn" class="ghost" title="Layar Penuh">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/>
-            </svg> Full
-        </button>
-
-        <!-- ZOOM SEGMENT -->
-        <span class="seg" role="group" aria-label="Zoom controls">
-      <button id="zoomOutBtn" title="Zoom Out ( - )" aria-label="Zoom Out">–</button>
-      <span class="sep"></span>
-      <span id="zoomReadout" class="ro">100%</span>
-      <span class="sep"></span>
-      <button id="zoomInBtn" title="Zoom In ( + )" aria-label="Zoom In">+</button>
-      <span class="sep"></span>
-      <button id="zoomResetBtn" title="Reset 100% (0)">100%</button>
-      <span class="sep"></span>
-      <button id="fitWidthBtn" title="Fit Width">Fit&nbsp;Width</button>
-    </span>
-
-        <button id="modeBtn" class="primary" title="Mode Baca">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/>
-            </svg> Mode Baca
-        </button>
-        <button id="playBtn" class="ghost" title="Putar otomatis">
-            <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play
-        </button>
-    </div>
-
-    <!-- SLIDE MODE -->
-    <div id="stage" aria-live="polite">
-        <button class="nav" id="prev" aria-label="Sebelumnya">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6 9 12l6 6"/></svg>
-        </button>
-
-        <div class="deck">
-            <div id="L1" class="layer active"><canvas id="c1"></canvas></div>
-            <div id="L2" class="layer"><canvas id="c2"></canvas></div>
+        <button id="kebabBtn" class="iconbtn kebab" aria-label="Menu">⋮</button>
+        <div id="pop" class="popover" role="menu" aria-label="Menu">
+            <button class="popitem" id="miDownload">⬇️ Download</button>
+            <button class="popitem" id="miFullscreen">⤢ Fullscreen</button>
+            <button class="popitem" id="miMode">📖 Mode Baca</button>
+            <hr class="sep">
+            <button class="popitem" id="miZoomIn">＋ Zoom In</button>
+            <button class="popitem" id="miZoomOut">－ Zoom Out</button>
+            <button class="popitem" id="miZoomReset">⤾ Reset 100%</button>
+            <button class="popitem" id="miFitWidth">⇔ Fit Width</button>
+            <hr class="sep">
+            <button class="popitem" id="miPlay">▶️ Play</button>
         </div>
-
-        <button class="nav" id="next" aria-label="Berikutnya">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
-        </button>
     </div>
 
-    <!-- READ MODE -->
-    <div id="read" aria-label="Read Mode"><div id="doc"></div></div>
+    <!-- SLIDE -->
+    <div id="stage" aria-live="polite">
+        <button class="nav" id="prev" aria-label="Sebelumnya">❮</button>
+        <div class="deck">
+            <div id="L1" class="layer"><div class="pageWrap" id="wrap1"><canvas id="c1"></canvas></div></div>
+            <div id="L2" class="layer"><div class="pageWrap" id="wrap2"><canvas id="c2"></canvas></div></div>
+        </div>
+        <button class="nav" id="next" aria-label="Berikutnya">❯</button>
+    </div>
+
+    <!-- READ -->
+    <div id="read" aria-label="Read Mode" style="display:none"><div id="doc" style="margin:0 auto;padding:16px;width:min(100%,1100px)"></div></div>
 
     <div id="footer">
         <div id="indicator">Page 1 / 1</div>
         <div class="bar" id="progress" aria-label="Progress"><i id="prog"></i></div>
     </div>
-
-    <div id="thumbs" aria-label="Thumbnails"></div>
 </div>
 
+<!-- sumber PDF versi kamu -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
@@ -199,37 +121,18 @@
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
 
-    // Prewarm worker (kurangi cold start)
-    try {
-      if (!pdfjsLib.GlobalWorkerOptions.workerPort) {
-        const warm = new Worker(pdfjsLib.GlobalWorkerOptions.workerSrc);
-        pdfjsLib.GlobalWorkerOptions.workerPort = warm;
-      }
-    } catch(e) { /* no-op */ }
-
-    // ===== Config =====
-    const NO_GESTURE = true; // non-animasi
-
     // ===== State =====
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
+
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
-    const ZMIN=25, ZMAX=400, ZSTEP=10;
-    let MAX_DPR_SLIDE = 3, MAX_DPR_READ = 3; // ketajaman tinggi
-    let inReadMode = false;
+    const ZMIN=25, ZMAX=600, ZSTEP=12;
+    const MAX_DPR_SLIDE=3, MAX_DPR_READ=3;
+    let inReadMode=false;
 
-    // anti double-render
-    let renderToken = 0;
-    async function safeRender(fn){
-      const token = ++renderToken;
-      const ret = await fn();
-      if (token !== renderToken) return; // abaikan render lama
-      return ret;
-    }
-
-    // autoplay
-    let auto = false, timer = null, SLIDE_MS = 8000;
+    // autoplay state
+    let auto=false, timer=null, SLIDE_MS=8000;
 
     const viewer=document.getElementById('viewer');
     const stage =document.getElementById('stage');
@@ -237,267 +140,245 @@
     const docEl =document.getElementById('doc');
     const L1=document.getElementById('L1'), L2=document.getElementById('L2');
     const c1=document.getElementById('c1'), c2=document.getElementById('c2');
-    // KANVAS OPAQUE (anti ngeblur saat nimpa)
-    const ctx1=c1.getContext('2d', { alpha:false, desynchronized:true });
-    const ctx2=c2.getContext('2d', { alpha:false, desynchronized:true });
+    const ctx1=c1.getContext('2d',{alpha:false,desynchronized:true});
+    const ctx2=c2.getContext('2d',{alpha:false,desynchronized:true});
+    const wrap1=document.getElementById('wrap1'), wrap2=document.getElementById('wrap2');
+
     const prevBtn=document.getElementById('prev');
     const nextBtn=document.getElementById('next');
     const indicator=document.getElementById('indicator');
     const progressBar=document.getElementById('progress'), prog=document.getElementById('prog');
-    const playBtn=document.getElementById('playBtn');
-    const modeBtn=document.getElementById('modeBtn');
 
-    const zoomOutBtn=document.getElementById('zoomOutBtn');
-    const zoomInBtn =document.getElementById('zoomInBtn');
-    const zoomResetBtn=document.getElementById('zoomResetBtn');
-    const fitWidthBtn=document.getElementById('fitWidthBtn');
-    const zoomReadout=document.getElementById('zoomReadout');
+    // ===== Menu kebab =====
+    const kebab=document.getElementById('kebabBtn');
+    const pop=document.getElementById('pop');
+    kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
+    document.addEventListener('click',()=>pop.classList.remove('show'));
+    const A=(id)=>document.getElementById(id);
+    A('miDownload').onclick = ()=>{ const a=document.createElement('a'); a.href=PDF_URL; a.download='file.pdf'; a.click(); pop.classList.remove('show'); };
+    A('miFullscreen').onclick = ()=>{ (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.()); pop.classList.remove('show'); };
+    A('miFitWidth').onclick = ()=>{ stopAuto(); fitMode='width'; show(pageNum,true); pop.classList.remove('show'); };
+    A('miZoomIn').onclick = ()=>{ stopAuto(); setZoom(zoomPct+ZSTEP); pop.classList.remove('show'); };
+    A('miZoomOut').onclick = ()=>{ stopAuto(); setZoom(zoomPct-ZSTEP); pop.classList.remove('show'); };
+    A('miZoomReset').onclick = ()=>{ stopAuto(); setZoom(100); pop.classList.remove('show'); };
 
-    if (NO_GESTURE) viewer.classList.add('no-gesture');
-
-    document.getElementById('dlBtn').href = PDF_URL;
-    document.getElementById('fsBtn').onclick=()=>{ if(!document.fullscreenElement) viewer.requestFullscreen?.(); else document.exitFullscreen?.(); };
-
-    // ==== VisualViewport fix Android ====
-    function applyViewportSize(){
-      const vv = window.visualViewport;
-      const w = Math.min(1400, Math.round((vv?.width || innerWidth)));
-      const h = Math.min(900,  Math.round((vv?.height || innerHeight)));
-      viewer.style.width  = w + 'px';
-      viewer.style.height = h + 'px';
+    // ===== Play/Pause logic =====
+    function updatePlayLabel(){
+      A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play';
     }
-    applyViewportSize();
-    (visualViewport||window).addEventListener('resize', applyViewportSize);
-    (visualViewport||window).addEventListener('scroll', applyViewportSize);
-
-    // ===== Helpers =====
-    function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
-    function resetClasses(el){ el.className='layer'; }
-    function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-    function updateZoomReadout(){
-      const pct = inReadMode ? readZoomPct : zoomPct;
-      zoomReadout.textContent = Math.round(pct) + '%';
-    }
-    function renderIntentFor(pct, dpr){
-      // "display" cepat, "print" super tajam (lebih berat)
-      return (pct >= 150 || dpr >= 2.5) ? 'print' : 'display';
-    }
-
-    async function calcViewport(page, dprCap, mode){
-      const base = page.getViewport({scale:1});
-      let W,H,scalePct;
-      if (mode==='slide'){
-        W = Math.max(1, stage.clientWidth  - 24);
-        H = Math.max(1, stage.clientHeight - 24);
-        scalePct = zoomPct;
-      } else {
-        const containerW = docEl.clientWidth - 2;
-        W = containerW; H = Infinity;
-        scalePct = readZoomPct; // Read Mode
-      }
-      const dpr = Math.min(dprCap, Math.max(1, devicePixelRatio||1));
-      const fitScale = (fitMode==='width' || mode==='read')
-        ? (W / base.width)
-        : Math.min(W/base.width, H/base.height);
-      const scale = Math.max(0.1, fitScale * (scalePct/100) * dpr);
-      return { viewport: page.getViewport({ scale }), cssScale: scale/dpr, dpr };
-    }
-
-    async function renderFit(p, canvas, ctx){
-      const page = await pdfDoc.getPage(p);
-      const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE, 'slide');
-      const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
-
-      canvas.width=w; canvas.height=h;
-      canvas.style.width  = Math.floor(w/dpr)+'px';
-      canvas.style.height = Math.floor(h/dpr)+'px';
-
-      ctx.imageSmoothingEnabled=false;
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0,0,w,h);
-
-      await page.render({
-        canvasContext: ctx,
-        viewport,
-        intent: renderIntentFor(zoomPct, devicePixelRatio||1)
-      }).promise;
-    }
-
-    function updateIndicator(){
-      indicator.textContent = `Page ${pageNum} / ${numPages}`;
-      const pct = Math.round(((pageNum-1)/(numPages-1||1))*100);
-      progressBar.style.setProperty('--p', pct + '%');
-      prog.style.inset = `0 ${100-pct}% 0 0`;
-    }
-
-    // ===== Show halaman (instan, tanpa overlap) =====
-    async function show(p, forward=true){
-      if(inReadMode || animating) return;
-      animating=true; setNavDisabled(true);
-
-      const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
-      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
-
-      nxtL.style.display='none';
-      await safeRender(() => renderFit(p, nxtC, nxtCtx)); // anti double render
-
-      curL.style.display='none';
-      nxtL.style.display='grid';
-      resetClasses(nxtL); nxtL.classList.add('active');
-
-      active=(active===1)?2:1; pageNum=p; updateIndicator();
-      setNavDisabled(false); animating=false;
-    }
-
-    prevBtn.onclick=()=>{ if(pageNum>1) show(pageNum-1,false); };
-    nextBtn.onclick=()=>{ if(pageNum<numPages) show(pageNum+1,true); };
-
-    progressBar.addEventListener('click', (e)=>{
-      const rect = progressBar.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (e.clientX-rect.left)/rect.width));
-      const target = Math.max(1, Math.round(1 + pct*(numPages-1)));
-      if(target!==pageNum) show(target, target>pageNum);
-    });
-
-    // ====== AUTOPLAY ======
     function startAuto(){
-      if (inReadMode || auto) return;
-      auto = true;
-      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg> Pause`;
-      timer = setInterval(()=>{ (pageNum < numPages) ? show(pageNum+1,true) : show(1,true); }, SLIDE_MS);
+      if(inReadMode || auto || numPages<=1) return;
+      auto=true; updatePlayLabel();
+      timer=setInterval(()=>{
+        const next = (pageNum < numPages) ? pageNum+1 : 1;
+        show(next,true);
+      }, SLIDE_MS);
     }
     function stopAuto(){
-      auto = false;
-      playBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7-11-7Z"/></svg> Play`;
-      if (timer){ clearInterval(timer); timer=null; }
+      if(timer){ clearInterval(timer); timer=null; }
+      if(auto){ auto=false; updatePlayLabel(); }
     }
-    playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
+    A('miPlay').onclick=()=>{ auto ? stopAuto() : startAuto(); pop.classList.remove('show'); };
 
-    document.addEventListener('keydown', (e)=>{
-      if (!inReadMode && e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
+    // stop autoplay pada interaksi manual
+    function stopAutoOnInteraction(){ if(auto) stopAuto(); }
 
-      // Zoom shortcuts
-      const plus = (e.key === '=' || e.key === '+');
-      const minus = (e.key === '-' || e.key === '_');
-      const reset = (e.key === '0');
-      if (plus){ e.preventDefault(); doZoom(+1); }
-      if (minus){ e.preventDefault(); doZoom(-1); }
-      if (reset){ e.preventDefault(); setZoom(100); }
-      if ((e.ctrlKey||e.metaKey) && (plus||minus||reset)) e.preventDefault();
+    // ===== Helpers =====
+    function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+    function updateIndicator(){ indicator.textContent=`Page ${pageNum} / ${numPages}`; const pct=Math.round(((pageNum-1)/(numPages-1||1))*100); progressBar.style.setProperty('--p', pct+'%'); prog.style.inset=`0 ${100-pct}% 0 0`; }
+    function renderIntentFor(pct,dpr){ return (pct>=150||dpr>=2.5)?'print':'display'; }
+
+    async function calcViewport(page,dprCap,mode){
+      const base=page.getViewport({scale:1});
+      let W,H,scalePct=(mode==='read')?readZoomPct:zoomPct;
+      if(mode==='slide'){ W=Math.max(1,stage.clientWidth-24); H=Math.max(1,stage.clientHeight-24); }
+      else { const cw=docEl.clientWidth-2; W=cw; H=Infinity; }
+      const dpr=Math.min(dprCap,Math.max(1,devicePixelRatio||1));
+      const fitScale=(fitMode==='width'||mode==='read')?(W/base.width):Math.min(W/base.width,H/base.height);
+      const scale=Math.max(0.1,fitScale*(scalePct/100)*dpr);
+      return {viewport:page.getViewport({scale}), cssScale:scale/dpr, dpr};
+    }
+
+    async function renderFit(p,canvas,ctx){
+      const page=await pdfDoc.getPage(p);
+      const {viewport,dpr}=await calcViewport(page,MAX_DPR_SLIDE,'slide');
+      const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
+      canvas.width=w; canvas.height=h;
+      canvas.style.width=Math.floor(w/dpr)+'px';
+      canvas.style.height=Math.floor(h/dpr)+'px';
+      ctx.imageSmoothingEnabled=false; ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+      await page.render({canvasContext:ctx,viewport,intent:renderIntentFor(zoomPct,devicePixelRatio||1)}).promise;
+    }
+
+    async function show(p,forward=true){
+      if(inReadMode||animating) return;
+      animating=true; prevBtn.disabled=nextBtn.disabled=true;
+      const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
+      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1, nxtW=(active===1)?wrap2:wrap1;
+      nxtL.style.display='none';
+      await renderFit(p,nxtC,nxtCtx);
+      curL.style.display='none'; nxtL.style.display='grid';
+      nxtW.style.transform='translate(0px,0px) scale(1)'; // reset transform
+      active=(active===1)?2:1; pageNum=p; updateIndicator();
+      prevBtn.disabled=nextBtn.disabled=false; animating=false;
+    }
+
+    // Next/Prev selalu aktif; hentikan autoplay saat dipakai
+    prevBtn.onclick=()=>{ if(pageNum>1){ stopAutoOnInteraction(); show(pageNum-1,false); } };
+    nextBtn.onclick=()=>{ if(pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1,true);  } };
+
+    progressBar.addEventListener('click',(e)=>{
+      const r=progressBar.getBoundingClientRect();
+      const pct=clamp((e.clientX-r.left)/r.width,0,1);
+      const target=Math.max(1,Math.round(1+pct*(numPages-1)));
+      if(target!==pageNum){ stopAutoOnInteraction(); show(target,target>pageNum); }
     });
 
-    // ===== Read Mode (lazy render) =====
-    const io = new IntersectionObserver(async (entries)=>{
-      for(const ent of entries){
-        if(ent.isIntersecting){
-          const cnv = ent.target;
-          if(cnv.dataset.rendered) continue;
-          const i = +cnv.dataset.page;
-          const page = await pdfDoc.getPage(i);
-          const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_READ, 'read');
+    // ===== Zoom (keyboard/menu) + debounce =====
+    let zoomTimer=null;
+    function setZoom(pct){
+      if(inReadMode){ readZoomPct=clamp(pct,ZMIN,ZMAX); buildReadPages(); return; }
+      zoomPct=clamp(pct,ZMIN,ZMAX);
+      clearTimeout(zoomTimer);
+      zoomTimer=setTimeout(()=>show(pageNum,true),60);
+    }
 
-          const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
-          cnv.width  = w; cnv.height = h;
-          cnv.style.width  = Math.floor(w/dpr)+'px';
-          cnv.style.height = Math.floor(h/dpr)+'px';
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(100); }
+      if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
+      if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
+      if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); } // spasi = toggle
+      if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1,true); }
+      if(e.key==='ArrowLeft'  && pageNum>1){        stopAutoOnInteraction(); show(pageNum-1,false); }
+    });
 
-          const cctx = cnv.getContext('2d', {alpha:false});
-          cctx.imageSmoothingEnabled=false;
-          cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
-          await page.render({
-            canvasContext:cctx,
-            viewport,
-            intent: renderIntentFor(readZoomPct, devicePixelRatio||1)
-          }).promise;
-          cnv.dataset.rendered = '1';
-        }
+    // ===== Gesture: pinch (2 jari) & pan (1 jari saat zoom>100) =====
+    const gesture = {
+      pointers:new Map(), mode:'idle', dist0:1, scaleTmp:1,
+      tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0}
+    };
+    const wrapOf=()=> (active===1?wrap1:wrap2);
+
+    function getMid(){ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
+    function dist(){ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
+
+    function setTransform(){ const w=wrapOf(); w.style.transform=`translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.scaleTmp})`; }
+    function clampPan(limit=120){
+      const cnv=(active===1?c1:c2);
+      const w=cnv.clientWidth, h=cnv.clientHeight;
+      const maxX=(w*(gesture.scaleTmp)-w)/2 + limit;
+      const maxY=(h*(gesture.scaleTmp)-h)/2 + limit;
+      gesture.tx = clamp(gesture.tx,-maxX,maxX);
+      gesture.ty = clamp(gesture.ty,-maxY,maxY);
+    }
+
+    function onPointerDown(e){
+      stopAutoOnInteraction();
+      const w=wrapOf();
+      w.setPointerCapture?.(e.pointerId);
+      gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(gesture.pointers.size===2){
+        gesture.mode='pinch';
+        gesture.dist0=dist(); gesture.scaleTmp=1;
+        gesture.mid0=getMid();
+        gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
+      }else if(gesture.pointers.size===1 && zoomPct>100){
+        gesture.mode='pan';
+        gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
       }
-    }, {root: read, rootMargin:'200px 0px', threshold:0.01});
+    }
+    function onPointerMove(e){
+      if(!gesture.pointers.has(e.pointerId)) return;
+      gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(gesture.mode==='pinch'){
+        const s=clamp(dist()/gesture.dist0,0.5,3);
+        gesture.scaleTmp=s;
+        const mid=getMid();
+        gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x);
+        gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
+        clampPan(); setTransform();
+      }else if(gesture.mode==='pan'){
+        const p=[...gesture.pointers.values()][0];
+        if(!gesture._anchor){ gesture._anchor={x:p.x,y:p.y}; }
+        gesture.tx = gesture.startTx + (p.x-gesture._anchor.x);
+        gesture.ty = gesture.startTy + (p.y-gesture._anchor.y);
+        clampPan(); setTransform();
+      }
+    }
+    function onPointerUp(e){
+      const w=wrapOf();
+      if(gesture.pointers.has(e.pointerId)) gesture.pointers.delete(e.pointerId);
+      if(gesture.mode==='pinch' && gesture.pointers.size<2){
+        const newPct = clamp(zoomPct * gesture.scaleTmp, ZMIN, ZMAX);
+        gesture.mode='idle'; gesture.scaleTmp=1; gesture.tx=0; gesture.ty=0; gesture._anchor=null;
+        w.style.transform='translate(0,0) scale(1)';
+        setZoom(Math.round(newPct));
+        return;
+      }
+      if(gesture.mode==='pan' && gesture.pointers.size===0){ gesture.mode='idle'; gesture._anchor=null; }
+    }
+    ;[wrap1,wrap2].forEach(w=>{
+      w.addEventListener('pointerdown',onPointerDown);
+      w.addEventListener('pointermove',onPointerMove);
+      w.addEventListener('pointerup',onPointerUp);
+      w.addEventListener('pointercancel',onPointerUp);
+    });
+
+    // Swipe ganti halaman — hanya saat zoom=100
+    let swipeX=null;
+    stage.addEventListener('pointerdown', (e)=>{ if(zoomPct===100){ swipeX=e.clientX; }});
+    stage.addEventListener('pointerup', (e)=>{
+      if(zoomPct!==100 || swipeX===null) return;
+      const dx=e.clientX-swipeX;
+      if(Math.abs(dx)>60){
+        stopAutoOnInteraction();
+        if(dx<0 && pageNum<numPages) show(pageNum+1,true);
+        if(dx>0 && pageNum>1)        show(pageNum-1,false);
+      }
+      swipeX=null;
+    });
+
+    // ===== Read mode (lazy) =====
+    const io=new IntersectionObserver(async (entries)=>{
+      for(const ent of entries){
+        if(!ent.isIntersecting) continue;
+        const cnv=ent.target; if(cnv.dataset.rendered) continue;
+        const i=+cnv.dataset.page;
+        const page=await pdfDoc.getPage(i);
+        const {viewport,dpr}=await calcViewport(page,MAX_DPR_READ,'read');
+        const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
+        cnv.width=w; cnv.height=h; cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
+        const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
+        await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
+        cnv.dataset.rendered='1';
+      }
+    },{root:read,rootMargin:'200px 0px',threshold:0.01});
 
     function buildReadPages(){
       docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
-        const cnv=document.createElement('canvas');
-        cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
-        const pinfo=document.createElement('div'); pinfo.className='pinfo'; pinfo.textContent=`Halaman ${i}`;
-        docEl.appendChild(cnv); docEl.appendChild(pinfo);
-        io.observe(cnv);
+        const cnv=document.createElement('canvas'); cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
+        docEl.appendChild(cnv); io.observe(cnv);
       }
     }
+    function enterReadMode(){ stopAuto(); inReadMode=true; stage.style.display='none'; read.style.display='block'; buildReadPages(); A('miMode').textContent='🖼️ Mode Slide'; }
+    function exitReadMode(){ inReadMode=false; read.style.display='none'; stage.style.display='grid'; show(pageNum,true); A('miMode').textContent='📖 Mode Baca'; }
+    A('miMode').onclick=()=> (inReadMode?exitReadMode():enterReadMode());
 
-    function enterReadMode(){
-      stopAuto();
-      inReadMode=true;
-      stage.style.display='none';
-      read.style.display='block';
-      buildReadPages();
-      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a 3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
-      playBtn.disabled = true; playBtn.title = 'Play hanya di Mode Slide';
-      updateZoomReadout();
-    }
-    function exitReadMode(){
-      inReadMode=false;
-      read.style.display='none';
-      stage.style.display='grid';
-      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
-      playBtn.disabled = false; playBtn.title = 'Putar otomatis';
-      show(pageNum,true);
-      updateZoomReadout();
-    }
-    document.getElementById('modeBtn').onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
-
-    // ===== ZOOM LOGIC =====
-    function setZoom(pct){
-      if (inReadMode){
-        readZoomPct = clamp(pct, ZMIN, ZMAX);
-        updateZoomReadout();
-        const ratio = read.scrollTop / Math.max(1, read.scrollHeight - read.clientHeight);
-        buildReadPages(); // render ulang sesuai zoom
-        requestAnimationFrame(()=>{ read.scrollTop = Math.round(ratio * (read.scrollHeight - read.clientHeight)); });
-      } else {
-        zoomPct = clamp(pct, ZMIN, ZMAX);
-        updateZoomReadout();
-        safeRender(() => show(pageNum, true)); // re-render tajam halaman aktif
-      }
-    }
-    function doZoom(dir){
-      const base = inReadMode ? readZoomPct : zoomPct;
-      setZoom(base + dir*ZSTEP);
-    }
-    function fitWidth(){
-      if (inReadMode){
-        setZoom(100); // read mode memang fit-width pada 100%
-      } else {
-        fitMode='width';
-        safeRender(() => show(pageNum,true));
-      }
-    }
-
-    zoomInBtn.onclick = ()=>doZoom(+1);
-    zoomOutBtn.onclick= ()=>doZoom(-1);
-    zoomResetBtn.onclick= ()=>setZoom(100);
-    fitWidthBtn.onclick = ()=>fitWidth();
-
-    // ===== Load PDF (optimized) =====
+    // ===== Load PDF =====
     (async function(){
-      const task = pdfjsLib.getDocument({
-        url: PDF_URL,
+      const task=pdfjsLib.getDocument({
+        url:PDF_URL,
         cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
         standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
-        useSystemFonts:true,
-
-        // ==== TUNING ====
-        disableAutoFetch: true,     // kurangi banyak fetch chunk otomatis
-        disableStream: false,       // izinkan streaming (first page cepat)
-        rangeChunkSize: 524288,     // 512KB (setel 256k~1MB sesuai latency)
-        isEvalSupported: true,
-        enableXfa: false
+        useSystemFonts:true, disableAutoFetch:true, disableStream:false, rangeChunkSize:524288,
+        isEvalSupported:true, enableXfa:false
       });
-      pdfDoc = await task.promise;
-      numPages = pdfDoc.numPages; pageNum=1; updateIndicator();
-      await renderFit(pageNum, c1, ctx1);
+      pdfDoc=await task.promise;
+      numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
+      await renderFit(pageNum,c1,ctx1);
       L1.style.display='grid'; L2.style.display='none';
-      updateZoomReadout();
+      updatePlayLabel(); // set label awal
     })();
 </script>
 </body>
