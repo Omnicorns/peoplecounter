@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
+<html lang="id">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -42,6 +42,7 @@
         .popitem{width:100%; text-align:left; background:transparent; border:0; color:#cfd7e6; cursor:pointer;
                  display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px}
         .popitem:hover{background:#1a1f28}
+        .popitem[aria-disabled="true"]{opacity:.45; pointer-events:none}
         .sep{height:1px; background:#232a39; margin:6px 0; border:0}
 
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
@@ -52,6 +53,10 @@
           max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block;
           image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
         }
+
+        /* READ mode container MUST flex:1 to be visible */
+        #read{flex:1; overflow:auto; background:#0b0f15; display:none}
+        #doc{margin:0 auto; padding:16px; width:min(100%,1100px)}
 
         .nav{
           position:absolute; top:50%; transform:translateY(-50%);
@@ -100,7 +105,7 @@
     </div>
 
     <!-- READ -->
-    <div id="read" aria-label="Read Mode" style="display:none"><div id="doc" style="margin:0 auto;padding:16px;width:min(100%,1100px)"></div></div>
+    <div id="read" aria-label="Read Mode"><div id="doc"></div></div>
 
     <div id="footer">
         <div id="indicator">Page 1 / 1</div>
@@ -108,30 +113,29 @@
     </div>
 </div>
 
-<!-- sumber PDF versi kamu -->
+<!-- DEFAULT_PDF: Thymeleaf-safe + fallback -->
 <script th:inline="javascript">
     /*<![CDATA[*/
-    const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
+    const DEFAULT_PDF =
+      /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
     /*]]>*/
 </script>
 
 <script>
-    // ===== PDF.js =====
+    /* ===== PDF.js ===== */
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     pdfjsLib.disableCreateObjectURL = true;
 
-    // ===== State =====
+    /* ===== State ===== */
     const params = new URLSearchParams(location.search);
-    let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
+    let PDF_URL = params.get('pdf') || DEFAULT_PDF;
 
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
     const MAX_DPR_SLIDE=3, MAX_DPR_READ=3;
-    let inReadMode=false;
-
-    // autoplay state
+    let viewMode='slide';            // 'slide' | 'read'
     let auto=false, timer=null, SLIDE_MS=8000;
 
     const viewer=document.getElementById('viewer');
@@ -149,44 +153,48 @@
     const indicator=document.getElementById('indicator');
     const progressBar=document.getElementById('progress'), prog=document.getElementById('prog');
 
-    // ===== Menu kebab =====
+    /* ===== Menu ===== */
     const kebab=document.getElementById('kebabBtn');
     const pop=document.getElementById('pop');
-    kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
-    document.addEventListener('click',()=>pop.classList.remove('show'));
     const A=(id)=>document.getElementById(id);
-    A('miDownload').onclick = ()=>{ const a=document.createElement('a'); a.href=PDF_URL; a.download='file.pdf'; a.click(); pop.classList.remove('show'); };
-    A('miFullscreen').onclick = ()=>{ (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.()); pop.classList.remove('show'); };
-    A('miFitWidth').onclick = ()=>{ stopAuto(); fitMode='width'; show(pageNum,true); pop.classList.remove('show'); };
-    A('miZoomIn').onclick = ()=>{ stopAuto(); setZoom(zoomPct+ZSTEP); pop.classList.remove('show'); };
-    A('miZoomOut').onclick = ()=>{ stopAuto(); setZoom(zoomPct-ZSTEP); pop.classList.remove('show'); };
-    A('miZoomReset').onclick = ()=>{ stopAuto(); setZoom(100); pop.classList.remove('show'); };
+    const closePop=()=>pop.classList.remove('show');
+    const stopThen=(fn)=>(e)=>{e.stopPropagation(); fn(); closePop();};
 
-    // ===== Play/Pause logic =====
-    function updatePlayLabel(){
-      A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play';
+    kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
+    document.addEventListener('click',closePop);
+
+    A('miDownload').addEventListener('click', stopThen(()=>{ const a=document.createElement('a'); a.href=PDF_URL; a.download='file.pdf'; a.click(); }));
+    A('miFullscreen').addEventListener('click', stopThen(()=>{ (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.()); }));
+    A('miFitWidth').addEventListener('click', stopThen(()=>{ fitMode='width'; if(viewMode==='slide') show(pageNum); }));
+
+    A('miZoomIn').addEventListener('click', stopThen(()=> setZoom(zoomPct+ZSTEP)));
+    A('miZoomOut').addEventListener('click', stopThen(()=> setZoom(zoomPct-ZSTEP)));
+    A('miZoomReset').addEventListener('click', stopThen(()=> setZoom(100)));
+
+    function setPlayEnabled(on){
+      A('miPlay').setAttribute('aria-disabled', on? 'false':'true');
     }
+    function updateModeLabel(){
+      A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Baca' : '🖼️ Mode Slide';
+      setPlayEnabled(viewMode==='slide');
+    }
+    function updatePlayLabel(){ A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
+
     function startAuto(){
-      if(inReadMode || auto || numPages<=1) return;
+      if(viewMode!=='slide' || auto || !numPages) return;
       auto=true; updatePlayLabel();
-      timer=setInterval(()=>{
-        const next = (pageNum < numPages) ? pageNum+1 : 1;
-        show(next,true);
-      }, SLIDE_MS);
+      timer=setInterval(()=>{ const nxt=(pageNum<numPages)?pageNum+1:1; show(nxt); }, SLIDE_MS);
     }
-    function stopAuto(){
-      if(timer){ clearInterval(timer); timer=null; }
-      if(auto){ auto=false; updatePlayLabel(); }
-    }
-    A('miPlay').onclick=()=>{ auto ? stopAuto() : startAuto(); pop.classList.remove('show'); };
+    function stopAuto(){ if(timer){clearInterval(timer); timer=null;} if(auto){auto=false; updatePlayLabel();} }
+    const stopAutoOnInteraction = ()=>{ if(auto) stopAuto(); };
 
-    // stop autoplay pada interaksi manual
-    function stopAutoOnInteraction(){ if(auto) stopAuto(); }
+    A('miPlay').addEventListener('click', stopThen(()=>{ if(viewMode!=='slide') return; auto?stopAuto():startAuto(); }));
+    A('miMode').addEventListener('click', stopThen(()=>{ viewMode==='slide' ? enterReadMode() : exitReadMode(); }));
 
-    // ===== Helpers =====
-    function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+    /* ===== Helpers ===== */
+    const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
     function updateIndicator(){ indicator.textContent=`Page ${pageNum} / ${numPages}`; const pct=Math.round(((pageNum-1)/(numPages-1||1))*100); progressBar.style.setProperty('--p', pct+'%'); prog.style.inset=`0 ${100-pct}% 0 0`; }
-    function renderIntentFor(pct,dpr){ return (pct>=150||dpr>=2.5)?'print':'display'; }
+    const renderIntentFor=(pct,dpr)=> (pct>=150||dpr>=2.5)?'print':'display';
 
     async function calcViewport(page,dprCap,mode){
       const base=page.getViewport({scale:1});
@@ -200,6 +208,7 @@
     }
 
     async function renderFit(p,canvas,ctx){
+      if(!pdfDoc) return;
       const page=await pdfDoc.getPage(p);
       const {viewport,dpr}=await calcViewport(page,MAX_DPR_SLIDE,'slide');
       const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
@@ -210,59 +219,59 @@
       await page.render({canvasContext:ctx,viewport,intent:renderIntentFor(zoomPct,devicePixelRatio||1)}).promise;
     }
 
-    async function show(p,forward=true){
-      if(inReadMode||animating) return;
+    function resetSlideTransforms(){
+      gesture.tx = gesture.ty = 0;
+      gesture.scaleTmp = 1;
+      wrap1.style.transform='translate(0,0) scale(1)';
+      wrap2.style.transform='translate(0,0) scale(1)';
+    }
+
+    async function show(p){
+      if(viewMode!=='slide' || animating || !pdfDoc) return;
       animating=true; prevBtn.disabled=nextBtn.disabled=true;
-      const curL=(active===1)?L1:L2, nxtL=(active===1)?L2:L1;
-      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1, nxtW=(active===1)?wrap2:wrap1;
+      const nxtL=(active===1)?L2:L1;
+      const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
       nxtL.style.display='none';
       await renderFit(p,nxtC,nxtCtx);
-      curL.style.display='none'; nxtL.style.display='grid';
-      nxtW.style.transform='translate(0px,0px) scale(1)'; // reset transform
+      (active===1?L1:L2).style.display='none'; nxtL.style.display='grid';
+      resetSlideTransforms();
       active=(active===1)?2:1; pageNum=p; updateIndicator();
       prevBtn.disabled=nextBtn.disabled=false; animating=false;
     }
 
-    // Next/Prev selalu aktif; hentikan autoplay saat dipakai
-    prevBtn.onclick=()=>{ if(pageNum>1){ stopAutoOnInteraction(); show(pageNum-1,false); } };
-    nextBtn.onclick=()=>{ if(pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1,true);  } };
-
+    /* Next/Prev & progress */
+    prevBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum>1) show(pageNum-1); };
+    nextBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum<numPages) show(pageNum+1); };
     progressBar.addEventListener('click',(e)=>{
       const r=progressBar.getBoundingClientRect();
       const pct=clamp((e.clientX-r.left)/r.width,0,1);
       const target=Math.max(1,Math.round(1+pct*(numPages-1)));
-      if(target!==pageNum){ stopAutoOnInteraction(); show(target,target>pageNum); }
+      if(target!==pageNum){ stopAutoOnInteraction(); show(target); }
     });
 
-    // ===== Zoom (keyboard/menu) + debounce =====
+    /* Zoom via menu/keyboard */
     let zoomTimer=null;
     function setZoom(pct){
-      if(inReadMode){ readZoomPct=clamp(pct,ZMIN,ZMAX); buildReadPages(); return; }
+      if(viewMode==='read'){ readZoomPct=clamp(pct,ZMIN,ZMAX); buildReadPages(); return; }
       zoomPct=clamp(pct,ZMIN,ZMAX);
       clearTimeout(zoomTimer);
-      zoomTimer=setTimeout(()=>show(pageNum,true),60);
+      zoomTimer=setTimeout(()=>show(pageNum),60);
     }
-
     document.addEventListener('keydown',(e)=>{
       if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(100); }
       if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
       if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
-      if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); } // spasi = toggle
-      if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1,true); }
-      if(e.key==='ArrowLeft'  && pageNum>1){        stopAutoOnInteraction(); show(pageNum-1,false); }
+      if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
+      if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
+      if(e.key==='ArrowLeft'  && pageNum>1)       { stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    // ===== Gesture: pinch (2 jari) & pan (1 jari saat zoom>100) =====
-    const gesture = {
-      pointers:new Map(), mode:'idle', dist0:1, scaleTmp:1,
-      tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0}
-    };
-    const wrapOf=()=> (active===1?wrap1:wrap2);
-
-    function getMid(){ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
-    function dist(){ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
-
-    function setTransform(){ const w=wrapOf(); w.style.transform=`translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.scaleTmp})`; }
+    /* Gesture: pinch/pan */
+    const gesture = { pointers:new Map(), mode:'idle', dist0:1, scaleTmp:1, tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0} };
+    const wrapOf = ()=> (active===1?wrap1:wrap2);
+    const getMid=()=>{ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
+    const dist=()=>{ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
+    const setTransform=()=>{ const w=wrapOf(); w.style.transform=`translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.scaleTmp})`; }
     function clampPan(limit=120){
       const cnv=(active===1?c1:c2);
       const w=cnv.clientWidth, h=cnv.clientHeight;
@@ -271,37 +280,28 @@
       gesture.tx = clamp(gesture.tx,-maxX,maxX);
       gesture.ty = clamp(gesture.ty,-maxY,maxY);
     }
-
     function onPointerDown(e){
+      if(viewMode!=='slide') return;
       stopAutoOnInteraction();
-      const w=wrapOf();
-      w.setPointerCapture?.(e.pointerId);
+      const w=wrapOf(); w.setPointerCapture?.(e.pointerId);
       gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(gesture.pointers.size===2){
-        gesture.mode='pinch';
-        gesture.dist0=dist(); gesture.scaleTmp=1;
-        gesture.mid0=getMid();
+        gesture.mode='pinch'; gesture.dist0=dist(); gesture.scaleTmp=1; gesture.mid0=getMid();
         gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
       }else if(gesture.pointers.size===1 && zoomPct>100){
-        gesture.mode='pan';
-        gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
+        gesture.mode='pan'; gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
       }
     }
     function onPointerMove(e){
       if(!gesture.pointers.has(e.pointerId)) return;
       gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(gesture.mode==='pinch'){
-        const s=clamp(dist()/gesture.dist0,0.5,3);
-        gesture.scaleTmp=s;
-        const mid=getMid();
-        gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x);
-        gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
+        const s=clamp(dist()/gesture.dist0,0.5,3); gesture.scaleTmp=s;
+        const mid=getMid(); gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x); gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
         clampPan(); setTransform();
       }else if(gesture.mode==='pan'){
-        const p=[...gesture.pointers.values()][0];
-        if(!gesture._anchor){ gesture._anchor={x:p.x,y:p.y}; }
-        gesture.tx = gesture.startTx + (p.x-gesture._anchor.x);
-        gesture.ty = gesture.startTy + (p.y-gesture._anchor.y);
+        const p=[...gesture.pointers.values()][0]; if(!gesture._anchor){ gesture._anchor={x:p.x,y:p.y}; }
+        gesture.tx = gesture.startTx + (p.x-gesture._anchor.x); gesture.ty = gesture.startTy + (p.y-gesture._anchor.y);
         clampPan(); setTransform();
       }
     }
@@ -324,48 +324,88 @@
       w.addEventListener('pointercancel',onPointerUp);
     });
 
-    // Swipe ganti halaman — hanya saat zoom=100
+    /* Wheel/trackpad */
+    stage.addEventListener('wheel', (e) => {
+      if (viewMode !== 'slide' || !pdfDoc) return;
+      if (zoomPct <= 100) {
+        const dy = e.deltaY || 0;
+        if (Math.abs(dy) < 1) return;
+        stopAutoOnInteraction();
+        if (dy > 0 && pageNum < numPages) { e.preventDefault(); show(pageNum + 1); }
+        else if (dy < 0 && pageNum > 1)    { e.preventDefault(); show(pageNum - 1); }
+        return;
+      }
+      e.preventDefault();
+      stopAutoOnInteraction();
+      gesture.scaleTmp = 1;
+      gesture.tx += -e.deltaX;
+      gesture.ty += -e.deltaY;
+      clampPan();
+      setTransform();
+    }, { passive: false });
+
+    /* Swipe to change page */
     let swipeX=null;
-    stage.addEventListener('pointerdown', (e)=>{ if(zoomPct===100){ swipeX=e.clientX; }});
+    stage.addEventListener('pointerdown', (e)=>{ if(viewMode==='slide'){ swipeX=e.clientX; }});
     stage.addEventListener('pointerup', (e)=>{
-      if(zoomPct!==100 || swipeX===null) return;
+      if(viewMode!=='slide' || swipeX===null) return;
       const dx=e.clientX-swipeX;
       if(Math.abs(dx)>60){
         stopAutoOnInteraction();
-        if(dx<0 && pageNum<numPages) show(pageNum+1,true);
-        if(dx>0 && pageNum>1)        show(pageNum-1,false);
+        if(dx<0 && pageNum<numPages) show(pageNum+1);
+        if(dx>0 && pageNum>1)        show(pageNum-1);
       }
       swipeX=null;
     });
 
-    // ===== Read mode (lazy) =====
-    const io=new IntersectionObserver(async (entries)=>{
-      for(const ent of entries){
-        if(!ent.isIntersecting) continue;
-        const cnv=ent.target; if(cnv.dataset.rendered) continue;
-        const i=+cnv.dataset.page;
-        const page=await pdfDoc.getPage(i);
-        const {viewport,dpr}=await calcViewport(page,MAX_DPR_READ,'read');
-        const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
-        cnv.width=w; cnv.height=h; cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
-        const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
-        await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
-        cnv.dataset.rendered='1';
-      }
-    },{root:read,rootMargin:'200px 0px',threshold:0.01});
+    /* READ mode lazy render */
+    let io=null;
+    const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=>{
+        for(const ent of ents){
+          if(!ent.isIntersecting) continue;
+          const cnv=ent.target; if(cnv.dataset.rendered) continue;
+          const i=+cnv.dataset.page;
+          const page=await pdfDoc.getPage(i);
+          const {viewport,dpr}=await calcViewport(page,MAX_DPR_READ,'read');
+          const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
+          cnv.width=w; cnv.height=h; cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
+          const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
+          await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
+          cnv.dataset.rendered='1';
+        }
+      },{root:read,rootMargin:'200px 0px',threshold:0.01}));
 
     function buildReadPages(){
+      const obs=ensureObserver();
       docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
         const cnv=document.createElement('canvas'); cnv.className='page'; cnv.dataset.page=i; cnv.height=200; cnv.style.width='100%';
-        docEl.appendChild(cnv); io.observe(cnv);
+        docEl.appendChild(cnv); obs.observe(cnv);
       }
+      read.scrollTop=0;
     }
-    function enterReadMode(){ stopAuto(); inReadMode=true; stage.style.display='none'; read.style.display='block'; buildReadPages(); A('miMode').textContent='🖼️ Mode Slide'; }
-    function exitReadMode(){ inReadMode=false; read.style.display='none'; stage.style.display='grid'; show(pageNum,true); A('miMode').textContent='📖 Mode Baca'; }
-    A('miMode').onclick=()=> (inReadMode?exitReadMode():enterReadMode());
+    function destroyReadPages(){ if(io){ io.disconnect(); io=null; } docEl.innerHTML=''; }
 
-    // ===== Load PDF =====
+    function enterReadMode(){
+      if(viewMode==='read') return;
+      stopAuto();
+      viewMode='read'; updateModeLabel();
+      stage.style.display='none';
+      read.style.display='block';
+      buildReadPages();
+    }
+    function exitReadMode(){
+      if(viewMode==='slide') return;
+      stopAuto();
+      viewMode='slide'; updateModeLabel();
+      destroyReadPages();
+      read.style.display='none';
+      stage.style.display='grid';
+      fitMode='page'; resetSlideTransforms();
+      show(pageNum);
+    }
+
+    /* Load PDF */
     (async function(){
       const task=pdfjsLib.getDocument({
         url:PDF_URL,
@@ -378,7 +418,7 @@
       numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum,c1,ctx1);
       L1.style.display='grid'; L2.style.display='none';
-      updatePlayLabel(); // set label awal
+      updatePlayLabel(); updateModeLabel();     /* penting: set label awal & disable Play di Read */
     })();
 </script>
 </body>
