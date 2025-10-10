@@ -41,7 +41,7 @@
         }
 
         #top{
-          display:flex; gap:8px; justify-content:flex-end; align-items:center;
+          display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap;
           padding:calc(8px + var(--safe-top)) var(--pad) 8px var(--pad);
           background:rgba(16,18,24,.86); backdrop-filter:blur(12px);
           border-bottom:1px solid var(--ring); position:sticky; top:0; z-index:50;
@@ -57,6 +57,11 @@
         .btn-ico{ width:18px; height:18px; flex:0 0 18px; opacity:.9; }
         .ghost:hover{ background:#1a1f28; }
         .primary:hover{ filter:brightness(1.02); }
+
+        .seg{display:inline-flex;align-items:center;border:1px solid var(--ring);border-radius:12px;overflow:hidden}
+        .seg button{background:transparent;border:0;height:36px;padding:0 10px}
+        .seg .sep{width:1px;height:20px;background:var(--ring);margin:0 4px;opacity:.8}
+        .seg .ro{min-width:64px;text-align:center;color:var(--sub);pointer-events:none}
 
         #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
         .deck{position:absolute; inset:var(--pad); display:grid; place-items:center; perspective:1400px; isolation:isolate;}
@@ -124,6 +129,20 @@
                 <path d="M7 3H3v4M21 7V3h-4M17 21h4v-4M3 17v4h4"/>
             </svg> Full
         </button>
+
+        <!-- ZOOM SEGMENT -->
+        <span class="seg" role="group" aria-label="Zoom controls">
+      <button id="zoomOutBtn" title="Zoom Out ( - )" aria-label="Zoom Out">–</button>
+      <span class="sep"></span>
+      <span id="zoomReadout" class="ro">100%</span>
+      <span class="sep"></span>
+      <button id="zoomInBtn" title="Zoom In ( + )" aria-label="Zoom In">+</button>
+      <span class="sep"></span>
+      <button id="zoomResetBtn" title="Reset 100% (0)">100%</button>
+      <span class="sep"></span>
+      <button id="fitWidthBtn" title="Fit Width">Fit&nbsp;Width</button>
+    </span>
+
         <button id="modeBtn" class="primary" title="Mode Baca">
             <svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/>
@@ -179,8 +198,9 @@
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || (typeof DEFAULT_PDF!=='undefined'?DEFAULT_PDF:'/file.pdf');
     let pdfDoc=null, pageNum=1, numPages=0;
-    let active=1, animating=false, fitMode='page', zoomPct=100;
-    let MAX_DPR_SLIDE = 3, MAX_DPR_READ = 3; // naikkan ketajaman
+    let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
+    const ZMIN=25, ZMAX=400, ZSTEP=10;
+    let MAX_DPR_SLIDE = 3, MAX_DPR_READ = 3; // ketajaman tinggi
     let inReadMode = false;
 
     // autoplay
@@ -202,6 +222,12 @@
     const playBtn=document.getElementById('playBtn');
     const modeBtn=document.getElementById('modeBtn');
 
+    const zoomOutBtn=document.getElementById('zoomOutBtn');
+    const zoomInBtn =document.getElementById('zoomInBtn');
+    const zoomResetBtn=document.getElementById('zoomResetBtn');
+    const fitWidthBtn=document.getElementById('fitWidthBtn');
+    const zoomReadout=document.getElementById('zoomReadout');
+
     if (NO_GESTURE) viewer.classList.add('no-gesture');
 
     document.getElementById('dlBtn').href = PDF_URL;
@@ -222,20 +248,35 @@
     // ===== Helpers =====
     function setNavDisabled(v){ prevBtn.disabled=v; nextBtn.disabled=v; }
     function resetClasses(el){ el.className='layer'; }
+    function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+    function updateZoomReadout(){
+      const pct = inReadMode ? readZoomPct : zoomPct;
+      zoomReadout.textContent = Math.round(pct) + '%';
+    }
 
-    async function calcViewport(page, dprCap){
+    async function calcViewport(page, dprCap, mode){
       const base = page.getViewport({scale:1});
-      const W = Math.max(1, stage.clientWidth  - 24);
-      const H = Math.max(1, stage.clientHeight - 24);
+      let W,H,scalePct;
+      if (mode==='slide'){
+        W = Math.max(1, stage.clientWidth  - 24);
+        H = Math.max(1, stage.clientHeight - 24);
+        scalePct = zoomPct;
+      } else {
+        const containerW = docEl.clientWidth - 2;
+        W = containerW; H = Infinity;
+        scalePct = readZoomPct; // untuk Read Mode
+      }
       const dpr = Math.min(dprCap, Math.max(1, devicePixelRatio||1));
-      const fitScale = (fitMode==='width') ? (W / base.width) : Math.min(W/base.width, H/base.height);
-      const scale = Math.max(0.1, fitScale * (zoomPct/100) * dpr);
+      const fitScale = (fitMode==='width' || mode==='read')
+        ? (W / base.width)
+        : Math.min(W/base.width, H/base.height);
+      const scale = Math.max(0.1, fitScale * (scalePct/100) * dpr);
       return { viewport: page.getViewport({ scale }), cssScale: scale/dpr, dpr };
     }
 
     async function renderFit(p, canvas, ctx){
       const page = await pdfDoc.getPage(p);
-      const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE);
+      const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_SLIDE, 'slide');
       const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
 
       canvas.width=w; canvas.height=h;
@@ -303,8 +344,19 @@
     playBtn.onclick = ()=> auto ? stopAuto() : startAuto();
 
     document.addEventListener('keydown', (e)=>{
-      if (inReadMode) return;
-      if (e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
+      // Play/Pause hanya di slide mode
+      if (!inReadMode && e.code === 'Space'){ e.preventDefault(); auto ? stopAuto() : startAuto(); }
+
+      // Zoom shortcuts
+      const plus = (e.key === '=' || e.key === '+');
+      const minus = (e.key === '-' || e.key === '_');
+      const reset = (e.key === '0');
+      if (plus || minus || reset || e.ctrlKey || e.metaKey){
+        if (plus){ e.preventDefault(); doZoom(+1); }
+        if (minus){ e.preventDefault(); doZoom(-1); }
+        if (reset){ e.preventDefault(); setZoom(100); }
+        if ((e.ctrlKey||e.metaKey) && (plus||minus||reset)) e.preventDefault();
+      }
     });
 
     // ===== Read Mode (lazy render) =====
@@ -315,29 +367,23 @@
           if(cnv.dataset.rendered) continue;
           const i = +cnv.dataset.page;
           const page = await pdfDoc.getPage(i);
-          const base = page.getViewport({scale:1});
-          const containerW = docEl.clientWidth - 2;
-          const dpr = Math.min(MAX_DPR_READ, Math.max(1, devicePixelRatio||1));
-          const scale = (containerW * dpr) / base.width;
-          const vp = page.getViewport({scale});
-          cnv.width  = Math.floor(vp.width);
-          cnv.height = Math.floor(vp.height);
-          cnv.style.width  = Math.floor(vp.width/dpr)+'px';
-          cnv.style.height = Math.floor(vp.height/dpr)+'px';
+          const { viewport, cssScale, dpr } = await calcViewport(page, MAX_DPR_READ, 'read');
+
+          const w = Math.floor(viewport.width), h = Math.floor(viewport.height);
+          cnv.width  = w; cnv.height = h;
+          cnv.style.width  = Math.floor(w/dpr)+'px';
+          cnv.style.height = Math.floor(h/dpr)+'px';
+
           const cctx = cnv.getContext('2d', {alpha:false});
           cctx.imageSmoothingEnabled=false;
-          cctx.fillStyle='#fff'; cctx.fillRect(0,0,cnv.width,cnv.height);
-          await page.render({canvasContext:cctx, viewport:vp, intent:'print'}).promise;
+          cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
+          await page.render({canvasContext:cctx, viewport, intent:'print'}).promise;
           cnv.dataset.rendered = '1';
         }
       }
     }, {root: read, rootMargin:'200px 0px', threshold:0.01});
 
-    function enterReadMode(){
-      stopAuto();
-      inReadMode=true;
-      stage.style.display='none';
-      read.style.display='block';
+    function buildReadPages(){
       docEl.innerHTML='';
       for(let i=1;i<=numPages;i++){
         const cnv=document.createElement('canvas');
@@ -346,8 +392,17 @@
         docEl.appendChild(cnv); docEl.appendChild(pinfo);
         io.observe(cnv);
       }
-      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
+    }
+
+    function enterReadMode(){
+      stopAuto();
+      inReadMode=true;
+      stage.style.display='none';
+      read.style.display='block';
+      buildReadPages();
+      modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a 3 3 0 0 1-3-3V4z"/></svg> Mode Slide`;
       playBtn.disabled = true; playBtn.title = 'Play hanya di Mode Slide';
+      updateZoomReadout();
     }
     function exitReadMode(){
       inReadMode=false;
@@ -356,8 +411,46 @@
       modeBtn.innerHTML = `<svg class="btn-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5a2 2 0 0 1 2-2h6.5a3.5 3.5 0 0 1 3.5 3.5V21H5a2 2 0 0 1-2-2V5Zm13 0h3a2 2 0 0 1 2 2v14h-5V5Z"/></svg> Mode Baca`;
       playBtn.disabled = false; playBtn.title = 'Putar otomatis';
       show(pageNum,true);
+      updateZoomReadout();
     }
     document.getElementById('modeBtn').onclick=()=> inReadMode ? exitReadMode() : enterReadMode();
+
+    // ===== ZOOM LOGIC =====
+    function setZoom(pct){
+      if (inReadMode){
+        readZoomPct = clamp(pct, ZMIN, ZMAX);
+        updateZoomReadout();
+        // rebuild visible canvases (preserve scroll ratio)
+        const ratio = read.scrollTop / Math.max(1, read.scrollHeight - read.clientHeight);
+        buildReadPages();
+        // restore approx position
+        requestAnimationFrame(()=>{ read.scrollTop = Math.round(ratio * (read.scrollHeight - read.clientHeight)); });
+      } else {
+        zoomPct = clamp(pct, ZMIN, ZMAX);
+        updateZoomReadout();
+        // re-render current page sharply
+        show(pageNum, true);
+      }
+    }
+    function doZoom(dir){ // dir: +1 / -1
+      const base = inReadMode ? readZoomPct : zoomPct;
+      setZoom(base + dir*ZSTEP);
+    }
+    function fitWidth(){
+      if (inReadMode){
+        // Hitung zoom yang bikin lebar pas container
+        // read mode sudah by width; gunakan 100% sebagai "fit width".
+        setZoom(100);
+      } else {
+        fitMode='width';
+        show(pageNum,true);
+      }
+    }
+
+    zoomInBtn.onclick = ()=>doZoom(+1);
+    zoomOutBtn.onclick= ()=>doZoom(-1);
+    zoomResetBtn.onclick= ()=>setZoom(100);
+    fitWidthBtn.onclick = ()=>fitWidth();
 
     // ===== Load PDF =====
     (async function(){
@@ -371,6 +464,7 @@
       numPages = pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum, c1, ctx1);
       L1.style.display='grid'; L2.style.display='none';
+      updateZoomReadout();
     })();
 </script>
 </body>
