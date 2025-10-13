@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Sarinah Catalogue — Fast PDF Viewer</title>
+    <title>Sarinah Catalogue</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -28,7 +28,6 @@
         }
         @supports(height:100svh){#viewer{width:min(100svw,1400px);height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)}}
 
-        /* Top bar & kebab */
         #top{position:absolute; inset:0 0 auto 0; height:56px; display:flex; align-items:center; justify-content:flex-end;
              padding:calc(8px + var(--safe-top)) 10px 8px; z-index:50;
              background:rgba(16,18,24,.6); backdrop-filter:blur(10px); border-bottom:1px solid var(--ring)}
@@ -54,7 +53,6 @@
           image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
         }
 
-        /* READ mode container MUST flex:1 to be visible */
         #read{flex:1; overflow:auto; background:#0b0f15; display:none}
         #doc{margin:0 auto; padding:16px; width:min(100%,1100px)}
 
@@ -83,7 +81,7 @@
         <div id="pop" class="popover" role="menu" aria-label="Menu">
             <button class="popitem" id="miDownload">⬇️ Download</button>
             <button class="popitem" id="miFullscreen">⤢ Fullscreen</button>
-            <button class="popitem" id="miMode">📖 Mode Baca</button>
+            <button class="popitem" id="miMode">📖 Mode Read</button>
             <hr class="sep">
             <button class="popitem" id="miZoomIn">＋ Zoom In</button>
             <button class="popitem" id="miZoomOut">－ Zoom Out</button>
@@ -113,7 +111,7 @@
     </div>
 </div>
 
-<!-- DEFAULT_PDF: Thymeleaf-safe + fallback -->
+<!-- DEFAULT_PDF -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const DEFAULT_PDF =
@@ -135,7 +133,7 @@
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
     const MAX_DPR_SLIDE=3, MAX_DPR_READ=3;
-    let viewMode='slide';            // 'slide' | 'read'
+    let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
 
     const viewer=document.getElementById('viewer');
@@ -171,23 +169,13 @@
     A('miZoomOut').addEventListener('click', stopThen(()=> setZoom(zoomPct-ZSTEP)));
     A('miZoomReset').addEventListener('click', stopThen(()=> setZoom(100)));
 
-    function setPlayEnabled(on){
-      A('miPlay').setAttribute('aria-disabled', on? 'false':'true');
-    }
-    function updateModeLabel(){
-      A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Baca' : '🖼️ Mode Slide';
-      setPlayEnabled(viewMode==='slide');
-    }
+    function setPlayEnabled(on){ A('miPlay').setAttribute('aria-disabled', on? 'false':'true'); }
+    function updateModeLabel(){ A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Baca' : '🖼️ Mode Slide'; setPlayEnabled(viewMode==='slide'); }
     function updatePlayLabel(){ A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
 
-    function startAuto(){
-      if(viewMode!=='slide' || auto || !numPages) return;
-      auto=true; updatePlayLabel();
-      timer=setInterval(()=>{ const nxt=(pageNum<numPages)?pageNum+1:1; show(nxt); }, SLIDE_MS);
-    }
+    function startAuto(){ if(viewMode!=='slide' || auto || !numPages) return; auto=true; updatePlayLabel(); timer=setInterval(()=>{ const nxt=(pageNum<numPages)?pageNum+1:1; show(nxt); }, SLIDE_MS); }
     function stopAuto(){ if(timer){clearInterval(timer); timer=null;} if(auto){auto=false; updatePlayLabel();} }
     const stopAutoOnInteraction = ()=>{ if(auto) stopAuto(); };
-
     A('miPlay').addEventListener('click', stopThen(()=>{ if(viewMode!=='slide') return; auto?stopAuto():startAuto(); }));
     A('miMode').addEventListener('click', stopThen(()=>{ viewMode==='slide' ? enterReadMode() : exitReadMode(); }));
 
@@ -266,58 +254,105 @@
       if(e.key==='ArrowLeft'  && pageNum>1)       { stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    /* Gesture: pinch/pan */
-    const gesture = { pointers:new Map(), mode:'idle', dist0:1, scaleTmp:1, tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0} };
+    /* ====== LIVE ZOOM PIPELINE (biar mirip Read) ====== */
+    const live = { target: 100, rendering:false, scheduled:false, lastApplied:100 };
+    function requestLiveRender(pct){
+      live.target = clamp(Math.round(pct), ZMIN, ZMAX);
+      if(live.scheduled || live.rendering) return;
+      live.scheduled = true;
+      setTimeout(async ()=>{   // debounce ~80ms
+        live.scheduled = false;
+        if(live.rendering) return;
+        live.rendering = true;
+        const z = live.target;
+        zoomPct = z;
+        await show(pageNum);   // render tajam di zoom terbaru
+        live.lastApplied = z;
+        live.rendering = false;
+      }, 80);
+    }
+
+    /* ====== Gesture: Slide behaves like Read ====== */
+    const gesture = {
+      pointers:new Map(), mode:'idle',
+      dist0:1, scaleTmp:1, tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0},
+      startZoom:100, livePct:100
+    };
     const wrapOf = ()=> (active===1?wrap1:wrap2);
+    const canvasOf = ()=> (active===1?c1:c2);
     const getMid=()=>{ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
     const dist=()=>{ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
-    const setTransform=()=>{ const w=wrapOf(); w.style.transform=`translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.scaleTmp})`; }
+    const setTransform=()=>{ const w=wrapOf(); w.style.transform=`translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.scaleTmp})`; };
+
     function clampPan(limit=120){
-      const cnv=(active===1?c1:c2);
+      const cnv=canvasOf();
       const w=cnv.clientWidth, h=cnv.clientHeight;
-      const maxX=(w*(gesture.scaleTmp)-w)/2 + limit;
-      const maxY=(h*(gesture.scaleTmp)-h)/2 + limit;
+      const scale = gesture.scaleTmp; // live visual
+      const maxX=(w*(scale)-w)/2 + limit;
+      const maxY=(h*(scale)-h)/2 + limit;
       gesture.tx = clamp(gesture.tx,-maxX,maxX);
       gesture.ty = clamp(gesture.ty,-maxY,maxY);
     }
+
     function onPointerDown(e){
       if(viewMode!=='slide') return;
       stopAutoOnInteraction();
       const w=wrapOf(); w.setPointerCapture?.(e.pointerId);
       gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(gesture.pointers.size===2){
-        gesture.mode='pinch'; gesture.dist0=dist(); gesture.scaleTmp=1; gesture.mid0=getMid();
+        gesture.mode='pinch';
+        gesture.dist0=dist();
+        gesture.scaleTmp=1;
+        gesture.mid0=getMid();
         gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
+        gesture.startZoom = zoomPct;
+        gesture.livePct  = zoomPct;
       }else if(gesture.pointers.size===1 && zoomPct>100){
         gesture.mode='pan'; gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
       }
     }
+
     function onPointerMove(e){
       if(!gesture.pointers.has(e.pointerId)) return;
       gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(gesture.mode==='pinch'){
-        const s=clamp(dist()/gesture.dist0,0.5,3); gesture.scaleTmp=s;
-        const mid=getMid(); gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x); gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
+        const factor=clamp(dist()/gesture.dist0,0.5,3);
+        const newPct = clamp(gesture.startZoom * factor, ZMIN, ZMAX);
+
+        // Visual responsif: transform sementara
+        gesture.scaleTmp = newPct / gesture.startZoom;
+        const mid=getMid();
+        gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x);
+        gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
         clampPan(); setTransform();
-      }else if(gesture.mode==='pan'){
+
+        // Rerender tajam berkala (mirip Read)
+        gesture.livePct = newPct;
+        requestLiveRender(newPct);
+        return;
+      }
+      if(gesture.mode==='pan'){
         const p=[...gesture.pointers.values()][0]; if(!gesture._anchor){ gesture._anchor={x:p.x,y:p.y}; }
-        gesture.tx = gesture.startTx + (p.x-gesture._anchor.x); gesture.ty = gesture.startTy + (p.y-gesture._anchor.y);
+        gesture.tx = gesture.startTx + (p.x-gesture._anchor.x);
+        gesture.ty = gesture.startTy + (p.y-gesture._anchor.y);
         clampPan(); setTransform();
       }
     }
+
     function onPointerUp(e){
-      const w=wrapOf();
       if(gesture.pointers.has(e.pointerId)) gesture.pointers.delete(e.pointerId);
       if(gesture.mode==='pinch' && gesture.pointers.size<2){
-        const newPct = clamp(zoomPct * gesture.scaleTmp, ZMIN, ZMAX);
-        gesture.mode='idle'; gesture.scaleTmp=1; gesture.tx=0; gesture.ty=0; gesture._anchor=null;
-        w.style.transform='translate(0,0) scale(1)';
-        setZoom(Math.round(newPct));
+        gesture.mode='idle'; gesture._anchor=null;
+        // Final commit: paksa satu render lagi ke target terakhir
+        const finalPct = gesture.livePct || zoomPct;
+        resetSlideTransforms();
+        requestLiveRender(finalPct);
         return;
       }
       if(gesture.mode==='pan' && gesture.pointers.size===0){ gesture.mode='idle'; gesture._anchor=null; }
     }
-    ;[wrap1,wrap2].forEach(w=>{
+
+    [wrap1,wrap2].forEach(w=>{
       w.addEventListener('pointerdown',onPointerDown);
       w.addEventListener('pointermove',onPointerMove);
       w.addEventListener('pointerup',onPointerUp);
@@ -327,6 +362,18 @@
     /* Wheel/trackpad */
     stage.addEventListener('wheel', (e) => {
       if (viewMode !== 'slide' || !pdfDoc) return;
+
+      // Zoom kontinu saat Ctrl/Meta (mirip Read)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        stopAutoOnInteraction();
+        const delta = e.deltaY;
+        const step = (Math.abs(delta) > 40 ? 8 : 4);
+        const dir = delta > 0 ? -step : step;
+        requestLiveRender(zoomPct + dir);
+        return;
+      }
+
       if (zoomPct <= 100) {
         const dy = e.deltaY || 0;
         if (Math.abs(dy) < 1) return;
@@ -344,13 +391,13 @@
       setTransform();
     }, { passive: false });
 
-    /* Swipe to change page */
+    /* Swipe next/prev hanya saat tidak di-zoom */
     let swipeX=null;
     stage.addEventListener('pointerdown', (e)=>{ if(viewMode==='slide'){ swipeX=e.clientX; }});
     stage.addEventListener('pointerup', (e)=>{
       if(viewMode!=='slide' || swipeX===null) return;
       const dx=e.clientX-swipeX;
-      if(Math.abs(dx)>60){
+      if(Math.abs(dx)>60 && zoomPct<=100){
         stopAutoOnInteraction();
         if(dx<0 && pageNum<numPages) show(pageNum+1);
         if(dx>0 && pageNum>1)        show(pageNum-1);
@@ -358,7 +405,24 @@
       swipeX=null;
     });
 
-    /* READ mode lazy render */
+    /* Double-tap zoom 100% <-> 180% */
+    let lastTap=0, lastTapPos=null;
+    stage.addEventListener('pointerup', (e)=>{
+      if(viewMode!=='slide') return;
+      const now=Date.now();
+      const pos={x:e.clientX,y:e.clientY};
+      const gap = now - lastTap;
+      const moved = lastTapPos ? Math.hypot(pos.x-lastTapPos.x, pos.y-lastTapPos.y) : 999;
+      if(gap<280 && moved<20){
+        stopAutoOnInteraction();
+        requestLiveRender(zoomPct<=100 ? 180 : 100);
+        lastTap=0; lastTapPos=null;
+      }else{
+        lastTap=now; lastTapPos=pos;
+      }
+    });
+
+    /* ===== READ mode (unchanged) ===== */
     let io=null;
     const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=>{
         for(const ent of ents){
@@ -418,7 +482,7 @@
       numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum,c1,ctx1);
       L1.style.display='grid'; L2.style.display='none';
-      updatePlayLabel(); updateModeLabel();     /* penting: set label awal & disable Play di Read */
+      updatePlayLabel(); updateModeLabel();
     })();
 </script>
 </body>

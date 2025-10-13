@@ -2,10 +2,7 @@ package com.sarinah.peoplecounter.controller;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.sarinah.peoplecounter.service.PostJournalEntriesService;
-import com.sarinah.peoplecounter.service.PostLoyaltyMemberService;
-import com.sarinah.peoplecounter.service.PostPosHistoryService;
-import com.sarinah.peoplecounter.service.PostScanBarcodeService;
+import com.sarinah.peoplecounter.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +17,7 @@ public class ScanBarcodeController {
     private final PostLoyaltyMemberService postLoyaltyMemberService;
     private final PostPosHistoryService postPosHistoryService;
     private final PostJournalEntriesService postJournalEntriesService;
+    private final PostOrderRatingService postOrderRatingService;
 
     @PostMapping(value = "/barcode")
     public ObjectNode postScanResponse(@RequestBody ObjectNode request) {
@@ -39,5 +37,10 @@ public class ScanBarcodeController {
     @PostMapping(value = "/journal-entries")
     public ArrayNode postJournalEntriesResponse(@RequestBody ObjectNode request) {
         return postJournalEntriesService.execute(request);
+    }
+
+    @PostMapping(value = "/rating")
+    public ArrayNode postOrderRatingResponse(@RequestBody ObjectNode request) {
+        return postOrderRatingService.execute(request);
     }
 }
