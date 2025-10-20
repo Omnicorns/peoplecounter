@@ -11,6 +11,7 @@ import com.sarinah.peoplecounter.service.AuthServicePlain;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +30,9 @@ import java.util.stream.Collectors;
 public class GreetingController {
     private final AuthServicePlain authService;
     private final UserRepository userRepo;
+    @Value("${api.key}")
+    private  String apiKey;
+
 
     public GreetingController(AuthServicePlain authService, UserRepository userRepository) {
         this.authService = authService;
@@ -66,6 +70,18 @@ public class GreetingController {
     public String doLogout(HttpSession session) {
         session.invalidate();
         return "redirect:/middleware/login";
+    }
+
+
+    @GetMapping("/sop")
+    public String manajemenSop(HttpSession session,Model model){
+        String username = (String) session.getAttribute("AUTH_USERNAME");
+        if (username == null) {
+            // jika belum login, redirect ke login
+            return "redirect:/middleware/login";
+        }
+        model.addAttribute("apiKey", apiKey);
+        return "middleware-sop";
     }
 
 

@@ -38,6 +38,7 @@ public class SecurityConfig {
             "/middleware/users/register",
             "/middleware/users/forgot",
             "/middleware/users/inactive",
+            "/middleware/sop",
 
             "/web/login",
             "/web/product",
@@ -90,6 +91,7 @@ public class SecurityConfig {
 
                         // 4) Preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
 
                         // 5) Sisanya wajib auth
                         .anyRequest().authenticated()

@@ -111,15 +111,15 @@ public class LoggingFilterConfig {
             String traceId = headerOrNew(req, "X-Request-ID");
             MDC.put("traceId", traceId);
 
-            // --- Cari username dengan urutan: SecurityContext → Session → IP map ---
-            String username = resolveUsername(req);
-
-            MDC.put("username", username);
-
             long start = System.currentTimeMillis();
             try {
+                // JANGAN resolve username di sini (SecurityContext belum siap)
                 chain.doFilter(req, res);
-            } finally {
+
+                // === Setelah filter chain lewat, SecurityContext sudah terisi ===
+                String username = resolveUsername(req);
+                MDC.put("username", username); // set MDC setelahnya
+
                 long dur = System.currentTimeMillis() - start;
                 String method = req.getMethod();
                 String uri = req.getRequestURI();
@@ -128,10 +128,7 @@ public class LoggingFilterConfig {
                 String reqBody = sanitize(bytesToString(req.getContentAsByteArray()));
                 String resBody = sanitize(bytesToString(res.getContentAsByteArray()));
 
-                // --- Ekstrak nilai scan dari REQUEST body
                 String scanVal = extractScanValue(reqBody);
-
-                // --- Ekstrak product name dari RESPONSE body (kalau ada)
                 String productName = extractJsonField(resBody, "name");
 
                 if (scanVal != null && !scanVal.isBlank()) {
@@ -139,8 +136,6 @@ public class LoggingFilterConfig {
                             (productName == null || productName.isBlank()) ? "-" : productName);
 
                     HttpSession s = req.getSession(false);
-
-                    // Simpan ke session (opsional)
                     if (s != null) {
                         s.setAttribute("LAST_SCAN_USER", username);
                         s.setAttribute("LAST_SCAN_VALUE", scanVal);
@@ -148,14 +143,12 @@ public class LoggingFilterConfig {
                         s.setAttribute("LAST_SCAN_AT", Instant.now());
                     }
 
-                    // Simpan GLOBAL agar terbaca semua session
                     ServletContext ctx = request.getServletContext();
                     ctx.setAttribute(ATTR_LAST_SCAN_USER, username);
                     ctx.setAttribute(ATTR_LAST_SCAN_VALUE, scanVal);
                     ctx.setAttribute(ATTR_LAST_SCAN_NAME, productName);
                     ctx.setAttribute(ATTR_LAST_SCAN_AT, Instant.now());
 
-                    // Catat riwayat hari ini
                     if (uri != null && uri.startsWith(BARCODE_ENDPOINT_PREFIX)) {
                         @SuppressWarnings("unchecked")
                         List<Map<String, Object>> buf =
@@ -164,7 +157,6 @@ public class LoggingFilterConfig {
                             buf = new CopyOnWriteArrayList<>();
                             ctx.setAttribute(ATTR_SCAN_TODAY, buf);
                         }
-
                         Map<String, Object> row = new LinkedHashMap<>();
                         row.put("time", LocalDateTime.now());
                         row.put("user", username);
@@ -173,40 +165,34 @@ public class LoggingFilterConfig {
                         row.put("traceId", traceId);
 
                         buf.add(0, row);
-                        while (buf.size() > 1000) {
-                            buf.remove(buf.size() - 1);
-                        }
+                        while (buf.size() > 1000) buf.remove(buf.size() - 1);
                     }
+
                     try {
                         String pname = (productName == null || productName.isBlank()) ? "-" : productName;
-
-                        // Gunakan SETTER agar tidak tergantung konstruktor
                         ProductScanLog logRow = new ProductScanLog();
                         logRow.setUsername(username);
                         logRow.setValue(scanVal);
                         logRow.setProductName(pname);
                         logRow.setSource(resolveSource(request));
-
-                        // Jika entitas punya kolom 'source' (enum):
-                        // logRow.setSource(resolveSource(request));
-
                         productScanLogRepository.save(logRow);
                     } catch (Exception e) {
                         log.warn("Gagal simpan product_scan_log: {}", e.toString());
                     }
                 }
 
-                // Ringkasan
                 log.info("API {} {} → status={} ({} ms) traceId={} user={}",
                         method, uri, status, dur, traceId, username);
                 if (!reqBody.isBlank()) log.info("reqBody: {}", reqBody);
                 if (!resBody.isBlank()) log.info("resBody: {}", resBody);
 
+            } finally {
                 res.copyBodyToResponse();
                 MDC.remove("traceId");
                 MDC.remove("username");
             }
         }
+
 
         // === Username resolver ===================================================
 

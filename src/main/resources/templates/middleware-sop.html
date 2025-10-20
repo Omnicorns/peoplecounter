@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PROMIS — Manajemen SOP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f5f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--ring:#e6ebf2;--pri:#2563eb;--pri-2:#1d4ed8;--danger:#dc2626}
+    *{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+    body{margin:0;background:var(--bg);color:var(--ink)}
+    /* Appbar */
+    .appbar{position:sticky;top:0;z-index:50;background:#0b1322;color:#eaf2ff;border-bottom:1px solid rgba(255,255,255,.06)}
+    .appbar .bar{max-width:1180px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+    .brand img{width:22px;height:22px}
+    .spacer{flex:1}
+    .userwrap{position:relative}
+    .userbtn{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+      color:#eaf2ff;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .userbtn .avatar{width:24px;height:24px;border-radius:999px;background:#0e172b;color:#ffd;display:grid;place-items:center;font-weight:800}
+    .userbtn .uname{font-weight:700;line-height:1}
+    .userbtn .udesc{font-size:12px;opacity:.75;line-height:1}
+    .menu{position:absolute;right:0;top:44px;width:280px;background:#0f1628;border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;box-shadow:0 14px 40px rgba(2,6,23,.35);padding:10px;display:none}
+    .menu.open{display:block}
+    .menu .top{display:flex;gap:10px;align-items:center;padding:8px 8px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .menu .top .avatar{width:28px;height:28px;border-radius:999px;background:#111a33;color:#ffd;display:grid;place-items:center;font-weight:800}
+    .menu .top .name{font-weight:700}.menu .top .meta{font-size:12px;opacity:.7}
+    .menu .item{padding:10px 6px;display:flex;flex-direction:column;gap:8px}
+    .menu .btn{width:100%;display:flex;align-items:center;gap:10px;background:#101a30;border:1px solid rgba(255,255,255,.12);
+      color:#eaf2ff;border-radius:10px;padding:8px 10px;cursor:pointer}
+    .menu .btn:hover{background:#13203a}.menu .btn.danger{background:#7a1111;border-color:#a51d1d}
+    .menu-sep{height:1px;background:rgba(255,255,255,.08);margin:8px 4px}
+    /* Title */
+    .pagehead{max-width:1180px;margin:0 auto;padding:18px 18px 6px;font-size:22px;font-weight:800}
+    /* Toolbar */
+    main{max-width:1180px;margin:0 auto;padding:12px 18px 32px}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 16px}
+    .btn{border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--pri);color:#fff}.btn.primary:hover{background:var(--pri-2)}
+    .btn.ghost{background:#e9eef6;color:#0f172a}.btn.danger{background:var(--danger);color:#fff}
+    .btn.small{padding:6px 10px;border-radius:8px;font-weight:600}
+    .search,.select{height:44px;border:1px solid var(--ring);border-radius:12px;padding:0 14px;background:#fff;font-size:14px;outline:none;min-width:260px}
+    /* Tabel */
+    table.datagrid{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #e7eef7;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(2,6,23,.07)}
+    .datagrid thead th{position:sticky;top:0;background:linear-gradient(180deg,#f9fbff 0,#f3f6fc 100%);color:#374151;font-weight:700;padding:14px 16px;border-bottom:1px solid #e7eef9}
+    .datagrid tbody td{padding:14px 16px;border-bottom:1px dashed #eef2f7;vertical-align:middle}
+    .datagrid tbody tr:nth-child(odd){background:#fcfdff}.datagrid tbody tr:hover{background:#f3f8ff}
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;color:#0b1740}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;border-radius:999px;background:#eef3ff;border:1px solid #dbe6ff;color:#203a9a;text-decoration:none}
+    .status{display:inline-flex;align-items:center;padding:6px 10px;font-size:12px;font-weight:800;border-radius:999px}
+    .DRAFT{background:#e9eef6;color:#334155}.REVIEW{background:#fff0c2;color:#7a4b00}.PUBLISHED{background:#d7fbe7;color:#065f46}.ARCHIVED{background:#ffdede;color:#7a1111}
+    /* Pager */
+    .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+    .pager .btn{padding:6px 10px;border-radius:8px}.pager select{height:36px;border:1px solid var(--ring);border-radius:8px;padding:0 8px;background:#fff}
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:60}
+    .modal.open{display:flex}
+    .sheet{background:#fff;border-radius:16px;max-width:760px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:12px;font-weight:700;color:#475569}
+    .input,textarea.input,select.input{border:1px solid var(--ring);border-radius:12px;padding:10px 12px;background:#fff;font-size:14px;resize:vertical}
+    .filebox{border:1px dashed var(--ring);border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}
+    .fileitem{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--ring);border-radius:12px;padding:8px 12px;margin-top:6px}
+    .muted{color:var(--muted);font-size:12px}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+    /* Toast */
+    #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.3s;z-index:99}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+
+<!-- APPBAR -->
+<header class="appbar">
+  <div class="bar">
+    <div class="brand">
+      <img src="/promis.png" alt="PROMIS" onerror="this.style.display='none'">
+      <span>PROMIS Dashboard</span>
+    </div>
+    <div class="spacer"></div>
+
+    <div class="userwrap">
+      <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
+        <div class="avatar">P</div>
+        <div><div class="uname">promisadmin</div><div class="udesc">promisadmin</div></div>
+      </button>
+
+      <div class="menu" id="usermenu" role="menu" aria-label="Menu pengguna">
+        <div class="top">
+          <div class="avatar">P</div>
+          <div><div class="name">promisadmin</div><div class="meta">promisadmin</div></div>
+        </div>
+
+        <div class="item" role="menuitem">
+          <!-- HOME -->
+          <button type="button" class="btn" id="homeBtn">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M3 11.2 12 4l9 7.2V20a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-8.8z"/>
+                <path d="M12 2 2 10l1.2 1.6L12 5l8.8 6.6L22 10z"/>
+              </svg>
+            </span>
+            <span>HOME</span>
+          </button>
+
+          <!-- Manajemen SOP (halaman ini) -->
+          <button type="button" class="btn" id="sopBtn">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+              </svg>
+            </span>
+            <span>Manajemen SOP</span>
+          </button>
+
+          <div class="menu-sep" role="separator"></div>
+
+          <!-- LOGOUT (Thymeleaf form) -->
+          <form th:action="@{/middleware/logout}" method="post" style="width:100%">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn danger" style="width:100%">Keluar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="pagehead">Manajemen SOP</div>
+
+<main>
+  <div class="toolbar">
+    <button id="btnAdd" class="btn primary">+ Tambah SOP</button>
+    <input id="q" class="search" type="search" placeholder="Cari kode/judul SOP…"/>
+    <select id="filterStatus" class="select">
+      <option value="">Semua Status</option>
+      <option>Draft</option><option>Review</option><option>Published</option><option>Archived</option>
+    </select>
+  </div>
+
+  <table id="tbl" class="datagrid">
+    <thead>
+    <tr>
+      <th>Kode</th><th>Judul</th><th>Versi</th><th>Status</th>
+      <th>Owner</th><th>Efektif</th><th>Files</th><th>Aksi</th>
+    </tr>
+    </thead>
+    <tbody><tr><td colspan="8" class="muted">Memuat…</td></tr></tbody>
+  </table>
+
+  <div class="pager">
+    <div class="muted" id="pgInfo">Showing 0–0 of 0</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label for="pgSize" class="muted">Rows:</label>
+      <select id="pgSize"><option>10</option><option>25</option><option>50</option><option>100</option></select>
+      <button class="btn ghost" id="pgPrev">Prev</button>
+      <span class="muted" id="pgPage">1 / 1</span>
+      <button class="btn ghost" id="pgNext">Next</button>
+    </div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div id="modal" class="modal" aria-hidden="true">
+  <div class="sheet">
+    <h3 id="mTitle">Tambah SOP</h3>
+    <form id="form">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div class="field"><label for="code">Kode</label><input id="code" class="input" required></div>
+        <div class="field"><label for="title">Judul</label><input id="title" class="input" required></div>
+        <div class="field"><label for="category">Kategori</label><input id="category" class="input"></div>
+        <div class="field"><label for="status">Status</label>
+          <select id="status" class="input"><option>Draft</option><option>Review</option><option>Published</option><option>Archived</option></select>
+        </div>
+        <div class="field"><label for="owner">Owner</label><input id="owner" class="input"></div>
+        <div class="field"><label for="effective">Efektif</label><input id="effective" type="date" class="input"></div>
+      </div>
+      <div class="field"><label for="tags">Tags (pisahkan koma)</label><input id="tags" class="input" placeholder="kasir, shift"></div>
+      <div class="field"><label for="change">Ringkasan Perubahan</label><textarea id="change" class="input"></textarea></div>
+      <div class="filebox">
+        <div style="display:flex;align-items:center;gap:10px"><input id="files" type="file" multiple/><span class="muted">PDF / DOC / DOCX / CSV</span></div>
+        <div id="filePreview"></div>
+      </div>
+      <div class="actions"><button id="btnClose" type="button" class="btn ghost">Tutup</button><button class="btn primary" type="submit">Simpan</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const API_KEY = /*[[${apiKey}]]*/ "";
+  /*]]>*/
+</script>
+
+<script>
+  /* ===== CONFIG ===== */
+  const API_BASE = 'http://localhost:8080/api';
+<!--  const API_KEY  = '4F7K8C2';-->
+
+  /* ===== Helpers ===== */
+  const $ = s => document.querySelector(s);
+  const fmtDate = d => !d ? '-' : new Date(d).toISOString().slice(0,10);
+  const iconFor = m => { if(!m) return '📄'; const t=String(m).toLowerCase();
+    if(t.includes('pdf')) return '📕 PDF';
+    if(t.includes('word')) return '📘 DOCX';
+    if(t.includes('csv')||t.includes('text')) return '📗 CSV';
+    return '📄';
+  };
+  const badge = s => `<span class="status ${String(s||'DRAFT').toUpperCase()}">${String(s||'DRAFT').toUpperCase()}</span>`;
+  const toast = t => { const e=$('#toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1500); };
+  async function j(url,opt={}){ opt.headers=Object.assign({'x-api-key':API_KEY},opt.headers||{}); const r=await fetch(url,opt); if(!r.ok){const t=await r.text(); throw new Error(t||r.statusText);} return r.json(); }
+
+  // HOME & menu toggle
+  const userbtn = $('#userbtn'), usermenu = $('#usermenu');
+  userbtn.addEventListener('click', ()=> usermenu.classList.toggle('open'));
+  document.addEventListener('click', e=>{ if(!usermenu.contains(e.target)&&!userbtn.contains(e.target)) usermenu.classList.remove('open'); });
+  $('#homeBtn').onclick = ()=> { window.location.href = '/middleware/dashboard'; };
+  $('#sopBtn').onclick  = ()=> { usermenu.classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'}); };
+
+  /* ===== STATE ===== */
+  const state = { items:[], view:[], q:'', status:'', page:1, pageSize:10 };
+
+  /* ===== DOWNLOAD via fetch (header API key) ===== */
+  async function downloadFile(docId, fileId, fileName){
+    try{
+      const url = `${API_BASE}/sop/${docId}/files/${fileId}`;
+      const r = await fetch(url, { headers: { 'x-api-key': API_KEY } });
+      if(!r.ok){ throw new Error(await r.text()); }
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      const objectUrl = URL.createObjectURL(blob);
+      a.href = objectUrl;
+      a.download = fileName || 'file';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    }catch(err){
+      alert(err.message || 'Gagal mengunduh file');
+    }
+  }
+
+  /* ===== LOAD ===== */
+  async function load(){
+    const qs=new URLSearchParams();
+    if(state.q) qs.set('query',state.q);
+    if(state.status) qs.set('status',state.status);
+    const data = await j(`${API_BASE}/sop?${qs.toString()}`);
+    state.items = Array.isArray(data.items)?data.items:[];
+    applyFilter(); state.page=1; render();
+  }
+
+  /* ===== FILTER ===== */
+  function applyFilter(){
+    const q=(state.q||'').trim().toLowerCase();
+    const st=(state.status||'').toLowerCase();
+    state.view = state.items.filter(x=>{
+      const hitQ=!q || (`${x.code||''} ${x.title||''}`.toLowerCase().includes(q));
+      const hitS=!st|| String(x.status||'').toLowerCase()===st;
+      return hitQ && hitS;
+    });
+  }
+
+  /* ===== RENDER ===== */
+  function render(){
+    const tb=$('#tbl tbody'); tb.innerHTML='';
+    const total=state.view.length;
+    const pages=Math.max(1,Math.ceil(total/state.pageSize));
+    if(state.page>pages) state.page=pages;
+    const start=(state.page-1)*state.pageSize, end=Math.min(start+state.pageSize,total);
+
+    if(total===0){
+      tb.innerHTML=`<tr><td colspan="8" class="muted">Belum ada data</td></tr>`;
+    }else{
+      state.view.slice(start,end).forEach(x=>{
+        const files = (x.files||[]).map(f=>{
+          const safe = String(f.fileName||'file').replace(/'/g,"\\'");
+          return `<button type="button" class="badge" onclick="downloadFile(${x.id},${f.id},'${safe}')">${iconFor(f.mime)}</button>`;
+        }).join(' ');
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td class="code">${x.code||'-'}</td>
+          <td>${x.title||'-'}</td>
+          <td>${x.version||'1.0'}</td>
+          <td>${badge(x.status)}</td>
+          <td>${x.owner||'-'}</td>
+          <td>${fmtDate(x.effective)}</td>
+          <td>${files||'-'}</td>
+          <td>
+            <button class="btn small ghost" data-action="edit" data-id="${x.id}">Edit</button>
+            <button class="btn small danger" data-action="delete" data-id="${x.id}" data-code="${(x.code||'').replace(/"/g,'&quot;')}">Delete</button>
+          </td>`;
+        tb.appendChild(tr);
+      });
+    }
+    $('#pgInfo').textContent = total ? `Showing ${start+1}–${end} of ${total}` : 'Showing 0–0 of 0';
+    $('#pgPage').textContent = `${state.page} / ${pages}`;
+    $('#pgPrev').disabled = state.page<=1;
+    $('#pgNext').disabled = state.page>=pages;
+    $('#pgSize').value = String(state.pageSize);
+  }
+
+  /* ===== Search / Filter / Pager ===== */
+  let qTimer=null;
+  $('#q').addEventListener('input',e=>{ clearTimeout(qTimer); qTimer=setTimeout(()=>{ state.q=(e.target.value||'').trim(); applyFilter(); state.page=1; render(); },200); });
+  $('#filterStatus').addEventListener('change',e=>{ state.status=e.target.value; applyFilter(); state.page=1; render(); });
+  $('#pgPrev').onclick=()=>{ if(state.page>1){ state.page--; render(); } };
+  $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
+  $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
+
+  /* ===== Delegasi tombol tabel ===== */
+  document.querySelector('#tbl tbody').addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-action]'); if(!btn) return;
+    const id = btn.getAttribute('data-id');
+    if(btn.dataset.action==='edit')  edit(id);
+    if(btn.dataset.action==='delete') delSop(id, btn.dataset.code||'');
+  });
+
+  /* ===== Modal ===== */
+  const modal=$('#modal'); const openModal=()=>modal.classList.add('open'); const closeModal=()=>modal.classList.remove('open');
+  $('#btnAdd').onclick=()=>{ $('#mTitle').textContent='Tambah SOP'; $('#form').reset(); $('#id').value=''; $('#filePreview').innerHTML=''; openModal(); };
+  $('#btnClose').onclick=closeModal;
+  modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
+
+  $('#files').onchange=()=>{ const box=$('#filePreview'); box.innerHTML='';
+    Array.from($('#files').files).forEach(f=>{
+      const d=document.createElement('div'); d.className='fileitem';
+      d.innerHTML=`<span>${f.name} <span class='muted'>(${(f.size/1024).toFixed(1)} KB)</span></span><span class='badge'>${iconFor(f.type)}</span>`;
+      box.appendChild(d);
+    });
+  };
+
+  $('#form').onsubmit=async e=>{
+    e.preventDefault();
+    const id=$('#id').value.trim();
+    const fd=new FormData();
+    ['code','title','category','status','owner','effective','tags','change'].forEach(k=>fd.append(k,$('#'+k).value||''));
+    Array.from($('#files').files).forEach(f=>fd.append('files',f));
+    try{
+      const opt={method:id?'PUT':'POST',headers:{'x-api-key':API_KEY},body:fd};
+      const url=id?`${API_BASE}/sop/${id}`:`${API_BASE}/sop`;
+      const r=await fetch(url,opt); if(!r.ok) throw new Error(await r.text());
+      toast('Tersimpan'); closeModal(); await load();
+    }catch(err){ alert(err.message||err); }
+  };
+
+  async function edit(id){
+    $('#mTitle').textContent='Edit SOP'; $('#form').reset(); $('#id').value=id; $('#filePreview').innerHTML=''; openModal();
+    try{
+      const x=await j(`${API_BASE}/sop/${id}`);
+      $('#mTitle').textContent='Edit SOP — '+(x.code||id);
+      $('#code').value=x.code||''; $('#title').value=x.title||''; $('#category').value=x.category||'';
+      $('#status').value=x.status||'Draft'; $('#owner').value=x.owner||''; $('#effective').value=x.effective||'';
+      $('#tags').value=(x.tags||[]).join(', '); $('#change').value=x.change||''; $('#files').value='';
+      // list file dengan tombol download (pakai fetch header)
+      $('#filePreview').innerHTML=(x.files||[]).map(f=>{
+        const safe=String(f.fileName||'file').replace(/'/g,"\\'");
+        return `<div class='fileitem'>
+          <span>${f.fileName} <span class="muted">(${(f.size/1024).toFixed(1)} KB)</span></span>
+          <button type="button" class="badge" onclick="downloadFile(${x.id},${f.id},'${safe}')">${iconFor(f.mime)}</button>
+        </div>`;
+      }).join('');
+    }catch(err){ console.error(err); toast('Gagal memuat detail.'); }
+  }
+
+  async function delSop(id,code){
+    if(!confirm(`Hapus ${code||'dokumen ini'}?`)) return;
+    const r=await fetch(`${API_BASE}/sop/${id}`,{method:'DELETE',headers:{'x-api-key':API_KEY}});
+    if(!r.ok){ alert(await r.text()||'Gagal hapus'); return; }
+    toast('Dihapus'); await load();
+  }
+
+  load();
+</script>
+</body>
+</html>
