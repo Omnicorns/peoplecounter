@@ -200,8 +200,18 @@
 
 <script>
   /* ===== CONFIG ===== */
-  const API_BASE = 'http://localhost:8080/api';
-<!--  const API_KEY  = '4F7K8C2';-->
+  const API_BASE = (() => {
+  // 1) <meta name="api-base" content="/api"> atau "https://api.domain.com/api"
+  const meta = document.querySelector('meta[name="api-base"]')?.content?.trim();
+  if (meta) return meta.replace(/\/+$/,''); // trim trailing slash
+
+  // 2) Optional: bisa di-inject dari server
+  if (window.API_BASE) return String(window.API_BASE).replace(/\/+$/,'');
+
+  // 3) Default: same-origin relative, aman di local & server (no CORS)
+  return '/api';
+})();
+
 
   /* ===== Helpers ===== */
   const $ = s => document.querySelector(s);
