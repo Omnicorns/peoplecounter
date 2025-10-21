@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sarinah.peoplecounter.entity.ProductScanLog;
 import com.sarinah.peoplecounter.entity.ScanSource;
 import com.sarinah.peoplecounter.repository.ProductScanLogRepository;
-import jakarta.servlet.DispatcherType;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -21,6 +18,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -45,11 +43,53 @@ public class LoggingFilterConfig {
     public static final String ATTR_LAST_SCAN_NAME = "LAST_SCAN_NAME_GLOBAL";   // <<— BARU
     public static final String ATTR_LAST_SCAN_AT = "LAST_SCAN_AT_GLOBAL";
     public static final String ATTR_SCAN_TODAY = "SCAN_TODAY_LIST";
+    public static final String HDR_CID  = "X-Correlation-ID";
+    public static final String ATTR_CID = "REQ_CID";
     private  final ProductScanLogRepository productScanLogRepository;
 
     @Bean
     public ApiLoggingFilter apiLoggingFilter() {
         return new ApiLoggingFilter(productScanLogRepository);
+    }
+
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public Filter correlationIdFilter() {
+        return new OncePerRequestFilter() {
+            @Override protected boolean shouldNotFilterErrorDispatch() { return false; }
+            @Override protected boolean shouldNotFilterAsyncDispatch() { return false; }
+
+            @Override
+            protected void doFilterInternal(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain filterChain)
+                    throws ServletException, IOException {
+                String cid = Optional.ofNullable(request.getHeader(HDR_CID))
+                        .filter(s -> !s.isBlank())
+                        .orElse(UUID.randomUUID().toString());
+
+                MDC.put("cid", cid);
+                request.setAttribute(ATTR_CID, cid);
+                response.setHeader(HDR_CID, cid);
+
+                try {
+                    filterChain.doFilter(request, response);
+
+                    if (request.isAsyncStarted()) {
+                        try {
+                            request.getAsyncContext().addListener(new AsyncListener() {
+                                @Override public void onComplete(AsyncEvent event) { MDC.remove("cid"); }
+                                @Override public void onTimeout(AsyncEvent event) {}
+                                @Override public void onError(AsyncEvent event) {}
+                                @Override public void onStartAsync(AsyncEvent event) {}
+                            });
+                        } catch (IllegalStateException ignore) {}
+                    }
+                } finally {
+                    if (!request.isAsyncStarted()) MDC.remove("cid");
+                }
+            }
+        };
     }
 
 
@@ -108,8 +148,8 @@ public class LoggingFilterConfig {
             ContentCachingRequestWrapper req = new ContentCachingRequestWrapper(request);
             ContentCachingResponseWrapper res = new ContentCachingResponseWrapper(response);
 
-            String traceId = headerOrNew(req, "X-Request-ID");
-            MDC.put("traceId", traceId);
+            final String cid = getCid(req);
+            MDC.put("traceId", cid); // kompat nama lama
 
             long start = System.currentTimeMillis();
             try {
@@ -162,7 +202,7 @@ public class LoggingFilterConfig {
                         row.put("user", username);
                         row.put("value", scanVal);
                         row.put("name", productName);
-                        row.put("traceId", traceId);
+                        row.put("traceId", cid);
 
                         buf.add(0, row);
                         while (buf.size() > 1000) buf.remove(buf.size() - 1);
@@ -182,7 +222,7 @@ public class LoggingFilterConfig {
                 }
 
                 log.info("API {} {} → status={} ({} ms) traceId={} user={}",
-                        method, uri, status, dur, traceId, username);
+                        method, uri, status, dur, cid, username);
                 if (!reqBody.isBlank()) log.info("reqBody: {}", reqBody);
                 if (!resBody.isBlank()) log.info("resBody: {}", resBody);
 
@@ -191,6 +231,13 @@ public class LoggingFilterConfig {
                 MDC.remove("traceId");
                 MDC.remove("username");
             }
+        }
+
+        private static String getCid(HttpServletRequest req) {
+            Object attr = req.getAttribute(ATTR_CID);
+            if (attr instanceof String s && !s.isBlank()) return s;
+            String h = req.getHeader(HDR_CID);
+            return (h == null || h.isBlank()) ? "cid-missing" : h;
         }
 
 
