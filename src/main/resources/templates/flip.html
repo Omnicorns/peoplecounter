@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -24,22 +24,24 @@
           margin:auto; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; position:relative; z-index:1;
           background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
-          backdrop-filter:blur(2px)
+          /* FIX: hilangkan glass/blur di card viewer supaya aman dari artefak */
+          backdrop-filter:none;
         }
         @supports(height:100svh){#viewer{width:min(100svw,1400px);height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)}}
 
-        /* ===== Header super transparan ===== */
+        /* ===== Header super transparan (tanpa blur) ===== */
         #top{
           position:absolute; inset:0 0 auto 0; height:56px; display:flex; align-items:center; justify-content:flex-end;
           padding:calc(8px + var(--safe-top)) 10px 8px; z-index:50;
 
-          background:transparent;               /* tak terlihat */
+          /* FIX: matikan total efek blur agar PDF di bawahnya tidak ikut blur */
+          background:transparent;
           border-bottom:0; box-shadow:none;
-          backdrop-filter:none; -webkit-backdrop-filter:none;
+          backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
         }
         .iconbtn{
           height:36px; width:36px; border-radius:12px;
-          background:rgba(255,255,255,0.02);    /* hampir tak terlihat */
+          background:rgba(255,255,255,0.02);
           border:1px solid rgba(255,255,255,0.08);
           display:grid; place-items:center; color:#eaf0ff; cursor:pointer;
           box-shadow:none;
@@ -77,6 +79,7 @@
           position:absolute; top:50%; transform:translateY(-50%);
           z-index:20; width:44px; height:44px; display:grid; place-items:center; border-radius:999px;
           background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+          /* sedikit blur ke background card (bukan ke kanvas), aman */
           backdrop-filter:blur(8px); color:#cfd7e6; box-shadow:0 2px 12px rgba(0,0,0,.35);
         }
         .nav:active{transform:translateY(-50%) scale(.97)}
@@ -89,10 +92,7 @@
         .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
         .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
 
-        /* Bonus opsional: kalau device support blur, beri 10% glass tipis */
-        @supports (backdrop-filter: blur(2px)) {
-          #top{ backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); background: rgba(16,18,24,0.10); }
-        }
+        /* HAPUS blok @supports lama yang menambahkan blur di #top */
     </style>
 </head>
 <body>
@@ -134,11 +134,9 @@
 </div>
 
 <!-- DEFAULT_PDF -->
+<!-- DEFAULT_PDF -->
 <script th:inline="javascript">
-    /*<![CDATA[*/
-    const DEFAULT_PDF =
-      /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
-    /*]]>*/
+    /*<![CDATA[*/ const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf'; /*]]>*/
 </script>
 
 <script>
@@ -192,7 +190,7 @@
     A('miZoomReset').addEventListener('click', stopThen(()=> setZoom(100)));
 
     function setPlayEnabled(on){ A('miPlay').setAttribute('aria-disabled', on? 'false':'true'); }
-    function updateModeLabel(){ A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Baca' : '🖼️ Mode Slide'; setPlayEnabled(viewMode==='slide'); }
+    function updateModeLabel(){ A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Read' : '🖼️ Mode Slide'; setPlayEnabled(viewMode==='slide'); }
     function updatePlayLabel(){ A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
 
     function startAuto(){ if(viewMode!=='slide' || auto || !numPages) return; auto=true; updatePlayLabel(); timer=setInterval(()=>{ const nxt=(pageNum<numPages)?pageNum+1:1; show(nxt); }, SLIDE_MS); }
@@ -276,7 +274,7 @@
       if(e.key==='ArrowLeft'  && pageNum>1)       { stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    /* ====== LIVE ZOOM PIPELINE (biar mirip Read) ====== */
+    /* ====== LIVE ZOOM PIPELINE ====== */
     const live = { target: 100, rendering:false, scheduled:false, lastApplied:100 };
     function requestLiveRender(pct){
       live.target = clamp(Math.round(pct), ZMIN, ZMAX);
@@ -294,7 +292,7 @@
       }, 80);
     }
 
-    /* ====== Gesture: Slide behaves like Read ====== */
+    /* ====== Gesture: Slide ====== */
     const gesture = {
       pointers:new Map(), mode:'idle',
       dist0:1, scaleTmp:1, tx:0, ty:0, startTx:0, startTy:0, mid0:{x:0,y:0},
@@ -309,7 +307,7 @@
     function clampPan(limit=120){
       const cnv=canvasOf();
       const w=cnv.clientWidth, h=cnv.clientHeight;
-      const scale = gesture.scaleTmp; // live visual
+      const scale = gesture.scaleTmp;
       const maxX=(w*(scale)-w)/2 + limit;
       const maxY=(h*(scale)-h)/2 + limit;
       gesture.tx = clamp(gesture.tx,-maxX,maxX);
@@ -341,14 +339,12 @@
         const factor=clamp(dist()/gesture.dist0,0.5,3);
         const newPct = clamp(gesture.startZoom * factor, ZMIN, ZMAX);
 
-        // Visual responsif: transform sementara
         gesture.scaleTmp = newPct / gesture.startZoom;
         const mid=getMid();
         gesture.tx = gesture.startTx + (mid.x-gesture.mid0.x);
         gesture.ty = gesture.startTy + (mid.y-gesture.mid0.y);
         clampPan(); setTransform();
 
-        // Rerender tajam berkala (mirip Read)
         gesture.livePct = newPct;
         requestLiveRender(newPct);
         return;
@@ -365,7 +361,6 @@
       if(gesture.pointers.has(e.pointerId)) gesture.pointers.delete(e.pointerId);
       if(gesture.mode==='pinch' && gesture.pointers.size<2){
         gesture.mode='idle'; gesture._anchor=null;
-        // Final commit: paksa satu render lagi ke target terakhir
         const finalPct = gesture.livePct || zoomPct;
         resetSlideTransforms();
         requestLiveRender(finalPct);
@@ -385,7 +380,6 @@
     stage.addEventListener('wheel', (e) => {
       if (viewMode !== 'slide' || !pdfDoc) return;
 
-      // Zoom kontinu saat Ctrl/Meta (mirip Read)
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         stopAutoOnInteraction();
@@ -444,7 +438,7 @@
       }
     });
 
-    /* ===== READ mode (unchanged) ===== */
+    /* ===== READ mode ===== */
     let io=null;
     const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=>{
         for(const ent of ents){
