@@ -217,5 +217,43 @@ public class UserImportApi {
     }
 
 
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String,Object> updatePdf(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file,
+            @RequestPart(name = "filename", required = false) String filename
+    ) throws IOException {
+
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File kosong");
+        }
+        if (!isPdf(file)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Harus PDF");
+        }
+
+        PdfDocs doc = pdfDocRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dokumen tidak ditemukan"));
+
+        // Update konten
+        doc.setData(file.getBytes());
+        doc.setContentType("application/pdf");
+        // Pakai filename baru jika dikirim, kalau tidak pakai original filename dari upload
+        String newName = (filename != null && !filename.isBlank())
+                ? filename
+                : (file.getOriginalFilename() != null ? file.getOriginalFilename() : doc.getFilename());
+        doc.setFilename(newName);
+
+        doc = pdfDocRepository.save(doc);
+
+        return Map.of(
+                "id", doc.getId(),
+                "filename", doc.getFilename(),
+                "url", "/pdf/" + doc.getId(),
+                "open_in_viewer", "/catalogue?id=" + doc.getId(),
+                "status", "UPDATED"
+        );
+    }
+
+
 
 }
