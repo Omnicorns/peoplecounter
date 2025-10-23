@@ -137,6 +137,84 @@ public class UserImportApi {
     }
 
     // ====== sesuai schema kamu (tanpa ubah tabel) ======
+    @PostMapping(value = "/pdf/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Object> uploadBulk(@RequestPart("files") List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tidak ada file yang diunggah");
+        }
+
+        // Batas wajar biar nggak kebablasan (opsional)
+        if (files.size() > 100) {
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Maksimum 100 file per unggahan");
+        }
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        int success = 0, failed = 0;
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            String fname = file != null ? file.getOriginalFilename() : null;
+
+            try {
+                // Validasi dasar
+                if (file == null || file.isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File kosong: " + fname);
+                }
+                // Beberapa browser kadang kirim application/octet-stream — cek magic header %PDF juga
+                if (!isPdf(file)) {
+                    throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                            "Bukan PDF: " + fname);
+                }
+
+                PdfDocs doc = new PdfDocs();
+                doc.setFilename(fname);
+                doc.setContentType("application/pdf");
+                doc.setData(file.getBytes());
+
+                doc = pdfDocRepository.save(doc);
+
+                Map<String, Object> ok = new LinkedHashMap<>();
+                ok.put("index", i);
+                ok.put("filename", doc.getFilename());
+                ok.put("id", doc.getId());
+                ok.put("url", "/pdf/" + doc.getId());
+                ok.put("open_in_viewer", "/catalogue?id=" + doc.getId());
+                ok.put("status", "OK");
+                items.add(ok);
+                success++;
+
+            } catch (Exception e) {
+                Map<String, Object> err = new LinkedHashMap<>();
+                err.put("index", i);
+                err.put("filename", fname);
+                err.put("status", "ERROR");
+                err.put("error", e.getMessage());
+                items.add(err);
+                failed++;
+            }
+        }
+
+        return Map.of(
+                "total", files.size(),
+                "success", success,
+                "failed", failed,
+                "items", items
+        );
+    }
+
+    /**
+     * Deteksi cepat PDF:
+     * - Content-Type 'application/pdf' ATAU
+     * - Magic header file diawali "%PDF"
+     */
+    private boolean isPdf(MultipartFile file) throws IOException {
+        String ct = file.getContentType();
+        if ("application/pdf".equalsIgnoreCase(ct)) return true;
+
+        byte[] head = file.getInputStream().readNBytes(5);
+        return head.length >= 4 &&
+                head[0] == '%' && head[1] == 'P' && head[2] == 'D' && head[3] == 'F';
+    }
 
 
 
