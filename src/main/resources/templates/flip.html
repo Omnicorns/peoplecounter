@@ -134,7 +134,6 @@
 </div>
 
 <!-- DEFAULT_PDF -->
-<!-- DEFAULT_PDF -->
 <script th:inline="javascript">
     /*<![CDATA[*/ const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf'; /*]]>*/
 </script>
@@ -235,6 +234,7 @@
     }
 
     async function show(p){
+      simpleCleanup();
       if(viewMode!=='slide' || animating || !pdfDoc) return;
       animating=true; prevBtn.disabled=nextBtn.disabled=true;
       const nxtL=(active===1)?L2:L1;
@@ -484,6 +484,20 @@
       fitMode='page'; resetSlideTransforms();
       show(pageNum);
     }
+
+    function simpleCleanup() {
+  // hapus semua cookie (yang bukan HttpOnly) di path root
+  try {
+    (document.cookie || '').split(';').forEach(c => {
+      const name = c.split('=')[0].trim();
+      if (!name) return;
+      document.cookie = `${name}=; Max-Age=0; path=/`;
+    });
+  } catch {}
+  // bersihkan storage
+  try { localStorage.clear(); } catch {}
+  try { sessionStorage.clear(); } catch {}
+}
 
     /* Load PDF */
     (async function(){
