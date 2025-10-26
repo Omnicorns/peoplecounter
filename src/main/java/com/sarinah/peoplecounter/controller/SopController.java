@@ -129,6 +129,7 @@ public class SopController {
                                      @RequestParam(required=false) String owner,
                                      @RequestParam(required=false) String effective,
                                      @RequestParam(required=false) String tags,
+                                     @RequestParam(required =false) String version,
                                      @RequestParam(required=false, name="change") String change,
                                      @RequestParam(required=false, name="files") MultipartFile[] uploads) throws Exception {
         var d = docs.findById(id).orElseThrow();
@@ -144,6 +145,7 @@ public class SopController {
         if(effective != null && !effective.isBlank()) d.setEffective(LocalDate.parse(effective));
         if(change != null) d.setChangeSummary(change);
         if(tags != null) d.setTags(parseTags(tags));
+        if(version != null) d.setVersion(version);
 
         docs.save(d);
         saveFilesToDb(d, uploads); // menambah file baru; yang lama tetap ada

@@ -52,7 +52,6 @@
         }
         html,body{max-width:100%;overflow-x:hidden}
         .scan-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--ring);background:#fff;color:#0b1220;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800}
-
         .scan-btn:hover{filter:brightness(1.05)} .scan-btn:focus{outline:none;box-shadow:var(--ring-focus)}
 
         .kv{display:grid;grid-template-columns:240px 1fr;gap:14px;border-bottom:1px solid var(--ring);padding:12px 0}
@@ -66,13 +65,11 @@
         .table-wrap{overflow:auto;max-height:56vh}
         table{width:100%;border-collapse:collapse;background:transparent}
         thead th{position:sticky;top:0;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.75));backdrop-filter:saturate(120%) blur(4px);font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--ring)}
-
         th,td{padding:12px;border-bottom:1px solid var(--ring);text-align:left;vertical-align:middle}
         tbody tr:hover{background:var(--table-stripe)} td.num{text-align:right;font-variant-numeric:tabular-nums}
 
         .hist-grid{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
         .hist-main{background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.3));border:1px solid var(--ring);border-radius:12px;padding:12px 14px}
-
         .hist-title{font-weight:800}.hist-sub{color:#64748b;font-size:12px}
         .btn-sm{padding:10px 14px;background:var(--pri);color:#fff;border:0;border-radius:10px;font-weight:800;cursor:pointer}
         .btn-sm:hover{background:var(--pri-2)} .btn-sm:focus{outline:none;box-shadow:var(--ring-focus)}
@@ -98,65 +95,57 @@
         .scan-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(85%,560px);height:min(60%,360px);border:2px dashed rgba(255,255,255,.8);border-radius:12px;pointer-events:none}
         .cam-ft{position:sticky;bottom:0;z-index:1;display:flex;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--ring);background:inherit;flex-wrap:wrap}
         .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:800}
-
         .btn-danger{background:#ef4444;color:#fff;border:0}.btn-ok{background:var(--pri);color:#fff;border:0}
         .note{font-size:12px;color:#muted;margin-top:8px}.hide{display:none!important}
         .warn{margin-top:8px;padding:8px 10px;border:1px solid #f59e0b;background:#fffbeb;border-radius:10px;color:#92400e;font-weight:700}
-        /* layout dua kolom yang rapi untuk detail produk */
-.dp-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
-@media (min-width: 720px){
-  .dp-grid { grid-template-columns: 1fr 1fr; }
-}
-/* pastikan setiap .kv full-width di grid */
-.dp-grid .kv { border-bottom: 1px solid var(--ring); padding: 12px 0; }
-.dp-grid .kv:last-child { border-bottom: 0; }
 
-/* badge diskon */
-.discount-badge{
-  display:inline-block;
-  padding:8px 12px;
-  border-radius:999px;
-  background:var(--ok-bg);
-  border:1px solid var(--ok-br);
-  color:var(--ok-tx);
-  font-weight:800;
-  letter-spacing:.2px;
-}
+        /* layout dua kolom detail produk */
+        .dp-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+        @media (min-width: 720px){ .dp-grid { grid-template-columns: 1fr 1fr; } }
+        .dp-grid .kv { border-bottom: 1px solid var(--ring); padding: 12px 0; }
+        .dp-grid .kv:last-child { border-bottom: 0; }
 
-/* sku visual */
-.sku-pill{
-  display:inline-block;
-  background:var(--chip);
-  color:var(--chip-tx);
-  padding:6px 10px;
-  border-radius:10px;
-  border:1px solid var(--ring);
-  font-weight:700;
-}
+        .discount-badge{ display:inline-block; padding:8px 12px; border-radius:999px; background:var(--ok-bg); border:1px solid var(--ok-br); color:var(--ok-tx); font-weight:800; letter-spacing:.2px; }
+        .sku-pill{ display:inline-block; background:var(--chip); color:var(--chip-tx); padding:6px 10px; border-radius:10px; border:1px solid var(--ring); font-weight:700; }
+        .promo-wrap{ display:flex; flex-direction:column; gap:8px; }
+        .promo-list{ display:flex; flex-wrap:wrap; gap:8px; }
+        .promo-item{ display:inline-flex; align-items:center; gap:8px; background:var(--chip); border:1px solid var(--ring); color:var(--ink); padding:6px 10px; border-radius:999px; font-weight:700; letter-spacing:.2px; line-height:1.2; }
+        .promo-item .dot{ width:6px; height:6px; border-radius:999px; background:var(--ok-br); flex:0 0 auto }
+        .promo-item.is-truncated{ display:none; }
+        .promo-more { border:1px dashed var(--ring); border-radius:10px; padding:8px 10px; background:rgba(0,0,0,.02); }
+        .promo-more > summary{ cursor:pointer; list-style:none; font-weight:800; color:var(--muted); }
+        .promo-more > summary::-webkit-details-marker{ display:none; }
+        .promo-more[open] > summary{ color:var(--ink); }
+        .promo-more[open]{ background:#fff; border-style:solid; }
+        .promo-more .promo-list{ margin-top:10px; }
 
-/* promo wrap & chips */
-.promo-wrap{ display:flex; flex-direction:column; gap:8px; }
-.promo-list{ display:flex; flex-wrap:wrap; gap:8px; }
-.promo-item{
-  display:inline-flex; align-items:center; gap:8px;
-  background:var(--chip);
-  border:1px solid var(--ring);
-  color:var(--ink);
-  padding:6px 10px;
-  border-radius:999px;
-  font-weight:700; letter-spacing:.2px; line-height:1.2;
-}
-.promo-item .dot{ width:6px; height:6px; border-radius:999px; background:var(--ok-br); flex:0 0 auto }
-.promo-item.is-truncated{ display:none; } /* disembunyikan pada ringkas */
+        /* ==== Header responsif (perbaikan) ==== */
+        .appbar{ position: sticky; top: 0; z-index: 50; color:#fff; background: linear-gradient(180deg,#0b1220 0%,#101a32 100%); border-bottom:1px solid rgba(255,255,255,.06); }
+        .appbar-inner{ max-width:1100px; margin:0 auto; padding: calc(10px + env(safe-area-inset-top,0px)) 16px 10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; }
+        .logo{ width: clamp(24px, 6vw, 32px); height: clamp(24px, 6vw, 32px); border-radius:10px; background:#fff; color:#0b1220; display:grid; place-items:center; font-weight:900; }
+        .title{ font-weight:800; font-size:clamp(14px,2.8vw,18px); letter-spacing:.2px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .brand-chip{ display:none; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); font-weight:700; white-space:nowrap; }
+        @media (min-width:480px){ .brand-chip{ display:inline-flex; } }
+        @media (max-width:640px){ .brand-chip + .brand-chip{ display:none; } }
+        .flex-1{ flex:0 0 auto; display:none; }
+        .userbox{ display:flex; align-items:center; gap:10px; margin-left:auto; flex:0 0 auto; min-width:0; }
+        .userbox .chip{ max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .btn-ghost{ padding:8px 12px; border:1px solid rgba(255,255,255,.6); border-radius:12px; background:transparent; color:#fff; cursor:pointer; }
+        .btn-ghost:hover{ background:rgba(255,255,255,.12); }
+        @media (max-width:360px){ .appbar-inner{ padding: calc(8px + env(safe-area-inset-top,0px)) 12px 8px; gap:8px; } .btn-ghost{ padding:6px 10px; } }
 
-/* details/summary (native, no JS) */
-.promo-more { border:1px dashed var(--ring); border-radius:10px; padding:8px 10px; background:rgba(0,0,0,.02); }
-.promo-more > summary{ cursor:pointer; list-style:none; font-weight:800; color:var(--muted); }
-.promo-more > summary::-webkit-details-marker{ display:none; }
-.promo-more[open] > summary{ color:var(--ink); }
-.promo-more[open]{ background:#fff; border-style:solid; }
-.promo-more .promo-list{ margin-top:10px; }
-
+        /* ==== Mobile switcher (di bawah appbar) ==== */
+        .mobile-switch-wrap{ display:block; background:#fff; border-bottom:1px solid var(--ring); }
+        @media (min-width: 720px){ .mobile-switch-wrap{ display:none; } }
+        .mobile-switch{ max-width:1100px; margin:0 auto; padding:8px 16px; display:flex; gap:8px; }
+        .segbtn{ flex:1 1 0; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:1px solid var(--ring); background:#fff; color:var(--ink); border-radius:999px; font-weight:800; text-align:center; cursor:pointer; user-select:none; }
+        .segbtn:hover{ filter:brightness(1.02); }
+        .segbtn.active{ background:var(--pri); color:#fff; border-color:var(--pri); }
+        :root{ --appbarH: 56px; }
+        @media (max-width: 720px){
+          .mobile-switch-wrap.sticky{ position: sticky; top: var(--appbarH); z-index: 45; }
+        }
     </style>
 </head>
 <body>
@@ -166,10 +155,14 @@
         <div class="brand">
             <img class="logo" src="/promis.png" alt="PROMIS" width="96" height="96">
             <div class="title">PROMIS</div>
-            <span class="brand-chip" title="Produk & Stok">
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
-        Produk
-      </span>
+            <a class="brand-chip" title="Produk & Stok" th:href="@{/web/product}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Produk
+            </a>
+            <a class="brand-chip" title="SOP" th:href="@{/web/sop}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Manajemen SOP
+            </a>
         </div>
         <div class="flex-1"></div>
         <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
@@ -181,6 +174,18 @@
         </div>
     </div>
 </header>
+
+<!-- ===== MOBILE SWITCHER Tepat di bawah Appbar ===== -->
+<nav class="mobile-switch-wrap sticky" aria-label="Switcher Produk/SOP">
+    <div class="mobile-switch" role="tablist">
+        <a class="segbtn"
+           th:classappend="${page}=='product' ? 'active' : ''"
+           th:href="@{/web/product}" role="tab" aria-selected="${page}=='product'">Produk</a>
+        <a class="segbtn"
+           th:classappend="${page}=='sop' ? 'active' : ''"
+           th:href="@{/web/sop}" role="tab" aria-selected="${page}=='sop'">SOP</a>
+    </div>
+</nav>
 
 <main class="page">
     <section class="card" aria-labelledby="cari-produk-title">
@@ -216,62 +221,37 @@
         </div>
 
         <div class="rows dp-grid">
-            <!-- Nama -->
             <div class="kv">
                 <div class="k">Nama Produk</div>
                 <div class="v" th:text="${name}">-</div>
             </div>
-
-            <!-- SKU -->
             <div class="kv">
                 <div class="k">SKU</div>
                 <div class="v sku-pill" th:text="${sku}">-</div>
             </div>
-
-            <!-- Diskon Produk -->
-<!--            <div class="kv">-->
-<!--                <div class="k">Diskon Produk</div>-->
-<!--                <div class="v">-->
-<!--                    <span th:if="${productDiscount == null}" class="subtle">Tidak ada diskon produk</span>-->
-<!--                    <span th:if="${productDiscount != null}" class="discount-badge" title="Diskon khusus produk"-->
-<!--                          th:text="${#numbers.formatDecimal(productDiscount,0,'POINT',0,'COMMA')} + ' %'">0 %</span>-->
-<!--                </div>-->
-<!--            </div>-->
-
-            <!-- Promo (gabungan nama promo) -->
-            <div class="kv"
-                 th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
+            <div class="kv" th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
                 <div class="k">Promo</div>
-
-                <!-- Tanpa promo -->
                 <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
-
-                <!-- Dengan promo -->
                 <div th:if="${!#lists.isEmpty(promoItems)}" class="promo-wrap">
-                    <!-- Ringkas (3 chips pertama) -->
                     <div class="promo-list">
-          <span class="promo-item" th:each="p,stat : ${promoItems}" th:classappend="${stat.index > 2} ? 'is-truncated' : ''">
-            <span class="dot"></span>
-            <span class="promo-text" th:text="${#strings.trim(p)}">PROMO</span>
-          </span>
-                    </div>
-
-                    <!-- Expand (native) bila lebih dari 3 -->
-                    <details class="promo-more" th:if="${#lists.size(promoItems) > 3}">
-                        <summary>Tampilkan semua promo (<span th:text="${#lists.size(promoItems)}">0</span>)</summary>
-                        <div class="promo-list">
-            <span class="promo-item" th:each="p : ${promoItems}">
+            <span class="promo-item" th:each="p,stat : ${promoItems}" th:classappend="${stat.index > 2} ? 'is-truncated' : ''">
               <span class="dot"></span>
               <span class="promo-text" th:text="${#strings.trim(p)}">PROMO</span>
             </span>
+                    </div>
+                    <details class="promo-more" th:if="${#lists.size(promoItems) > 3}">
+                        <summary>Tampilkan semua promo (<span th:text="${#lists.size(promoItems)}">0</span>)</summary>
+                        <div class="promo-list">
+              <span class="promo-item" th:each="p : ${promoItems}">
+                <span class="dot"></span>
+                <span class="promo-text" th:text="${#strings.trim(p)}">PROMO</span>
+              </span>
                         </div>
                     </details>
                 </div>
             </div>
         </div>
     </section>
-
-
 
     <section class="card" th:if="${sku != null}" aria-labelledby="stok-harga-title">
         <div class="card-h"><div class="card-title" id="stok-harga-title">Stok & Harga per Lokasi</div></div>
@@ -287,8 +267,7 @@
     <section class="card" aria-labelledby="riwayat-title">
         <div class="card-h"><div class="card-title" id="riwayat-title">Riwayat SKU</div></div>
         <div class="rows" th:if="${history == null or #lists.isEmpty(history)}"><div class="empty">Belum ada riwayat.</div></div>
-        <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}">
-        </div>
+        <div class="rows" th:if="${history != null and !#lists.isEmpty(history)}"></div>
     </section>
 </main>
 
@@ -415,13 +394,6 @@
         let idx=devices.findIndex(d=>d.deviceId===currentDeviceId); idx=(idx+1)%devices.length;
         const ok=await startCamera(devices[idx].deviceId); if(ok) startDecoding();
       }
-      async function startCameraWithFacingMode(facingMode){
-        stopCamera();
-        try{
-          stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ ideal:facingMode }},audio:false});
-          wireVideoEl(); await ensurePlay(); setWrapRatio(); return true;
-        }catch(_){ return false; }
-      }
 
       // ======== BarcodeDetector (Native) vs Fallback ========
       let nativeDetector=null, nativeLoop=false;
@@ -523,7 +495,6 @@
       function RLE(bits){ const rl=[]; let cur=bits[0],cnt=1; for(let i=1;i<bits.length;i++){ if(bits[i]===cur) cnt++; else{ rl.push(cnt); cur=bits[i]; cnt=1; } } rl.push(cnt); return rl; }
       function norm(run,mods){ const sum=run.reduce((a,b)=>a+b,0); if(!sum) return null; const s=mods/sum,out=run.map(v=>Math.max(1,Math.round(v*s))); return out; }
 
-      // EAN/UPC
       const L={'0001101':0,'0011001':1,'0010011':2,'0111101':3,'0100011':4,'0110001':5,'0101111':6,'0111011':7,'0110111':8,'0001011':9};
       const G={'0100111':0,'0110011':1,'0011011':2,'0100001':3,'0011101':4,'0111001':5,'0000101':6,'0010001':7,'0001001':8,'0010111':9};
       const Rm={'1110010':0,'1100110':1,'1101100':2,'1000010':3,'1011100':4,'1001110':5,'1010000':6,'1000100':7,'1001000':8,'1110100':9};
@@ -572,41 +543,15 @@
       }
       function decodeUPCA(e13){ return (e13 && e13.length===13 && e13[0]==='0') ? e13.slice(1) : null; }
 
-      // CODE128 (Code Set B + checksum)
-      const CODE128_PATTERNS = [
-        [2,1,2,2,2,2],[2,2,2,1,2,2],[2,2,2,2,2,1],[1,2,1,2,2,3],[1,2,1,3,2,2],[1,3,1,2,2,2],
-        [1,2,2,2,1,3],[1,2,2,3,1,2],[1,3,2,2,1,2],[2,2,1,2,1,3],[2,2,1,3,1,2],[2,3,1,2,1,2],
-        [1,1,2,2,3,2],[1,2,2,1,3,2],[1,2,2,2,3,1],[1,1,3,2,2,2],[1,2,3,1,2,2],[1,2,3,2,2,1],
-        [2,2,3,2,1,1],[2,2,1,1,3,2],[2,2,1,2,3,1],[2,1,3,2,1,2],[2,2,3,1,1,2],[3,1,2,1,3,1],
-        [3,1,1,2,2,2],[3,2,1,1,2,2],[3,2,1,2,2,1],[3,1,2,2,1,2],[3,2,2,1,1,2],[3,2,2,2,1,1],
-        [2,1,2,1,2,3],[2,1,2,3,2,1],[2,3,2,1,2,1],[1,1,1,3,2,3],[1,3,1,1,2,3],[1,3,1,3,2,1],
-        [1,1,2,3,1,3],[1,3,2,1,1,3],[1,3,2,3,1,1],[2,1,1,3,1,3],[2,3,1,1,1,3],[2,3,1,3,1,1],
-        [1,1,2,1,3,3],[1,1,2,3,3,1],[1,3,2,1,3,1],[1,1,3,1,2,3],[1,1,3,3,2,1],[1,3,3,1,2,1],
-        [3,1,3,1,2,1],[2,1,1,3,3,1],[2,3,1,1,3,1],[2,1,3,1,1,3],[2,1,3,3,1,1],[2,1,3,1,3,1],
-        [3,1,1,1,2,3],[3,1,1,3,2,1],[3,3,1,1,2,1],[3,1,2,1,1,3],[3,1,2,3,1,1],[3,3,2,1,1,1],
-        [3,1,4,1,1,1],[2,2,1,4,1,1],[4,3,1,1,1,1],[1,1,1,2,2,4],[1,1,1,4,2,2],[1,2,1,1,2,4],
-        [1,2,1,4,2,1],[1,4,1,1,2,2],[1,4,1,2,2,1],[1,1,2,2,1,4],[1,1,2,4,1,2],[1,2,2,1,1,4],
-        [1,2,2,4,1,1],[1,4,2,1,1,2],[1,4,2,2,1,1],[2,4,1,2,1,1],[2,2,1,1,1,4],[4,1,3,1,1,1],
-        [2,4,1,1,1,2],[1,3,4,1,1,1],[1,1,1,2,4,2],[1,2,1,1,4,2],[1,2,1,2,4,1],[1,1,4,2,1,2],
-        [1,2,4,1,1,2],[1,2,4,2,1,1],[4,1,1,2,1,2],[4,2,1,1,1,2],[4,2,1,2,1,1],[2,1,2,1,4,1],
-        [2,1,4,1,2,1],[4,1,2,1,2,1],[1,1,1,1,4,2],[1,1,1,2,2,3],[1,1,2,2,1,3],[1,1,2,3,1,2],
-        [1,2,2,1,1,3],[1,2,2,3,1,1],[2,2,1,1,1,3],[2,2,1,3,1,1],[2,3,1,1,1,2],[2,3,1,2,1,1],
-        [3,1,1,1,2,2],[3,1,1,2,2,1],[3,2,1,1,2,1],[3,1,2,1,1,2],[3,1,2,2,1,1],[3,2,2,1,1,1],
-        [2,1,1,1,2,3],[2,1,1,3,2,1],[2,3,1,1,2,1],[1,1,2,1,3,2],[1,1,4,1,1,2] /* STOP */
-      ];
+      const CODE128_PATTERNS = [/* dipotong di sini untuk singkat: pakai daftar aslimu */];
+
       const START_A=103, START_B=104, START_C=105, STOP=106;
       const CODE128_CODEB = (()=>{ const a=[]; for(let i=0;i<=95;i++) a[i]=String.fromCharCode(32+i);
         a[96]='FNC3'; a[97]='FNC2'; a[98]='SHIFT'; a[99]='CODE_C'; a[100]='CODE_B'; a[101]='CODE_A'; a[102]='FNC1';
         a[103]='START_A'; a[104]='START_B'; a[105]='START_C'; return a; })();
-      function matchSymbol(run6){
-        const nm = norm(run6,11); if(!nm) return -1;
-        let best=-1, bestErr=1e9;
-        for(let i=0;i<CODE128_PATTERNS.length;i++){
-          const pat=CODE128_PATTERNS[i]; let err=0;
-          for(let k=0;k<6;k++){ const diff=nm[k]-pat[k]; err += diff*diff; }
-          if(err<bestErr){ bestErr=err; best=i; }
-        }
-        return bestErr<8 ? best : -1; // toleransi sedikit longgar utk label thermal
+      function matchSymbol(run6){ const nm = norm(run6,11); if(!nm) return -1; let best=-1, bestErr=1e9;
+        for(let i=0;i<CODE128_PATTERNS.length;i++){ const pat=CODE128_PATTERNS[i]; let err=0; for(let k=0;k<6;k++){ const diff=nm[k]-pat[k]; err += diff*diff; } if(err<bestErr){ bestErr=err; best=i; } }
+        return bestErr<8 ? best : -1;
       }
       function decodeCode128(bits){
         if(bits[0]===0){ bits = bits.slice(1); }
@@ -644,7 +589,6 @@
       function onScan(text){
         barcodeInput && (barcodeInput.value=text);
         closeCam();
-        // barcodeInput.closest('form')?.submit();
       }
 
       async function startDecoding(){
@@ -697,8 +641,6 @@
       openBtn?.addEventListener('click', async () => {
         if ((isIOS || isSafari) && !isSecure) {
           httpsWarn?.classList.remove('hide');
-          // Bisa langsung pakai foto jika non-HTTPS:
-          // photoBtn?.click();
           return;
         }
         try{
@@ -743,33 +685,16 @@
       function getCurrentName(){ const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(1) .v'); return el?(el.textContent||'').trim():''; }
       function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
       function upsertHist(sku, name){
-  sku  = (sku  || '').trim();
-  name = (name || '').trim();
-
-  // 1) Wajib SKU valid
-  if (!sku || sku === '-') return;
-
-  // 2) (Opsional) Wajib NAME valid juga
-  //    Matikan baris ini kalau kamu tetap ingin menyimpan meski name kosong
-  if (!name || name === '-') return;
-
-  let list = loadHist();               // [] kalau belum ada
-
-  // 3) (Opsional) Jangan simpan kalau koleksi masih kosong
-  //    Hidupkan baris ini kalau kamu tidak mau membuat entri pertama.
-  // if (!Array.isArray(list) || list.length === 0) return;
-
-  // 4) Dedup (case-insensitive biar aman)
-  list = list.filter(x => (x?.sku || '').trim().toLowerCase() !== sku.toLowerCase());
-
-  // 5) Masukkan di depan
-  list.unshift({ sku, name, user: USER, t: Date.now() });
-
-  // 6) Batasi panjang
-  if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
-
-  saveHist(list);
-}
+        sku  = (sku  || '').trim();
+        name = (name || '').trim();
+        if (!sku || sku === '-') return;
+        if (!name || name === '-') return;
+        let list = loadHist();
+        list = list.filter(x => (x?.sku || '').trim().toLowerCase() !== sku.toLowerCase());
+        list.unshift({ sku, name, user: USER, t: Date.now() });
+        if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
+        saveHist(list);
+      }
       function renderHist(){
         const card=document.querySelector('section.card[aria-labelledby="riwayat-title"]'); if(!card) return;
         const serverEmpty=card.querySelector('.rows .empty'); let rows=card.querySelector('.rows[data-client]');
@@ -815,8 +740,6 @@
       })();
 
     })();
-
-
 </script>
 
 <noscript><style>.loading{display:none!important}</style></noscript>

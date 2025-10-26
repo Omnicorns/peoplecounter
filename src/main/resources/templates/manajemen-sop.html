@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PROMIS — Manajemen SOP</title>
+
+  <!-- inject dari controller -->
+  <meta name="api-base" th:content="${apiBase}" content="/api">
+  <meta name="x-api-key" th:content="${apiKey}"  content="">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f5f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --ring:#e6ebf2;
+      --brand:#0b1322; --brand2:#101a2f; --ok:#22c55e; --warn:#f59e0b; --arch:#cbd5e1;
+      --shadow:0 10px 28px rgba(2,6,23,.08); --r:20px;
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);
+      font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:inherit;text-decoration:none}
+
+    /* ===== APPBAR (desktop) ===== */
+    .appbar{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+    .bar{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+    .brand img{width:28px;height:28px;border-radius:10px;background:#fff}
+    .seglist{display:none;gap:12px}
+    @media (min-width:721px){ .seglist{display:flex} }  /* tampilkan di web/desktop */
+    .segdesk{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.28); color:#fff; font-weight:800}
+    .segdesk.active{background:#1a2337}
+    .sp{flex:1}
+    .userbox{display:flex;align-items:center;gap:10px}
+    .chip{background:#fff;color:#0f172a;border-radius:999px;padding:8px 12px;font-weight:800}
+    .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
+    .btn-ghost:hover{background:rgba(255,255,255,.1)}
+
+    /* ===== MOBILE SWITCHER (di bawah appbar) ===== */
+    .msw{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+    @media (min-width:721px){ .msw{display:none} }   /* khusus mobile */
+    .msw-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:12px}
+    .segmob{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
+      background:#fff;color:#0f172a;border:1px solid #e6ebf2;box-shadow:inset 0 -1px 0 rgba(2,6,23,.03)}
+    .segmob.active{border-color:#cfd8e7;box-shadow:0 3px 10px rgba(2,6,23,.06)}
+
+    /* ===== PAGE ===== */
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .title{font-size:22px;font-weight:800;margin:4px 0 12px}
+    .toolbar{display:grid;grid-template-columns:1fr 160px 160px;gap:10px}
+    @media (max-width:900px){ .toolbar{grid-template-columns:1fr 1fr} }
+    @media (max-width:520px){ .toolbar{grid-template-columns:1fr} }
+    .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--ring);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
+    .search input{flex:1;border:0;outline:0;background:transparent;font-size:15px}
+    .select{height:44px;border:1px solid var(--ring);border-radius:16px;padding:0 12px;background:#fff;box-shadow:var(--shadow);font-weight:700}
+
+    /* ===== CARD LIST (web + mobile) ===== */
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    @media (max-width:900px){ .cards{grid-template-columns:1fr} }
+    .card{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
+    .card .top{display:flex;align-items:center;gap:8px}
+    .card .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
+    .badge{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
+    .Published{background:var(--ok)} .Draft{background:var(--warn);color:#111827}
+    .Archived{background:var(--arch);color:#111827}
+    .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chipx{background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
+    .chipx.owner{background:#dfeaff;color:#1e40af}
+    .chipx.ghost{background:#f1f5f9;color:#0f172a}
+    .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
+    .file{display:flex;align-items:center;gap:8px;font-weight:800;word-break:break-word}
+    .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
+    .eff{color:#94a3b8;margin-top:8px}
+
+    /* ===== PAGER ===== */
+    .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin:14px 0 6px;flex-wrap:wrap}
+    .btn{border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+    .btn.ghost{background:#e9eef6;color:#0f172a}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .rowsel{height:36px;border:1px solid var(--ring);border-radius:8px;padding:0 8px;background:#fff}
+
+    /* ===== EMPTY ===== */
+    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#64748b;padding:26px;border:1px dashed var(--ring);border-radius:18px;background:#fff}
+    .empty-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:#f1f5f9}
+  </style>
+</head>
+<body>
+
+<!-- APPBAR (desktop seperti gambar 2) -->
+<header class="appbar">
+  <div class="bar">
+    <div class="brand"><img src="/promis.png" alt="PROMIS"><span>PROMIS</span></div>
+
+    <!-- pills desktop -->
+    <nav class="seglist" aria-label="Primary">
+      <a class="segdesk" th:href="@{/web/product}">Produk</a>
+      <span class="segdesk active">Manajemen SOP</span>
+    </nav>
+
+    <div class="sp"></div>
+
+    <!-- user -->
+    <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
+      <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
+      <form th:action="@{/web/logout}" method="post" data-loading>
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-ghost">Logout</button>
+      </form>
+    </div>
+    <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
+      <a class="btn-ghost" th:href="@{/web/login}">Login</a>
+    </div>
+  </div>
+</header>
+
+<!-- MOBILE switcher (pills putih seperti gambar 1) -->
+<nav class="msw" aria-label="Switcher">
+  <div class="msw-inner">
+    <a class="segmob" th:href="@{/web/product}">Produk</a>
+    <span class="segmob active">SOP</span>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="title">Daftar SOP</div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search"><input id="q" placeholder="Cari kode/judul/tag/owner…"></div>
+    <select id="fStatus" class="select">
+      <option value="">Semua Status</option>
+      <option>Draft</option><option>Published</option><option>Archived</option>
+    </select>
+    <select id="fSort" class="select">
+      <option>Terbaru</option><option>Terlama</option><option>A-Z</option><option>Z-A</option>
+    </select>
+  </div>
+
+  <!-- Cards (dipakai web & mobile) -->
+  <section id="cards" class="cards" aria-live="polite"></section>
+
+  <!-- Pager -->
+  <div class="pager">
+    <small id="pgInfo">0–0 dari 0</small>
+    <select id="pgSize" class="rowsel">
+      <option>6</option><option selected>10</option><option>20</option>
+    </select>
+    <button id="pgPrev" class="btn ghost">Prev</button>
+    <span id="pgPage" class="muted">1 / 1</span>
+    <button id="pgNext" class="btn ghost">Next</button>
+  </div>
+</main>
+
+<script>
+  /* ===== API config ===== */
+  const API_BASE=(document.querySelector('meta[name="api-base"]')?.content||'/api').replace(/\/+$/,'');
+  const API_KEY =document.querySelector('meta[name="x-api-key"]')?.content?.trim()||'';
+  async function j(url,opt={}){const h=Object.assign({},opt.headers||{});if(API_KEY)h['x-api-key']=API_KEY;
+    const r=await fetch(url,{...opt,headers:h});if(!r.ok)throw new Error(await r.text()||r.statusText);return r.json();}
+
+  /* ===== State ===== */
+  const state={all:[],view:[],q:'',status:'',sort:'Terbaru',page:1,pageSize:10};
+  const $=s=>document.querySelector(s);
+
+  /* Helpers */
+  const fmtDate=s=>{if(!s)return'-';const d=new Date(s);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}).replace('.','');};
+  const chip=(t,cls='')=>`<span class="chipx ${cls}">${t}</span>`;
+  async function downloadFile(docId,fileId,fileName){try{
+    const r=await fetch(`${API_BASE}/sop/${docId}/files/${fileId}`,{headers:API_KEY?{'x-api-key':API_KEY}:{}});if(!r.ok)throw new Error(await r.text());
+    const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fileName||'file';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  }catch(e){alert(e.message||'Gagal mengunduh');}}
+
+  /* Filter & Sort */
+  function applyFilter(){
+    const q=(state.q||'').toLowerCase();
+    let arr=state.all.filter(x=>{
+      const hitQ=!q||(`${x.code||''} ${x.title||''} ${x.owner||''} ${(x.tags||[]).join(' ')} ${(x.categories||[]).join(' ')}`.toLowerCase().includes(q));
+      const hitS=!state.status||String(x.status||'').toLowerCase()===state.status.toLowerCase();
+      return hitQ&&hitS;
+    });
+    const s=state.sort;
+    arr.sort((a,b)=>{
+      if(s==='Terbaru') return new Date(b.effective||b.createdAt||0)-new Date(a.effective||a.createdAt||0);
+      if(s==='Terlama') return new Date(a.effective||a.createdAt||0)-new Date(b.effective||b.createdAt||0);
+      if(s==='A-Z')     return String(a.title||'').localeCompare(b.title||'');
+      if(s==='Z-A')     return String(b.title||'').localeCompare(a.title||'');
+      return 0;
+    });
+    state.view=arr;
+  }
+
+  /* Render */
+  function render(){
+    const cards=$('#cards'); cards.innerHTML='';
+    const total=state.view.length;
+    const pages=Math.max(1,Math.ceil(total/state.pageSize));
+    if(state.page>pages) state.page=pages;
+    const start=(state.page-1)*state.pageSize, end=Math.min(start+state.pageSize,total);
+
+    if(!total){
+      cards.innerHTML=`<div class="empty"><div class="empty-icon">📄</div><div><b>Tidak ada data</b><br><small>Coba ubah kata kunci/filter.</small></div></div>`;
+    }else{
+      state.view.slice(start,end).forEach(s=>{
+        const tg=(s.tags||[]).map(t=>chip(t,'ghost')).join('');
+        const cat=(s.categories||[]).map(c=>chip(c)).join('');
+        const own=s.owner?chip('By '+s.owner,'owner'):'';
+        const files=(s.files||[]).map(f=>{
+          const safe=String(f.fileName||'file').replace(/'/g,"\\'");
+          const sz=f.size?(f.size>=1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(1)+' KB'):'';
+          return `<a href="javascript:void(0)" class="file" onclick="downloadFile(${s.id},${f.id},'${safe}')">${f.fileName||'-'} <span class="size">• ${sz}</span></a>`;
+        }).join('');
+        const el=document.createElement('article');
+        el.className='card';
+        el.innerHTML=`
+          <div class="top"><h3>${s.title||'-'}</h3><span class="badge ${s.status||'Draft'}">${(s.status||'Draft')}</span></div>
+          <div class="meta">${s.code||'-'} • v${s.version||'1.0'}</div>
+          <div class="chips">${own} ${cat} ${tg}</div>
+          <hr class="hr">
+          ${files || '<div class="meta">Tidak ada file</div>'}
+          <div class="eff">Berlaku: ${fmtDate(s.effective)}</div>`;
+        cards.appendChild(el);
+      });
+    }
+
+    $('#pgInfo').textContent = total ? `${start+1}–${end} dari ${total}` : '0–0 dari 0';
+    $('#pgPage').textContent = `${state.page} / ${pages}`;
+    $('#pgPrev').disabled = state.page<=1;
+    $('#pgNext').disabled = state.page>=pages;
+  }
+
+  /* Load */
+  async function load(){
+    try{
+      const qs=new URLSearchParams(); if(state.q)qs.set('query',state.q); if(state.status)qs.set('status',state.status);
+      const data=await j(`${API_BASE}/sop?${qs.toString()}`); state.all=Array.isArray(data.items)?data.items:[];
+    }catch(e){ console.warn('API error:',e); state.all=[]; }
+    state.page=1; applyFilter(); render();
+  }
+
+  /* Bindings */
+  let t=null; $('#q').addEventListener('input',e=>{ clearTimeout(t); t=setTimeout(()=>{ state.q=(e.target.value||'').trim(); load(); },180); });
+  $('#fStatus').addEventListener('change',e=>{ state.status=e.target.value; load(); });
+  $('#fSort').addEventListener('change',e=>{ state.sort=e.target.value; applyFilter(); state.page=1; render(); });
+  $('#pgPrev').onclick=()=>{ if(state.page>1){ state.page--; render(); } };
+  $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
+  $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
+
+  /* start */
+  load();
+</script>
+</body>
+</html>

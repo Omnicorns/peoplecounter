@@ -176,6 +176,7 @@
         <div class="field"><label for="status">Status</label>
           <select id="status" class="input"><option>Draft</option><option>Review</option><option>Published</option><option>Archived</option></select>
         </div>
+        <div class="field"><label for="version">Version</label><input id="version" class="input"></div>
         <div class="field"><label for="owner">Owner</label><input id="owner" class="input"></div>
         <div class="field"><label for="effective">Efektif</label><input id="effective" type="date" class="input"></div>
       </div>
@@ -350,7 +351,7 @@
     e.preventDefault();
     const id=$('#id').value.trim();
     const fd=new FormData();
-    ['code','title','category','status','owner','effective','tags','change'].forEach(k=>fd.append(k,$('#'+k).value||''));
+    ['code','title','category','status','owner','effective','tags','change','version'].forEach(k=>fd.append(k,$('#'+k).value||''));
     Array.from($('#files').files).forEach(f=>fd.append('files',f));
     try{
       const opt={method:id?'PUT':'POST',headers:{'x-api-key':API_KEY},body:fd};
@@ -365,9 +366,12 @@
     try{
       const x=await j(`${API_BASE}/sop/${id}`);
       $('#mTitle').textContent='Edit SOP — '+(x.code||id);
-      $('#code').value=x.code||''; $('#title').value=x.title||''; $('#category').value=x.category||'';
+      $('#code').value=x.code||''; $('#title').value=x.title||'';
+      $('#category').value=x.category||'';
       $('#status').value=x.status||'Draft'; $('#owner').value=x.owner||''; $('#effective').value=x.effective||'';
       $('#tags').value=(x.tags||[]).join(', '); $('#change').value=x.change||''; $('#files').value='';
+      $('#version').value = x.version || '';
+
       // list file dengan tombol download (pakai fetch header)
       $('#filePreview').innerHTML=(x.files||[]).map(f=>{
         const safe=String(f.fileName||'file').replace(/'/g,"\\'");

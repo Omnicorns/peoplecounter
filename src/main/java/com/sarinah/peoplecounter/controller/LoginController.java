@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,6 +46,8 @@ public class LoginController {
     public static final String AUTH_USERNAME = "AUTH_USERNAME";
     public static final String AUTH_FULLNAME = "AUTH_FULLNAME";
     private static final String SESSION_SKU_HISTORY = "SKU_HISTORY";
+    @Value("${api.key}")
+    private  String apiKey;
 
     @GetMapping("/login")
     public String loginPage(@RequestParam(value = "redirect", required = false) String redirect,
@@ -140,7 +143,7 @@ public class LoginController {
         // request ke adaptor — kamu bebas pakai "barcode" atau "sku" sesuai endpoint
         ObjectNode req = om.createObjectNode();
         if (code != null && !code.isBlank()) req.put("value", code);
-        if (sku  != null && !sku.isBlank())  req.put("value", sku);
+        if (sku != null && !sku.isBlank()) req.put("value", sku);
 
         ObjectNode root = sarinahGetModulAdaptor.getScanBarcode(req);
 
@@ -149,7 +152,7 @@ public class LoginController {
         String name = textOrDefault(root.get("name"), "-");
 
         // sku: di JSON namanya "default_code"
-        String matchingSku ;
+        String matchingSku;
         String outSku = textOrNull(root.get("default_code"));
         if (outSku == null) outSku = "-"; // fallback
         matchingSku = outSku;
@@ -212,8 +215,6 @@ public class LoginController {
         }
 
 
-
-
         // stok per lokasi: "stock_by_location" adalah MAP: id -> { location, quantity, price, ... }
         List<Map<String, Object>> rows = new ArrayList<>();
         JsonNode stockMap = root.get("stock_by_location");
@@ -222,10 +223,10 @@ public class LoginController {
                 JsonNode n = e.getValue();
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("location", textOrDefault(n.get("location"), "-"));
-                m.put("stock",    intOrZero(n.get("quantity")));
-                m.put("uom",      textOrDefault(n.get("uom"), ""));
-                m.put("price",    decimalOrZero(n.get("price")));         // BigDecimal
-                m.put("pricelist",textOrDefault(n.get("pricelist_name"), ""));
+                m.put("stock", intOrZero(n.get("quantity")));
+                m.put("uom", textOrDefault(n.get("uom"), ""));
+                m.put("price", decimalOrZero(n.get("price")));         // BigDecimal
+                m.put("pricelist", textOrDefault(n.get("pricelist_name"), ""));
                 rows.add(m);
             });
         }
@@ -245,7 +246,7 @@ public class LoginController {
         model.addAttribute("stockPriceUrl", "/web/product/" + outSku + "/stock");
 
         String inputValue = (code != null && !code.isBlank()) ? code :
-                (sku  != null && !sku.isBlank())  ? sku  : "";
+                (sku != null && !sku.isBlank()) ? sku : "";
         // === PANGGIL INI JIKA DATA VALID ===
         if (outSku != null && !outSku.isBlank()
                 && name != null && !name.isBlank()
@@ -254,10 +255,10 @@ public class LoginController {
             addSkuHistory(session, outSku, name);
             saveScan(request, session, inputValue, name);
         }
-      
+
 
 // SELALU kirim history ke view
-   model.addAttribute("history", getSkuHistory(session));
+        model.addAttribute("history", getSkuHistory(session));
 
         return "product-detail";
     }
@@ -273,15 +274,22 @@ public class LoginController {
     private static String textOrNull(JsonNode n) {
         return (n == null || n.isMissingNode() || n.isNull()) ? null : n.asText(null);
     }
+
     private static String textOrDefault(JsonNode n, String def) {
         return (n == null || n.isMissingNode() || n.isNull()) ? def : n.asText(def);
     }
+
     private static int intOrZero(JsonNode n) {
         return (n == null || n.isMissingNode() || n.isNull()) ? 0 : n.asInt(0);
     }
+
     private static BigDecimal decimalOrZero(JsonNode n) {
         if (n == null || n.isMissingNode() || n.isNull()) return BigDecimal.ZERO;
-        try { return new BigDecimal(n.asText()); } catch (Exception e) { return BigDecimal.ZERO; }
+        try {
+            return new BigDecimal(n.asText());
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -291,17 +299,17 @@ public class LoginController {
 
         if (name == null || name.isBlank() || "-".equals(name.trim())) return;
 
-        List<Map<String,String>> hist =
-                (List<Map<String,String>>) session.getAttribute(SESSION_SKU_HISTORY);
+        List<Map<String, String>> hist =
+                (List<Map<String, String>>) session.getAttribute(SESSION_SKU_HISTORY);
         if (hist == null) hist = new LinkedList<>();
 
         // buang entry lama dengan sku yang sama
         hist = hist.stream()
-                .filter(m -> !sku.equalsIgnoreCase(m.getOrDefault("sku","")))
+                .filter(m -> !sku.equalsIgnoreCase(m.getOrDefault("sku", "")))
                 .collect(toCollection(LinkedList::new));
 
         // tambah di depan
-        Map<String,String> entry = new HashMap<>();
+        Map<String, String> entry = new HashMap<>();
         entry.put("sku", sku);
         entry.put("name", name.trim());
         hist.add(0, entry);
@@ -313,10 +321,10 @@ public class LoginController {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String,String>> getSkuHistory(HttpSession session){
+    private List<Map<String, String>> getSkuHistory(HttpSession session) {
 
-        List<Map<String,String>> hist =
-                (List<Map<String,String>>) session.getAttribute(SESSION_SKU_HISTORY);
+        List<Map<String, String>> hist =
+                (List<Map<String, String>>) session.getAttribute(SESSION_SKU_HISTORY);
 
         return hist != null ? hist : Collections.emptyList();
     }
@@ -326,7 +334,7 @@ public class LoginController {
         if (src != null) {
             src = src.trim().toUpperCase();
             if ("ANDROID".equals(src)) return ScanSource.ANDROID;
-            if ("WEB".equals(src))     return ScanSource.WEB;
+            if ("WEB".equals(src)) return ScanSource.WEB;
         }
         // fallback deteksi User-Agent
         String ua = request.getHeader("User-Agent");
@@ -346,5 +354,24 @@ public class LoginController {
     }
 
 
-}
+    @GetMapping("/sop")
+    public String manajemenSop(@RequestParam(value = "sku", required = false) String sku,
+                              @RequestParam(value = "code", required = false) String code,
+                              Model model,
+                              HttpServletRequest request,
+                              HttpSession session) {
+        if (session.getAttribute(AUTH_USER_ID) == null) {
+            // simpan url tujuan (termasuk query) agar bisa balik setelah login
+            String full = request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+            String redirect = UriUtils.encode(full, StandardCharsets.UTF_8);
+            return "redirect:/web/login";
+        }
+        model.addAttribute("apiKey", apiKey);
+        return "manajemen-sop";
+    }
+
+    }
+
+
+
 
