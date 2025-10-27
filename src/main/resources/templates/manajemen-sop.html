@@ -1,253 +1,410 @@
 <!DOCTYPE html>
 <html lang="id" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>PROMIS — Manajemen SOP</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>PROMIS — Manajemen SOP</title>
 
-  <!-- inject dari controller -->
-  <meta name="api-base" th:content="${apiBase}" content="/api">
-  <meta name="x-api-key" th:content="${apiKey}"  content="">
+    <!-- inject dari controller -->
+    <meta name="api-base" th:content="${apiBase}" content="/api">
+    <meta name="x-api-key" th:content="${apiKey}"  content="">
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#f5f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --ring:#e6ebf2;
-      --brand:#0b1322; --brand2:#101a2f; --ok:#22c55e; --warn:#f59e0b; --arch:#cbd5e1;
-      --shadow:0 10px 28px rgba(2,6,23,.08); --r:20px;
-    }
-    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);
-      font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    a{color:inherit;text-decoration:none}
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-    /* ===== APPBAR (desktop) ===== */
-    .appbar{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
-    .bar{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
-    .brand img{width:28px;height:28px;border-radius:10px;background:#fff}
-    .seglist{display:none;gap:12px}
-    @media (min-width:721px){ .seglist{display:flex} }  /* tampilkan di web/desktop */
-    .segdesk{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.28); color:#fff; font-weight:800}
-    .segdesk.active{background:#1a2337}
-    .sp{flex:1}
-    .userbox{display:flex;align-items:center;gap:10px}
-    .chip{background:#fff;color:#0f172a;border-radius:999px;padding:8px 12px;font-weight:800}
-    .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
-    .btn-ghost:hover{background:rgba(255,255,255,.1)}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --bg:#f5f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --ring:#e6ebf2;
+          --brand:#0b1322; --brand2:#101a2f; --ok:#22c55e; --warn:#f59e0b; --arch:#cbd5e1;
+          --shadow:0 10px 28px rgba(2,6,23,.08); --r:20px;
+          --safe-top: env(safe-area-inset-top, 0px);
+          --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        *{box-sizing:border-box}
+        html,body{margin:0;background:var(--bg);color:var(--ink);
+          font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-    /* ===== MOBILE SWITCHER (di bawah appbar) ===== */
-    .msw{display:block;background:#fff;border-bottom:1px solid var(--ring)}
-    @media (min-width:721px){ .msw{display:none} }   /* khusus mobile */
-    .msw-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:12px}
-    .segmob{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
-      background:#fff;color:#0f172a;border:1px solid #e6ebf2;box-shadow:inset 0 -1px 0 rgba(2,6,23,.03)}
-    .segmob.active{border-color:#cfd8e7;box-shadow:0 3px 10px rgba(2,6,23,.06)}
+        /* Appbar */
+        .appbar{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;border-bottom:1px solid rgba(255,255,255,.08); padding-top:var(--safe-top)}
+        .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+        .brand img{width:28px;height:28px;border-radius:10px;background:#fff}
+        .pill{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1rem;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff;font-weight:800}
+        .pill.active{background:#1a2337}
+        .chip{background:#fff;color:#0f172a;border-radius:999px;padding:.45rem .8rem;font-weight:800}
+        .btn-ghost{padding:.45rem .8rem;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
+        .btn-ghost:hover{background:rgba(255,255,255,.1)}
 
-    /* ===== PAGE ===== */
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    .title{font-size:22px;font-weight:800;margin:4px 0 12px}
-    .toolbar{display:grid;grid-template-columns:1fr 160px 160px;gap:10px}
-    @media (max-width:900px){ .toolbar{grid-template-columns:1fr 1fr} }
-    @media (max-width:520px){ .toolbar{grid-template-columns:1fr} }
-    .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--ring);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
-    .search input{flex:1;border:0;outline:0;background:transparent;font-size:15px}
-    .select{height:44px;border:1px solid var(--ring);border-radius:16px;padding:0 12px;background:#fff;box-shadow:var(--shadow);font-weight:700}
+        /* Mobile switcher */
+        .segmob{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
+          background:#fff;color:#0f172a;border:1px solid #e6ebf2;box-shadow:inset 0 -1px 0 rgba(2,6,23,.03)}
+        .segmob.active{border-color:#cfd8e7;box-shadow:0 3px 10px rgba(2,6,23,.06)}
 
-    /* ===== CARD LIST (web + mobile) ===== */
-    .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-    @media (max-width:900px){ .cards{grid-template-columns:1fr} }
-    .card{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
-    .card .top{display:flex;align-items:center;gap:8px}
-    .card .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
-    .badge{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
-    .Published{background:var(--ok)} .Draft{background:var(--warn);color:#111827}
-    .Archived{background:var(--arch);color:#111827}
-    .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .chipx{background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
-    .chipx.owner{background:#dfeaff;color:#1e40af}
-    .chipx.ghost{background:#f1f5f9;color:#0f172a}
-    .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
-    .file{display:flex;align-items:center;gap:8px;font-weight:800;word-break:break-word}
-    .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
-    .eff{color:#94a3b8;margin-top:8px}
+        /* Cards */
+        .cardx{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
+        .cardx .top{display:flex;align-items:center;gap:8px}
+        .cardx .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
+        .badgex{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
+        .Published{background:var(--ok)} .Draft{background:var(--warn);color:#111827}
+        .Archived{background:var(--arch);color:#111827}
+        .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
+        .chips{display:flex;gap:8px;flex-wrap:wrap}
+        .chipx{background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
+        .chipx.owner{background:#dfeaff;color:#1e40af}
+        .chipx.ghost{background:#f1f5f9;color:#0f172a}
+        .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
+        .file{display:flex;align-items:center;gap:8px;font-weight:800;word-break:break-word;cursor:pointer}
+        .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
+        .file:hover{text-decoration:underline}
+        .eff{color:#94a3b8;margin-top:8px}
 
-    /* ===== PAGER ===== */
-    .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin:14px 0 6px;flex-wrap:wrap}
-    .btn{border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .btn.ghost{background:#e9eef6;color:#0f172a}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-    .rowsel{height:36px;border:1px solid var(--ring);border-radius:8px;padding:0 8px;background:#fff}
-
-    /* ===== EMPTY ===== */
-    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#64748b;padding:26px;border:1px dashed var(--ring);border-radius:18px;background:#fff}
-    .empty-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:#f1f5f9}
-  </style>
+        /* Preview modal */
+        .pv{position:fixed;inset:0;display:none;z-index:100;background:rgba(15,23,42,.64);backdrop-filter:blur(2px)}
+        .pv.show{display:block}
+        .pv-inner{position:absolute;inset:40px 20px 20px 20px;background:#0b1220;border-radius:16px;display:flex;flex-direction:column;border:1px solid #1e2a44}
+        @media (max-width: 720px){ .pv-inner{inset:0; border-radius:0; padding-top:var(--safe-top); padding-bottom:var(--safe-bottom)} }
+        .pv-toolbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #1e2a44;background:linear-gradient(180deg,#0d1426,#0b1220);color:#e5edff}
+        .pv-toolbar .sp{flex:1}
+        .pv-btn{border:1px solid #24304c;background:#121b31;color:#e5edff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+        .pv-pages{flex:1;overflow:auto;background:#0b1220;padding:12px;display:flex;flex-direction:column;align-items:center;gap:12px}
+        .pv-pages canvas{background:#fff;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.35);width:calc(100% - 24px);max-width:1000px;height:auto}
+        .pv-info{color:#9fb4df;font-weight:700}
+        .pv-input{height:36px;border:1px solid #24304c;border-radius:8px;background:#0f172a;color:#e5edff;padding:0 10px;width:86px}
+        .pv-zoom{display:flex;align-items:center;gap:8px}
+        .pv-close{margin-left:auto}
+        @media print { body{ display:none !important; } }
+    </style>
 </head>
-<body>
+<body oncontextmenu="return false">
 
-<!-- APPBAR (desktop seperti gambar 2) -->
+<!-- APPBAR: user chip + Logout selalu di kanan -->
 <header class="appbar">
-  <div class="bar">
-    <div class="brand"><img src="/promis.png" alt="PROMIS"><span>PROMIS</span></div>
-
-    <!-- pills desktop -->
-    <nav class="seglist" aria-label="Primary">
-      <a class="segdesk" th:href="@{/web/product}">Produk</a>
-      <span class="segdesk active">Manajemen SOP</span>
-    </nav>
-
-    <div class="sp"></div>
-
-    <!-- user -->
-    <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
-      <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
-      <form th:action="@{/web/logout}" method="post" data-loading>
-        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit" class="btn-ghost">Logout</button>
-      </form>
+    <div class="container py-2">
+        <div class="d-flex align-items-center gap-3 flex-nowrap">
+            <div class="brand"><img src="/promis.png" alt="PROMIS"><span>PROMIS</span></div>
+            <nav class="d-none d-md-flex gap-2 ms-2" aria-label="Primary">
+                <a class="pill" th:href="@{/web/product}">Produk</a>
+                <span class="pill active">Manajemen SOP</span>
+            </nav>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2" th:if="${session.AUTH_USERNAME != null}">
+                    <span class="chip" th:text="${session.AUTH_USERNAME}">aloy</span>
+                    <form th:action="@{/web/logout}" method="post" data-loading class="m-0">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="btn-ghost">Logout</button>
+                    </form>
+                </div>
+                <div th:if="${session.AUTH_USERNAME == null}">
+                    <a class="btn-ghost" th:href="@{/web/login}">Login</a>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
-      <a class="btn-ghost" th:href="@{/web/login}">Login</a>
-    </div>
-  </div>
 </header>
 
-<!-- MOBILE switcher (pills putih seperti gambar 1) -->
-<nav class="msw" aria-label="Switcher">
-  <div class="msw-inner">
-    <a class="segmob" th:href="@{/web/product}">Produk</a>
-    <span class="segmob active">SOP</span>
-  </div>
-</nav>
+<!-- MOBILE switcher -->
+<div class="bg-white border-bottom d-md-none">
+    <div class="container py-2">
+        <div class="d-flex gap-2">
+            <a class="segmob" th:href="@{/web/product}">Produk</a>
+            <span class="segmob active">SOP</span>
+        </div>
+    </div>
+</div>
 
-<main class="wrap">
-  <div class="title">Daftar SOP</div>
+<main class="container my-3">
+    <h1 class="h4 fw-bold mb-3">Daftar SOP</h1>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="search"><input id="q" placeholder="Cari kode/judul/tag/owner…"></div>
-    <select id="fStatus" class="select">
-      <option value="">Semua Status</option>
-      <option>Draft</option><option>Published</option><option>Archived</option>
-    </select>
-    <select id="fSort" class="select">
-      <option>Terbaru</option><option>Terlama</option><option>A-Z</option><option>Z-A</option>
-    </select>
-  </div>
+    <!-- Toolbar: Search + Owner + Tag + Sort -->
+    <div class="row g-2">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border rounded-4 shadow-sm">
+                <input id="q" class="form-control border-0"
+                       placeholder="Cari judul/kode… (bisa: owner:aloy, tag:kasir, #kasir)">
+            </div>
+        </div>
+        <div class="col-6 col-md-auto" style="min-width:160px">
+            <select id="fOwner" class="form-select rounded-4 shadow-sm">
+                <option value="">Semua Owner</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-auto" style="min-width:160px">
+            <select id="fTag" class="form-select rounded-4 shadow-sm">
+                <option value="">Semua Tag</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-auto" style="min-width:160px">
+            <select id="fSort" class="form-select rounded-4 shadow-sm">
+                <option selected>Terbaru</option><option>Terlama</option><option>A-Z</option><option>Z-A</option>
+            </select>
+        </div>
+    </div>
 
-  <!-- Cards (dipakai web & mobile) -->
-  <section id="cards" class="cards" aria-live="polite"></section>
+    <!-- Cards -->
+    <section id="cards" class="row row-cols-1 row-cols-md-2 g-3 mt-2" aria-live="polite"></section>
 
-  <!-- Pager -->
-  <div class="pager">
-    <small id="pgInfo">0–0 dari 0</small>
-    <select id="pgSize" class="rowsel">
-      <option>6</option><option selected>10</option><option>20</option>
-    </select>
-    <button id="pgPrev" class="btn ghost">Prev</button>
-    <span id="pgPage" class="muted">1 / 1</span>
-    <button id="pgNext" class="btn ghost">Next</button>
-  </div>
+    <!-- Pager -->
+    <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center my-3">
+        <small id="pgInfo" class="text-secondary">0–0 dari 0</small>
+        <select id="pgSize" class="form-select form-select-sm" style="width:80px">
+            <option>6</option><option selected>10</option><option>20</option>
+        </select>
+        <button id="pgPrev" class="btn btn-sm btn-light">Prev</button>
+        <span id="pgPage" class="text-secondary">1 / 1</span>
+        <button id="pgNext" class="btn btn-sm btn-light">Next</button>
+    </div>
 </main>
 
+<!-- PREVIEW MODAL -->
+<div class="pv" id="pv">
+    <div class="pv-inner" role="dialog" aria-modal="true" aria-label="Pratinjau Dokumen">
+        <div class="pv-toolbar">
+            <strong class="pv-info" id="pvName">Pratinjau</strong>
+            <div class="sp"></div>
+            <div class="pv-zoom">
+                <button class="pv-btn" id="zoomOut">−</button>
+                <span class="pv-info" id="zoomPct">100%</span>
+                <button class="pv-btn" id="zoomIn">+</button>
+            </div>
+            <div style="width:10px"></div>
+            <label class="pv-info d-none d-sm-inline" for="goto">Hal:</label>
+            <input id="goto" class="pv-input d-none d-sm-inline" type="number" min="1" value="1"/>
+            <button class="pv-btn d-none d-sm-inline" id="goBtn">Go</button>
+            <button class="pv-btn pv-close ms-auto" id="pvClose">Tutup</button>
+        </div>
+        <div class="pv-pages" id="pvPages" ondragstart="return false"></div>
+    </div>
+</div>
+
 <script>
-  /* ===== API config ===== */
-  const API_BASE=(document.querySelector('meta[name="api-base"]')?.content||'/api').replace(/\/+$/,'');
-  const API_KEY =document.querySelector('meta[name="x-api-key"]')?.content?.trim()||'';
-  async function j(url,opt={}){const h=Object.assign({},opt.headers||{});if(API_KEY)h['x-api-key']=API_KEY;
-    const r=await fetch(url,{...opt,headers:h});if(!r.ok)throw new Error(await r.text()||r.statusText);return r.json();}
+    // ====== Config ======
+    const API_BASE=(document.querySelector('meta[name="api-base"]')?.content||'/api').replace(/\/+$/,'');
+    const API_KEY =document.querySelector('meta[name="x-api-key"]')?.content?.trim()||'';
+    const j=async (url,opt={})=>{
+      const h=Object.assign({},opt.headers||{}); if(API_KEY)h['x-api-key']=API_KEY;
+      const r=await fetch(url,{...opt,headers:h});
+      if(!r.ok) throw new Error(await r.text().catch(()=>r.statusText));
+      return r.json();
+    };
+    const $=s=>document.querySelector(s);
 
-  /* ===== State ===== */
-  const state={all:[],view:[],q:'',status:'',sort:'Terbaru',page:1,pageSize:10};
-  const $=s=>document.querySelector(s);
+    // ====== State ======
+    const state={all:[],view:[],q:'',owner:'',tag:'',sort:'Terbaru',page:1,pageSize:10};
 
-  /* Helpers */
-  const fmtDate=s=>{if(!s)return'-';const d=new Date(s);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}).replace('.','');};
-  const chip=(t,cls='')=>`<span class="chipx ${cls}">${t}</span>`;
-  async function downloadFile(docId,fileId,fileName){try{
-    const r=await fetch(`${API_BASE}/sop/${docId}/files/${fileId}`,{headers:API_KEY?{'x-api-key':API_KEY}:{}});if(!r.ok)throw new Error(await r.text());
-    const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fileName||'file';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-  }catch(e){alert(e.message||'Gagal mengunduh');}}
+    // ====== Util ======
+    const fmtDate=s=>{ if(!s)return'-'; const d=new Date(s);
+      return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}).replace('.','');
+    };
+    const chip=(t,cls='')=>`<span class="chipx ${cls}">${t}</span>`;
+    const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
 
-  /* Filter & Sort */
-  function applyFilter(){
-    const q=(state.q||'').toLowerCase();
-    let arr=state.all.filter(x=>{
-      const hitQ=!q||(`${x.code||''} ${x.title||''} ${x.owner||''} ${(x.tags||[]).join(' ')} ${(x.categories||[]).join(' ')}`.toLowerCase().includes(q));
-      const hitS=!state.status||String(x.status||'').toLowerCase()===state.status.toLowerCase();
-      return hitQ&&hitS;
-    });
-    const s=state.sort;
-    arr.sort((a,b)=>{
-      if(s==='Terbaru') return new Date(b.effective||b.createdAt||0)-new Date(a.effective||a.createdAt||0);
-      if(s==='Terlama') return new Date(a.effective||a.createdAt||0)-new Date(b.effective||b.createdAt||0);
-      if(s==='A-Z')     return String(a.title||'').localeCompare(b.title||'');
-      if(s==='Z-A')     return String(b.title||'').localeCompare(a.title||'');
-      return 0;
-    });
-    state.view=arr;
-  }
-
-  /* Render */
-  function render(){
-    const cards=$('#cards'); cards.innerHTML='';
-    const total=state.view.length;
-    const pages=Math.max(1,Math.ceil(total/state.pageSize));
-    if(state.page>pages) state.page=pages;
-    const start=(state.page-1)*state.pageSize, end=Math.min(start+state.pageSize,total);
-
-    if(!total){
-      cards.innerHTML=`<div class="empty"><div class="empty-icon">📄</div><div><b>Tidak ada data</b><br><small>Coba ubah kata kunci/filter.</small></div></div>`;
-    }else{
-      state.view.slice(start,end).forEach(s=>{
-        const tg=(s.tags||[]).map(t=>chip(t,'ghost')).join('');
-        const cat=(s.categories||[]).map(c=>chip(c)).join('');
-        const own=s.owner?chip('By '+s.owner,'owner'):'';
-        const files=(s.files||[]).map(f=>{
-          const safe=String(f.fileName||'file').replace(/'/g,"\\'");
-          const sz=f.size?(f.size>=1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(1)+' KB'):'';
-          return `<a href="javascript:void(0)" class="file" onclick="downloadFile(${s.id},${f.id},'${safe}')">${f.fileName||'-'} <span class="size">• ${sz}</span></a>`;
-        }).join('');
-        const el=document.createElement('article');
-        el.className='card';
-        el.innerHTML=`
-          <div class="top"><h3>${s.title||'-'}</h3><span class="badge ${s.status||'Draft'}">${(s.status||'Draft')}</span></div>
-          <div class="meta">${s.code||'-'} • v${s.version||'1.0'}</div>
-          <div class="chips">${own} ${cat} ${tg}</div>
-          <hr class="hr">
-          ${files || '<div class="meta">Tidak ada file</div>'}
-          <div class="eff">Berlaku: ${fmtDate(s.effective)}</div>`;
-        cards.appendChild(el);
-      });
+    // ====== Search parser: owner:xx, tag:yy, #yy ======
+    function parseQuery(q){
+      const tokens = (q||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const cond = { text:[], owner:[], tags:[] };
+      for(const t of tokens){
+        if(t.startsWith('owner:')) cond.owner.push(t.slice(6));
+        else if(t.startsWith('tag:')) cond.tags.push(t.slice(4));
+        else if(t.startsWith('#')) cond.tags.push(t.slice(1));
+        else cond.text.push(t);
+      }
+      return cond;
     }
 
-    $('#pgInfo').textContent = total ? `${start+1}–${end} dari ${total}` : '0–0 dari 0';
-    $('#pgPage').textContent = `${state.page} / ${pages}`;
-    $('#pgPrev').disabled = state.page<=1;
-    $('#pgNext').disabled = state.page>=pages;
-  }
+    // ====== Filter + Sort ======
+    function applyFilter(){
+      const {text, owner:qo, tags:qt} = parseQuery(state.q);
+      let arr=state.all.filter(x=>{
+        const base = `${x.code||''} ${x.title||''} ${x.owner||''} ${(x.tags||[]).join(' ')} ${(x.categories||[]).join(' ')}`.toLowerCase();
+        const hitText   = !text.length || text.every(t=>base.includes(t));
+        const hitOwner1 = !state.owner || String(x.owner||'').toLowerCase()===state.owner.toLowerCase();
+        const hitTag1   = !state.tag || (Array.isArray(x.tags)&&x.tags.map(t=>String(t).toLowerCase()).includes(state.tag.toLowerCase()));
+        const hitOwner2 = !qo.length || qo.some(v=>String(x.owner||'').toLowerCase().includes(v));
+        const hitTag2   = !qt.length || (Array.isArray(x.tags)&&qt.every(v=>x.tags.map(t=>String(t).toLowerCase()).includes(v)));
+        return hitText && hitOwner1 && hitTag1 && hitOwner2 && hitTag2;
+      });
 
-  /* Load */
-  async function load(){
-    try{
-      const qs=new URLSearchParams(); if(state.q)qs.set('query',state.q); if(state.status)qs.set('status',state.status);
-      const data=await j(`${API_BASE}/sop?${qs.toString()}`); state.all=Array.isArray(data.items)?data.items:[];
-    }catch(e){ console.warn('API error:',e); state.all=[]; }
-    state.page=1; applyFilter(); render();
-  }
+      const s=state.sort;
+      arr.sort((a,b)=>{
+        if(s==='Terbaru') return new Date(b.effective||b.createdAt||0)-new Date(a.effective||a.createdAt||0);
+        if(s==='Terlama') return new Date(a.effective||a.createdAt||0)-new Date(b.effective||b.createdAt||0);
+        if(s==='A-Z')     return String(a.title||'').localeCompare(String(b.title||''));
+        if(s==='Z-A')     return String(b.title||'').localeCompare(String(a.title||''));
+        return 0;
+      });
 
-  /* Bindings */
-  let t=null; $('#q').addEventListener('input',e=>{ clearTimeout(t); t=setTimeout(()=>{ state.q=(e.target.value||'').trim(); load(); },180); });
-  $('#fStatus').addEventListener('change',e=>{ state.status=e.target.value; load(); });
-  $('#fSort').addEventListener('change',e=>{ state.sort=e.target.value; applyFilter(); state.page=1; render(); });
-  $('#pgPrev').onclick=()=>{ if(state.page>1){ state.page--; render(); } };
-  $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
-  $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
+      state.view=arr;
+    }
 
-  /* start */
-  load();
+    // ====== Preview (PDF.js) ======
+    const pv=$('#pv'), pvPages=$('#pvPages'), pvName=$('#pvName'), zoomPct=$('#zoomPct');
+    let currentPdf=null, scale=1, renderToken=0;
+    if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`; }
+
+    async function showPdf(arrayBuffer, name){
+      pvName.textContent = name || 'Pratinjau';
+      pv.classList.add('show');
+      pvPages.innerHTML = '';
+      scale = 1; zoomPct.textContent='100%';
+
+      const myToken = ++renderToken;
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, disableCreateObjectURL: true });
+      currentPdf = await loadingTask.promise;
+      if(myToken !== renderToken || !currentPdf) return;
+
+      for(let p=1; p<=currentPdf.numPages; p++){
+        if(myToken !== renderToken || !currentPdf) return;
+        const page = await currentPdf.getPage(p);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { alpha:false });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        pvPages.appendChild(canvas);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      }
+
+      const goto=$('#goto'); if(goto){ goto.value=1; goto.max=currentPdf.numPages; }
+    }
+
+    async function rerenderAll(){
+      if(!currentPdf) return;
+      const myToken = ++renderToken;
+      pvPages.innerHTML='';
+      for(let p=1; p<=currentPdf.numPages; p++){
+        if(myToken !== renderToken || !currentPdf) return;
+        const page = await currentPdf.getPage(p);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { alpha:false });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        pvPages.appendChild(canvas);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      }
+      zoomPct.textContent = Math.round(scale*100)+'%';
+    }
+
+    async function openPreviewById(docId, fileId, fileName){
+      try{
+        const lower = String(fileName||'').toLowerCase();
+        if(!lower.endsWith('.pdf')){ alert('Pratinjau hanya untuk PDF.'); return; }
+        const url=`${API_BASE}/sop/${docId}/files/${fileId}`;
+        const r=await fetch(url,{headers:API_KEY?{'x-api-key':API_KEY}:{}, cache:'no-store'});
+        if(!r.ok) throw new Error(await r.text());
+        const buf=await r.arrayBuffer();
+        await showPdf(buf, fileName || 'Dokumen');
+      }catch(e){ alert(e.message||'Gagal membuka pratinjau'); }
+    }
+
+    // ====== Render list ======
+    function render(){
+      const cards=$('#cards'); cards.innerHTML='';
+      const total=state.view.length;
+      const pages=Math.max(1,Math.ceil(total/state.pageSize));
+      if(state.page>pages) state.page=pages;
+      const start=(state.page-1)*state.pageSize, end=Math.min(start+state.pageSize,total);
+
+      if(!total){
+        cards.innerHTML=`<div class="col"><div class="cardx text-center p-4">
+          <div class="mb-2">📄</div><div><b>Tidak ada data</b><br><small class="text-secondary">Coba ubah pencarian/fitur filter.</small></div>
+        </div></div>`;
+      }else{
+        state.view.slice(start,end).forEach(s=>{
+          const tg=(s.tags||[]).map(t=>chip(t,'ghost')).join('');
+          const cat=(s.categories||[]).map(c=>chip(c)).join('');
+          const own=s.owner?chip('By '+s.owner,'owner'):'';
+          const files=(s.files||[]).map(f=>{
+            const safe=(f.fileName||'file').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            const sz=f.size?(f.size>=1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(1)+' KB'):'';
+            return `<div class="file" role="button" tabindex="0"
+                        onclick="openPreviewById(${s.id},${f.id},'${safe}')"
+                        onkeydown="if(event.key==='Enter'||event.key===' ') this.click();">
+                      ${safe} <span class="size">• ${sz}</span>
+                    </div>`;
+          }).join('');
+
+          const col=document.createElement('div');
+          col.className='col';
+          col.innerHTML=`
+            <article class="cardx">
+              <div class="top">
+                <h3 class="flex-grow-1">${s.title||'-'}</h3>
+                <span class="badgex ${s.status||'Draft'}">${(s.status||'Draft')}</span>
+              </div>
+              <div class="meta">${s.code||'-'} • v${s.version||'1.0'}</div>
+              <div class="chips">${own} ${cat} ${tg}</div>
+              <hr class="hr">
+              ${files || '<div class="meta">Tidak ada file</div>'}
+              <div class="eff">Berlaku: ${fmtDate(s.effective)}</div>
+            </article>`;
+          cards.appendChild(col);
+        });
+      }
+
+      $('#pgInfo').textContent = total ? `${start+1}–${end} dari ${total}` : '0–0 dari 0';
+      $('#pgPage').textContent = `${state.page} / ${pages}`;
+      $('#pgPrev').disabled = state.page<=1;
+      $('#pgNext').disabled = state.page>=pages;
+    }
+
+    // ====== Populate filters ======
+    function populateFilters(){
+      const owners = uniq(state.all.map(x=>x.owner));
+      const tags = uniq(state.all.flatMap(x=>Array.isArray(x.tags)?x.tags:[]));
+      const fOwner=$('#fOwner'), fTag=$('#fTag');
+      fOwner.length=1; fTag.length=1;
+      owners.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; fOwner.appendChild(op); });
+      tags.forEach(t=>{ const op=document.createElement('option'); op.value=t; op.textContent=t; fTag.appendChild(op); });
+      if(owners.includes(state.owner)) fOwner.value=state.owner; else { state.owner=''; fOwner.value=''; }
+      if(tags.includes(state.tag)) fTag.value=state.tag; else { state.tag=''; fTag.value=''; }
+    }
+
+    // ====== Load ======
+    async function load(){
+      try{
+        const qs=new URLSearchParams(); if(state.q)qs.set('query',state.q);
+        const data=await j(`${API_BASE}/sop?${qs.toString()}`); state.all=Array.isArray(data.items)?data.items:[];
+      }catch(e){ console.warn('API error:',e); state.all=[]; }
+      populateFilters();
+      state.page=1; applyFilter(); render();
+    }
+
+    // ====== Bindings ======
+    let t=null;
+    $('#q').addEventListener('input',e=>{ clearTimeout(t); t=setTimeout(()=>{ state.q=(e.target.value||'').trim(); load(); },180); });
+    $('#fOwner').addEventListener('change',e=>{ state.owner=e.target.value||''; applyFilter(); state.page=1; render(); });
+    $('#fTag').addEventListener('change',e=>{ state.tag=e.target.value||''; applyFilter(); state.page=1; render(); });
+    $('#fSort').addEventListener('change',e=>{ state.sort=e.target.value; applyFilter(); state.page=1; render(); });
+    $('#pgPrev').onclick=()=>{ if(state.page>1){ state.page--; render(); } };
+    $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
+    $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
+
+    // Preview UI + guard
+    $('#pvClose').onclick=()=>{ renderToken++; pv.classList.remove('show'); currentPdf=null; pvPages.innerHTML=''; };
+    $('#zoomIn').onclick=()=>{ if(!currentPdf) return; scale=Math.min(3, scale+0.1); rerenderAll(); };
+    $('#zoomOut').onclick=()=>{ if(!currentPdf) return; scale=Math.max(0.5, scale-0.1); rerenderAll(); };
+    $('#goBtn').onclick=()=>{
+      if(!currentPdf) return;
+      const n=Math.max(1, Math.min(parseInt($('#goto').value,10)||1, currentPdf.numPages));
+      const nodes=[...pvPages.querySelectorAll('canvas')];
+      const target=nodes[n-1]; if(target){ target.scrollIntoView({behavior:'smooth',block:'start'}); }
+    };
+
+    // Anti print/save
+    window.addEventListener('keydown', (e)=>{
+      const k=e.key.toLowerCase();
+      if ((e.ctrlKey||e.metaKey) && (k==='p' || k==='s')) {
+        e.preventDefault(); e.stopPropagation();
+        if(k==='p') alert('Pencetakan dinonaktifkan untuk dokumen ini.');
+        if(k==='s') alert('Pengunduhan dinonaktifkan pada pratinjau.');
+        return false;
+      }
+    }, true);
+
+    load();
 </script>
 </body>
 </html>
