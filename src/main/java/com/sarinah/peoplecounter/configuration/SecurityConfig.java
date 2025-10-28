@@ -45,6 +45,7 @@ public class SecurityConfig {
             "/web/logout",
             "/web/product/history/clear",
             "/web/sop",
+            "/middleware/sop-bo",
 
             // API tertentu (kalau memang publik)
             "/api/admin/users/import-csv",

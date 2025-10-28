@@ -39,10 +39,34 @@ public class GreetingController {
         this.userRepo = userRepository;
     }
 
+
+    private boolean isLoggedIn(HttpSession s) {
+        return s.getAttribute("AUTH_USER_ID") != null;
+    }
+    private boolean isAdmin(HttpSession s) {
+        return Boolean.TRUE.equals(s.getAttribute("IS_ADMIN"));
+    }
+    // Simpan tujuan ke session, lalu arahkan ke login
+    private String sendToLogin(HttpSession s, String targetPath) {
+        s.setAttribute("LOGIN_NEXT", targetPath);
+        return "redirect:/middleware/login";
+    }
+    // Hormati LOGIN_NEXT jika ada; kalau tidak ada, pakai fallback
+    private String redirectAfterLogin(HttpSession s, String fallback) {
+        Object n = s.getAttribute("LOGIN_NEXT");
+        if (n instanceof String next && next.startsWith("/")) {
+            s.removeAttribute("LOGIN_NEXT");
+            return "redirect:" + next;
+        }
+        return "redirect:" + fallback;
+    }
+
     @GetMapping("/login")
     public String loginPage(HttpSession session,Model model) {
-        if (session.getAttribute("AUTH_USER_ID") != null) {
-            return "redirect:/middleware/dashboard";
+        if (isLoggedIn(session)) {
+            // Sudah login: hormati tujuan (LOGIN_NEXT) jika ada
+            String fallback = isAdmin(session) ? "/middleware/dashboard" : "/middleware/sop";
+            return redirectAfterLogin(session, fallback);
         }
         if (!model.containsAttribute("error")) model.addAttribute("error", null);
         return "middleware-login";
@@ -62,8 +86,11 @@ public class GreetingController {
 
         session.setAttribute("AUTH_USER_ID", user.getId());
         session.setAttribute("AUTH_USERNAME", user.getUsername());
+        // NOTE: pakai flag yang disepakati (contoh: is_admin). Pastikan entity punya getter.
+        session.setAttribute("IS_ADMIN", user.isAdmin());
 
-        return "redirect:/middleware/dashboard";
+        String fallback = user.isAdmin() ? "/middleware/dashboard" : "/middleware/sop-bo";
+        return redirectAfterLogin(session, fallback);
     }
 
     @PostMapping("/logout")
@@ -75,23 +102,34 @@ public class GreetingController {
 
     @GetMapping("/sop")
     public String manajemenSop(HttpSession session,Model model){
-        String username = (String) session.getAttribute("AUTH_USERNAME");
-        if (username == null) {
-            // jika belum login, redirect ke login
-            return "redirect:/middleware/login";
+        if (!isLoggedIn(session)) {
+            return sendToLogin(session, "/middleware/sop");
         }
         model.addAttribute("apiKey", apiKey);
         return "middleware-sop";
     }
 
+    @GetMapping("/sop-bo")
+    public String manajemenSopB0(HttpSession session,Model model){
+        if (!isLoggedIn(session)) {
+            return sendToLogin(session, "/middleware/sop-bo");
+        }
+        model.addAttribute("apiKey", apiKey);
+        return "middleware-sop-bo";
+    }
+
 
     @GetMapping("/dashboard")
     public String dashboard(HttpSession session, Model model, HttpServletRequest request) {
-        String username = (String) session.getAttribute("AUTH_USERNAME");
-        if (username == null) {
-            // jika belum login, redirect ke login
-            return "redirect:/middleware/login";
+        if (!isLoggedIn(session)) {
+            return sendToLogin(session, "/middleware/dashboard");
         }
+        if (!isAdmin(session)) {
+            // Tidak punya akses dashboard → arahkan ke SOP atau ke halaman 403
+            return "redirect:/middleware/sop-bo"; // atau: return "redirect:/middleware/forbidden";
+        }
+        String username = (String) session.getAttribute("AUTH_USERNAME");
+
         ServletContext ctx = request.getServletContext();
 
         String  lastScanUser  = (String)  ctx.getAttribute(LoggingFilterConfig.ATTR_LAST_SCAN_USER);

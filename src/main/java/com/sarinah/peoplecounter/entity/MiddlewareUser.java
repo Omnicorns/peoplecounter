@@ -28,7 +28,12 @@ public class MiddlewareUser {
     @Column(nullable=false, length=20)
     private String status = "ACTIVE";  // pakai string biasa
 
+
     @Column(name="created_at", nullable=false, updatable=false)
     private Instant createdAt = Instant.now();
+
+    @Column(name = "is_admin")
+    private boolean isAdmin;
+    public boolean isAdmin() { return isAdmin; }
 
 }

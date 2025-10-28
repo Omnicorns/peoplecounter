@@ -93,37 +93,13 @@
           <div><div class="name">promisadmin</div><div class="meta">promisadmin</div></div>
         </div>
 
-        <div class="item" role="menuitem">
-          <!-- HOME -->
-          <button type="button" class="btn" id="homeBtn">
-            <span aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M3 11.2 12 4l9 7.2V20a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-8.8z"/>
-                <path d="M12 2 2 10l1.2 1.6L12 5l8.8 6.6L22 10z"/>
-              </svg>
-            </span>
-            <span>HOME</span>
-          </button>
+        <div class="menu-sep" role="separator"></div>
 
-          <!-- Manajemen SOP (halaman ini) -->
-          <button type="button" class="btn" id="sopBtn">
-            <span aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <path d="M14 2v6h6"/>
-              </svg>
-            </span>
-            <span>Manajemen SOP</span>
-          </button>
-
-          <div class="menu-sep" role="separator"></div>
-
-          <!-- LOGOUT (Thymeleaf form) -->
-          <form th:action="@{/middleware/logout}" method="post" style="width:100%">
-            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <button type="submit" class="btn danger" style="width:100%">Keluar</button>
-          </form>
-        </div>
+        <!-- LOGOUT (Thymeleaf form) -->
+        <form th:action="@{/middleware/logout}" method="post" style="width:100%">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn danger" style="width:100%">Keluar</button>
+        </form>
       </div>
     </div>
   </div>
@@ -137,7 +113,7 @@
     <input id="q" class="search" type="search" placeholder="Cari kode/judul SOP…"/>
     <select id="filterStatus" class="select">
       <option value="">Semua Status</option>
-     <option>Published</option>
+      <option>Published</option>
     </select>
   </div>
 
@@ -200,21 +176,15 @@
 </script>
 
 <script>
-  /* ===== CONFIG ===== */
+  // ===== CONFIG =====
   const API_BASE = (() => {
-  // 1) <meta name="api-base" content="/api"> atau "https://api.domain.com/api"
-  const meta = document.querySelector('meta[name="api-base"]')?.content?.trim();
-  if (meta) return meta.replace(/\/+$/,''); // trim trailing slash
+    const meta = document.querySelector('meta[name="api-base"]')?.content?.trim();
+    if (meta) return meta.replace(/\/+$/,'');
+    if (window.API_BASE) return String(window.API_BASE).replace(/\/+$/,'');
+    return '/api';
+  })();
 
-  // 2) Optional: bisa di-inject dari server
-  if (window.API_BASE) return String(window.API_BASE).replace(/\/+$/,'');
-
-  // 3) Default: same-origin relative, aman di local & server (no CORS)
-  return '/api';
-})();
-
-
-  /* ===== Helpers ===== */
+  // ===== Helpers =====
   const $ = s => document.querySelector(s);
   const fmtDate = d => !d ? '-' : new Date(d).toISOString().slice(0,10);
   const iconFor = m => { if(!m) return '📄'; const t=String(m).toLowerCase();
@@ -227,17 +197,19 @@
   const toast = t => { const e=$('#toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1500); };
   async function j(url,opt={}){ opt.headers=Object.assign({'x-api-key':API_KEY},opt.headers||{}); const r=await fetch(url,opt); if(!r.ok){const t=await r.text(); throw new Error(t||r.statusText);} return r.json(); }
 
-  // HOME & menu toggle
+  // Menu toggle
   const userbtn = $('#userbtn'), usermenu = $('#usermenu');
   userbtn.addEventListener('click', ()=> usermenu.classList.toggle('open'));
   document.addEventListener('click', e=>{ if(!usermenu.contains(e.target)&&!userbtn.contains(e.target)) usermenu.classList.remove('open'); });
-  $('#homeBtn').onclick = ()=> { window.location.href = '/middleware/dashboard'; };
-  $('#sopBtn').onclick  = ()=> { usermenu.classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'}); };
 
-  /* ===== STATE ===== */
+  // Opsional: tombol yang mungkin tidak ada → aman pakai optional chaining
+  $('#homeBtn')?.addEventListener('click', () => { window.location.href = '/middleware/dashboard'; });
+  $('#sopBtn')?.addEventListener('click',  () => { usermenu.classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'}); });
+
+  // ===== STATE =====
   const state = { items:[], view:[], q:'', status:'', page:1, pageSize:10 };
 
-  /* ===== DOWNLOAD via fetch (header API key) ===== */
+  // ===== DOWNLOAD (header API key) =====
   async function downloadFile(docId, fileId, fileName){
     try{
       const url = `${API_BASE}/sop/${docId}/files/${fileId}`;
@@ -257,7 +229,7 @@
     }
   }
 
-  /* ===== LOAD ===== */
+  // ===== LOAD =====
   async function load(){
     const qs=new URLSearchParams();
     if(state.q) qs.set('query',state.q);
@@ -267,7 +239,7 @@
     applyFilter(); state.page=1; render();
   }
 
-  /* ===== FILTER ===== */
+  // ===== FILTER =====
   function applyFilter(){
     const q=(state.q||'').trim().toLowerCase();
     const st=(state.status||'').toLowerCase();
@@ -278,7 +250,7 @@
     });
   }
 
-  /* ===== RENDER ===== */
+  // ===== RENDER =====
   function render(){
     const tb=$('#tbl tbody'); tb.innerHTML='';
     const total=state.view.length;
@@ -317,7 +289,7 @@
     $('#pgSize').value = String(state.pageSize);
   }
 
-  /* ===== Search / Filter / Pager ===== */
+  // ===== Search / Filter / Pager =====
   let qTimer=null;
   $('#q').addEventListener('input',e=>{ clearTimeout(qTimer); qTimer=setTimeout(()=>{ state.q=(e.target.value||'').trim(); applyFilter(); state.page=1; render(); },200); });
   $('#filterStatus').addEventListener('change',e=>{ state.status=e.target.value; applyFilter(); state.page=1; render(); });
@@ -325,7 +297,7 @@
   $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
   $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
 
-  /* ===== Delegasi tombol tabel ===== */
+  // ===== Delegasi tombol tabel =====
   document.querySelector('#tbl tbody').addEventListener('click',e=>{
     const btn=e.target.closest('button[data-action]'); if(!btn) return;
     const id = btn.getAttribute('data-id');
@@ -333,7 +305,7 @@
     if(btn.dataset.action==='delete') delSop(id, btn.dataset.code||'');
   });
 
-  /* ===== Modal ===== */
+  // ===== Modal =====
   const modal=$('#modal'); const openModal=()=>modal.classList.add('open'); const closeModal=()=>modal.classList.remove('open');
   $('#btnAdd').onclick=()=>{ $('#mTitle').textContent='Tambah SOP'; $('#form').reset(); $('#id').value=''; $('#filePreview').innerHTML=''; openModal(); };
   $('#btnClose').onclick=closeModal;
@@ -372,7 +344,7 @@
       $('#tags').value=(x.tags||[]).join(', '); $('#change').value=x.change||''; $('#files').value='';
       $('#version').value = x.version || '';
 
-      // list file dengan tombol download (pakai fetch header)
+      // list file dengan tombol download
       $('#filePreview').innerHTML=(x.files||[]).map(f=>{
         const safe=String(f.fileName||'file').replace(/'/g,"\\'");
         return `<div class='fileitem'>
@@ -390,6 +362,8 @@
     toast('Dihapus'); await load();
   }
 
+  // Kickoff: panggil load saat halaman siap
+  // (Jika ada error sebelumnya, sekarang aman karena handler opsional)
   load();
 </script>
 </body>
