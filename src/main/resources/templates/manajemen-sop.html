@@ -9,26 +9,32 @@
     <meta name="api-base" th:content="${apiBase}" content="/api">
     <meta name="x-api-key" th:content="${apiKey}"  content="">
 
-    <!-- Bootstrap 5 -->
+    <!-- Bootstrap & PDF.js -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{
           --bg:#f5f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --ring:#e6ebf2;
-          --brand:#0b1322; --brand2:#101a2f; --ok:#22c55e; --warn:#f59e0b; --arch:#cbd5e1;
+          --brand:#0b1322; --brand2:#101a2f; --warn:#f59e0b; --arch:#cbd5e1; --pub:#2563eb;
           --shadow:0 10px 28px rgba(2,6,23,.08); --r:20px;
           --safe-top: env(safe-area-inset-top, 0px);
+          --safe-right: env(safe-area-inset-right, 0px);
           --safe-bottom: env(safe-area-inset-bottom, 0px);
+          --safe-left: env(safe-area-inset-left, 0px);
         }
         *{box-sizing:border-box}
         html,body{margin:0;background:var(--bg);color:var(--ink);
           font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
         /* Appbar */
-        .appbar{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;border-bottom:1px solid rgba(255,255,255,.08); padding-top:var(--safe-top)}
+        .appbar{
+          position:sticky;top:0;z-index:60;
+          background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;
+          border-bottom:1px solid rgba(255,255,255,.08);
+          padding-top:calc(6px + var(--safe-top));
+        }
         .brand{display:flex;align-items:center;gap:10px;font-weight:800}
         .brand img{width:28px;height:28px;border-radius:10px;background:#fff}
         .pill{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1rem;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff;font-weight:800}
@@ -38,6 +44,7 @@
         .btn-ghost:hover{background:rgba(255,255,255,.1)}
 
         /* Mobile switcher */
+        .segmob-wrap{background:#fff;border-bottom:1px solid var(--ring)}
         .segmob{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
           background:#fff;color:#0f172a;border:1px solid #e6ebf2;box-shadow:inset 0 -1px 0 rgba(2,6,23,.03)}
         .segmob.active{border-color:#cfd8e7;box-shadow:0 3px 10px rgba(2,6,23,.06)}
@@ -47,7 +54,8 @@
         .cardx .top{display:flex;align-items:center;gap:8px}
         .cardx .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
         .badgex{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
-        .Published{background:var(--ok)} .Draft{background:var(--warn);color:#111827}
+        .Published{background:var(--pub)}
+        .Draft{background:var(--warn);color:#111827}
         .Archived{background:var(--arch);color:#111827}
         .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
         .chips{display:flex;gap:8px;flex-wrap:wrap}
@@ -55,31 +63,49 @@
         .chipx.owner{background:#dfeaff;color:#1e40af}
         .chipx.ghost{background:#f1f5f9;color:#0f172a}
         .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
-        .file{display:flex;align-items:center;gap:8px;font-weight:800;word-break:break-word;cursor:pointer}
+        .file{display:flex;align-items:center;gap:8px;font-weight:700;word-break:break-word}
         .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
-        .file:hover{text-decoration:underline}
-        .eff{color:#94a3b8;margin-top:8px}
+        .btnx{padding:8px 12px;border-radius:12px;border:1px solid var(--ring);background:#fff;color:var(--ink);font-weight:800;cursor:pointer}
+        .btnx:hover{background:#f8fafc}
+        .btnx[disabled]{opacity:.6;cursor:not-allowed}
 
-        /* Preview modal */
-        .pv{position:fixed;inset:0;display:none;z-index:100;background:rgba(15,23,42,.64);backdrop-filter:blur(2px)}
-        .pv.show{display:block}
-        .pv-inner{position:absolute;inset:40px 20px 20px 20px;background:#0b1220;border-radius:16px;display:flex;flex-direction:column;border:1px solid #1e2a44}
-        @media (max-width: 720px){ .pv-inner{inset:0; border-radius:0; padding-top:var(--safe-top); padding-bottom:var(--safe-bottom)} }
-        .pv-toolbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #1e2a44;background:linear-gradient(180deg,#0d1426,#0b1220);color:#e5edff}
-        .pv-toolbar .sp{flex:1}
-        .pv-btn{border:1px solid #24304c;background:#121b31;color:#e5edff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
-        .pv-pages{flex:1;overflow:auto;background:#0b1220;padding:12px;display:flex;flex-direction:column;align-items:center;gap:12px}
-        .pv-pages canvas{background:#fff;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.35);width:calc(100% - 24px);max-width:1000px;height:auto}
-        .pv-info{color:#9fb4df;font-weight:700}
-        .pv-input{height:36px;border:1px solid #24304c;border-radius:8px;background:#0f172a;color:#e5edff;padding:0 10px;width:86px}
-        .pv-zoom{display:flex;align-items:center;gap:8px}
-        .pv-close{margin-left:auto}
+        /* Preview overlay – mobile fullscreen, tidak kepotong */
+        .spv{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.68);backdrop-filter:blur(1.5px)}
+        .spv.show{display:flex}
+        .spv-backdrop{position:absolute;inset:0}
+        .spv-box{
+          position:relative;background:#0b1220;border:1px solid #1e2a44;border-radius:14px;
+          width:min(96vw, 1000px); max-height:92dvh; padding:12px; box-shadow:0 12px 32px rgba(0,0,0,.45);
+          display:flex; flex-direction:column;
+        }
+        .spv-head{display:flex;align-items:center;gap:10px;color:#e5edff;padding:6px 8px;border-bottom:1px solid #1e2a44}
+        .spv-head .sp{flex:1}
+        .spv-pages{flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; align-items:center; gap:12px}
+        .spv-pages canvas{background:#fff;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%;max-width:100%;height:auto}
+        .spv-x{
+          position:absolute;
+          top:calc(10px + var(--safe-top));
+          right:calc(10px + var(--safe-right));
+          width:36px;height:36px;border-radius:10px;
+          border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
+        }
+        @media (max-width: 720px){
+          .segmob-wrap{display:block}
+          .spv-box{
+            border-radius:0; width:100svw; height:100dvh; max-height:100dvh;
+            padding:12px 10px;
+            padding-top:calc(12px + var(--safe-top));
+            padding-bottom:calc(12px + var(--safe-bottom));
+            border-left:0;border-right:0;
+          }
+          .spv-pages{padding:10px; gap:10px}
+        }
         @media print { body{ display:none !important; } }
     </style>
 </head>
 <body oncontextmenu="return false">
 
-<!-- APPBAR: user chip + Logout selalu di kanan -->
+<!-- APPBAR -->
 <header class="appbar">
     <div class="container py-2">
         <div class="d-flex align-items-center gap-3 flex-nowrap">
@@ -104,8 +130,8 @@
     </div>
 </header>
 
-<!-- MOBILE switcher -->
-<div class="bg-white border-bottom d-md-none">
+<!-- MOBILE SWITCHER -->
+<div class="segmob-wrap d-md-none">
     <div class="container py-2">
         <div class="d-flex gap-2">
             <a class="segmob" th:href="@{/web/product}">Produk</a>
@@ -117,23 +143,18 @@
 <main class="container my-3">
     <h1 class="h4 fw-bold mb-3">Daftar SOP</h1>
 
-    <!-- Toolbar: Search + Owner + Tag + Sort -->
+    <!-- Toolbar -->
     <div class="row g-2">
         <div class="col-12">
             <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border rounded-4 shadow-sm">
-                <input id="q" class="form-control border-0"
-                       placeholder="Cari judul/kode…">
+                <input id="q" class="form-control border-0" placeholder="Cari judul/kode…">
             </div>
         </div>
         <div class="col-6 col-md-auto" style="min-width:160px">
-            <select id="fOwner" class="form-select rounded-4 shadow-sm">
-                <option value="">Semua Owner</option>
-            </select>
+            <select id="fOwner" class="form-select rounded-4 shadow-sm"><option value="">Semua Owner</option></select>
         </div>
         <div class="col-6 col-md-auto" style="min-width:160px">
-            <select id="fTag" class="form-select rounded-4 shadow-sm">
-                <option value="">Semua Tag</option>
-            </select>
+            <select id="fTag" class="form-select rounded-4 shadow-sm"><option value="">Semua Tag</option></select>
         </div>
         <div class="col-12 col-md-auto" style="min-width:160px">
             <select id="fSort" class="form-select rounded-4 shadow-sm">
@@ -157,149 +178,134 @@
     </div>
 </main>
 
-<!-- PREVIEW MODAL -->
-<div class="pv" id="pv">
-    <div class="pv-inner" role="dialog" aria-modal="true" aria-label="Pratinjau Dokumen">
-        <div class="pv-toolbar">
-            <strong class="pv-info" id="pvName">Pratinjau</strong>
+<!-- PREVIEW -->
+<div id="spv" class="spv" role="dialog" aria-modal="true" aria-label="Pratinjau PDF">
+    <div class="spv-backdrop" id="spvBackdrop"></div>
+    <div class="spv-box" role="document" aria-labelledby="spvTitle">
+        <div class="spv-x" id="spvX" aria-label="Tutup">✕</div>
+        <div class="spv-head">
+            <strong id="spvTitle">Pratinjau</strong>
             <div class="sp"></div>
-            <div class="pv-zoom">
-                <button class="pv-btn" id="zoomOut">−</button>
-                <span class="pv-info" id="zoomPct">100%</span>
-                <button class="pv-btn" id="zoomIn">+</button>
-            </div>
-            <div style="width:10px"></div>
-            <label class="pv-info d-none d-sm-inline" for="goto">Hal:</label>
-            <input id="goto" class="pv-input d-none d-sm-inline" type="number" min="1" value="1"/>
-            <button class="pv-btn d-none d-sm-inline" id="goBtn">Go</button>
-            <button class="pv-btn pv-close ms-auto" id="pvClose">Tutup</button>
         </div>
-        <div class="pv-pages" id="pvPages" ondragstart="return false"></div>
+        <div class="spv-pages" id="spvPages"></div>
     </div>
 </div>
 
 <script>
-    // ====== Config ======
+    // ====== Config
     const API_BASE=(document.querySelector('meta[name="api-base"]')?.content||'/api').replace(/\/+$/,'');
     const API_KEY =document.querySelector('meta[name="x-api-key"]')?.content?.trim()||'';
     const j=async (url,opt={})=>{
       const h=Object.assign({},opt.headers||{}); if(API_KEY)h['x-api-key']=API_KEY;
-      const r=await fetch(url,{...opt,headers:h});
-      if(!r.ok) throw new Error(await r.text().catch(()=>r.statusText));
-      return r.json();
+      const r=await fetch(url,{...opt,headers:h}); if(!r.ok) throw new Error(await r.text().catch(()=>r.statusText));
+      const ct=r.headers.get('content-type')||''; return ct.includes('application/json')? r.json(): r.text();
     };
     const $=s=>document.querySelector(s);
 
-    // ====== State ======
+    // ====== State
     const state={all:[],view:[],q:'',owner:'',tag:'',sort:'Terbaru',page:1,pageSize:10};
 
-    // ====== Util ======
+    // ====== Utils
     const fmtDate=s=>{ if(!s)return'-'; const d=new Date(s);
       return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}).replace('.','');
     };
     const chip=(t,cls='')=>`<span class="chipx ${cls}">${t}</span>`;
     const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
 
-    // ====== Search parser: owner:xx, tag:yy, #yy ======
     function parseQuery(q){
-      const tokens = (q||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
-      const cond = { text:[], owner:[], tags:[] };
+      const tokens=(q||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const cond={text:[],owner:[],tags:[]};
       for(const t of tokens){
-        if(t.startsWith('owner:')) cond.owner.push(t.slice(6));
-        else if(t.startsWith('tag:')) cond.tags.push(t.slice(4));
-        else if(t.startsWith('#')) cond.tags.push(t.slice(1));
+        if(t.startsWith('owner:'))cond.owner.push(t.slice(6));
+        else if(t.startsWith('tag:'))cond.tags.push(t.slice(4));
+        else if(t.startsWith('#'))cond.tags.push(t.slice(1));
         else cond.text.push(t);
       }
       return cond;
     }
 
-    // ====== Filter + Sort ======
     function applyFilter(){
-      const {text, owner:qo, tags:qt} = parseQuery(state.q);
+      const {text,owner:qo,tags:qt}=parseQuery(state.q);
       let arr=state.all.filter(x=>{
-        const base = `${x.code||''} ${x.title||''} ${x.owner||''} ${(x.tags||[]).join(' ')} ${(x.categories||[]).join(' ')}`.toLowerCase();
-        const hitText   = !text.length || text.every(t=>base.includes(t));
-        const hitOwner1 = !state.owner || String(x.owner||'').toLowerCase()===state.owner.toLowerCase();
-        const hitTag1   = !state.tag || (Array.isArray(x.tags)&&x.tags.map(t=>String(t).toLowerCase()).includes(state.tag.toLowerCase()));
-        const hitOwner2 = !qo.length || qo.some(v=>String(x.owner||'').toLowerCase().includes(v));
-        const hitTag2   = !qt.length || (Array.isArray(x.tags)&&qt.every(v=>x.tags.map(t=>String(t).toLowerCase()).includes(v)));
-        return hitText && hitOwner1 && hitTag1 && hitOwner2 && hitTag2;
+        const base=`${x.code||''} ${x.title||''} ${x.owner||''} ${(x.tags||[]).join(' ')} ${(x.categories||[]).join(' ')}`.toLowerCase();
+        const hitText=!text.length||text.every(t=>base.includes(t));
+        const hitOwner1=!state.owner||String(x.owner||'').toLowerCase()===state.owner.toLowerCase();
+        const hitTag1=!state.tag||(Array.isArray(x.tags)&&x.tags.map(t=>String(t).toLowerCase()).includes(state.tag.toLowerCase()));
+        const hitOwner2=!qo.length||qo.some(v=>String(x.owner||'').toLowerCase().includes(v));
+        const hitTag2=!qt.length||(Array.isArray(x.tags)&&qt.every(v=>x.tags.map(t=>String(t).toLowerCase()).includes(v)));
+        return hitText&&hitOwner1&&hitTag1&&hitOwner2&&hitTag2;
       });
-
       const s=state.sort;
       arr.sort((a,b)=>{
         if(s==='Terbaru') return new Date(b.effective||b.createdAt||0)-new Date(a.effective||a.createdAt||0);
         if(s==='Terlama') return new Date(a.effective||a.createdAt||0)-new Date(b.effective||b.createdAt||0);
-        if(s==='A-Z')     return String(a.title||'').localeCompare(String(b.title||''));
-        if(s==='Z-A')     return String(b.title||'').localeCompare(String(a.title||''));
+        if(s==='A-Z') return String(a.title||'').localeCompare(String(b.title||''));
+        if(s==='Z-A') return String(b.title||'').localeCompare(String(a.title||''));
         return 0;
       });
-
       state.view=arr;
     }
 
-    // ====== Preview (PDF.js) ======
-    const pv=$('#pv'), pvPages=$('#pvPages'), pvName=$('#pvName'), zoomPct=$('#zoomPct');
-    let currentPdf=null, scale=1, renderToken=0;
-    if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`; }
+    // ====== PREVIEW (multi-page)
+    const spv=$('#spv'), spvPages=$('#spvPages'), spvTitle=$('#spvTitle');
+    const spvBackdrop=$('#spvBackdrop'), spvX=$('#spvX');
+    let spvOpen=false;
+    if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
 
-    async function showPdf(arrayBuffer, name){
-      pvName.textContent = name || 'Pratinjau';
-      pv.classList.add('show');
-      pvPages.innerHTML = '';
-      scale = 1; zoomPct.textContent='100%';
+    function lockScroll(on){ document.body.style.overflow = on ? 'hidden' : ''; }
 
-      const myToken = ++renderToken;
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, disableCreateObjectURL: true });
-      currentPdf = await loadingTask.promise;
-      if(myToken !== renderToken || !currentPdf) return;
-
-      for(let p=1; p<=currentPdf.numPages; p++){
-        if(myToken !== renderToken || !currentPdf) return;
-        const page = await currentPdf.getPage(p);
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { alpha:false });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        pvPages.appendChild(canvas);
-        await page.render({ canvasContext: ctx, viewport }).promise;
-      }
-
-      const goto=$('#goto'); if(goto){ goto.value=1; goto.max=currentPdf.numPages; }
-    }
-
-    async function rerenderAll(){
-      if(!currentPdf) return;
-      const myToken = ++renderToken;
-      pvPages.innerHTML='';
-      for(let p=1; p<=currentPdf.numPages; p++){
-        if(myToken !== renderToken || !currentPdf) return;
-        const page = await currentPdf.getPage(p);
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { alpha:false });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        pvPages.appendChild(canvas);
-        await page.render({ canvasContext: ctx, viewport }).promise;
-      }
-      zoomPct.textContent = Math.round(scale*100)+'%';
-    }
-
-    async function openPreviewById(docId, fileId, fileName){
+    async function openSimplePreviewById(docId, fileId, fileName){
       try{
-        const lower = String(fileName||'').toLowerCase();
+        const lower=String(fileName||'').toLowerCase();
         if(!lower.endsWith('.pdf')){ alert('Pratinjau hanya untuk PDF.'); return; }
         const url=`${API_BASE}/sop/${docId}/files/${fileId}`;
         const r=await fetch(url,{headers:API_KEY?{'x-api-key':API_KEY}:{}, cache:'no-store'});
         if(!r.ok) throw new Error(await r.text());
         const buf=await r.arrayBuffer();
-        await showPdf(buf, fileName || 'Dokumen');
+        await showPdfAll(buf, fileName||'Dokumen');
       }catch(e){ alert(e.message||'Gagal membuka pratinjau'); }
     }
 
-    // ====== Render list ======
+    async function showPdfAll(arrayBuffer, name){
+      spvTitle.textContent=name||'Pratinjau';
+      spv.classList.add('show'); spvOpen=true; lockScroll(true);
+      spvPages.innerHTML='';
+
+      const loadingTask=pdfjsLib.getDocument({data:arrayBuffer, disableCreateObjectURL:true});
+      const pdf=await loadingTask.promise;
+
+      const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+      const containerWidth=Math.floor(spvPages.getBoundingClientRect().width);
+
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const base=page.getViewport({scale:1});
+        const scale=containerWidth/base.width; // fit width kontainer
+        const viewport=page.getViewport({scale});
+        const canvas=document.createElement('canvas');
+        canvas.setAttribute('aria-label',`Halaman ${p}`);
+        const ctx=canvas.getContext('2d',{alpha:false});
+        canvas.width=Math.floor(viewport.width*pixelRatio);
+        canvas.height=Math.floor(viewport.height*pixelRatio);
+        canvas.style.width=`${Math.floor(viewport.width)}px`;
+        canvas.style.height=`${Math.floor(viewport.height)}px`;
+        ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+        spvPages.appendChild(canvas);
+        await page.render({canvasContext:ctx, viewport}).promise;
+      }
+    }
+
+    function closePreview(){
+      if(!spvOpen) return;
+      spv.classList.remove('show'); spvOpen=false; lockScroll(false);
+      spvPages.innerHTML='';
+    }
+    spvBackdrop.addEventListener('click', closePreview);
+    spvX.addEventListener('click', closePreview);
+    window.addEventListener('keydown', e=>{ if(e.key==='Escape') closePreview(); });
+    window.addEventListener('orientationchange', ()=>{ if(spvOpen) closePreview(); });
+
+    // ====== Render cards
     function render(){
       const cards=$('#cards'); cards.innerHTML='';
       const total=state.view.length;
@@ -316,15 +322,17 @@
           const tg=(s.tags||[]).map(t=>chip(t,'ghost')).join('');
           const cat=(s.categories||[]).map(c=>chip(c)).join('');
           const own=s.owner?chip('By '+s.owner,'owner'):'';
-          const files=(s.files||[]).map(f=>{
-            const safe=(f.fileName||'file').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+          const filesArr=Array.isArray(s.files)?s.files:[];
+          const filesHtml=filesArr.map(f=>{
+            const safe=(f.fileName||'file')
+              .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
             const sz=f.size?(f.size>=1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(1)+' KB'):'';
-            return `<div class="file" role="button" tabindex="0"
-                        onclick="openPreviewById(${s.id},${f.id},'${safe}')"
-                        onkeydown="if(event.key==='Enter'||event.key===' ') this.click();">
-                      ${safe} <span class="size">• ${sz}</span>
-                    </div>`;
-          }).join('');
+            return `<div class="file"><span>${safe}</span> <span class="size">• ${sz}</span></div>`;
+          }).join('') || '<div class="meta">Tidak ada file</div>';
+
+          const firstPdf=filesArr.find(ff=>/\.pdf$/i.test(ff?.fileName||''));
+          const previewDisabled = firstPdf ? '' : 'disabled';
 
           const col=document.createElement('div');
           col.className='col';
@@ -337,8 +345,14 @@
               <div class="meta">${s.code||'-'} • v${s.version||'1.0'}</div>
               <div class="chips">${own} ${cat} ${tg}</div>
               <hr class="hr">
-              ${files || '<div class="meta">Tidak ada file</div>'}
-              <div class="eff">Berlaku: ${fmtDate(s.effective)}</div>
+              ${filesHtml}
+              <div class="d-flex gap-2 mt-2">
+                <button class="btnx" ${previewDisabled}
+                  onclick="openSimplePreviewById(${s.id}, ${firstPdf? firstPdf.id : 'null'}, '${(firstPdf? (firstPdf.fileName||'').replace(/['\"<>&]/g,s=>({'\'':'&#39;','\"':'&quot;','<':'&lt;','>':'&gt;','&':'&amp;'}[s])) : '')}')">
+                  Preview
+                </button>
+              </div>
+              <div class="meta mt-2">Berlaku: ${fmtDate(s.effective)}</div>
             </article>`;
           cards.appendChild(col);
         });
@@ -350,29 +364,27 @@
       $('#pgNext').disabled = state.page>=pages;
     }
 
-    // ====== Populate filters ======
+    // ====== Populate & Load
     function populateFilters(){
-      const owners = uniq(state.all.map(x=>x.owner));
-      const tags = uniq(state.all.flatMap(x=>Array.isArray(x.tags)?x.tags:[]));
+      const owners=uniq(state.all.map(x=>x.owner));
+      const tags=uniq(state.all.flatMap(x=>Array.isArray(x.tags)?x.tags:[]));
       const fOwner=$('#fOwner'), fTag=$('#fTag');
       fOwner.length=1; fTag.length=1;
       owners.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; fOwner.appendChild(op); });
       tags.forEach(t=>{ const op=document.createElement('option'); op.value=t; op.textContent=t; fTag.appendChild(op); });
-      if(owners.includes(state.owner)) fOwner.value=state.owner; else { state.owner=''; fOwner.value=''; }
-      if(tags.includes(state.tag)) fTag.value=state.tag; else { state.tag=''; fTag.value=''; }
+      if(!owners.includes(state.owner)) state.owner='', fOwner.value='';
+      if(!tags.includes(state.tag)) state.tag='', fTag.value='';
     }
-
-    // ====== Load ======
     async function load(){
       try{
         const qs=new URLSearchParams(); if(state.q)qs.set('query',state.q);
-        const data=await j(`${API_BASE}/sop?${qs.toString()}`); state.all=Array.isArray(data.items)?data.items:[];
+        const data=await j(`${API_BASE}/sop?${qs.toString()}`);
+        state.all=Array.isArray(data.items)?data.items:[];
       }catch(e){ console.warn('API error:',e); state.all=[]; }
-      populateFilters();
-      state.page=1; applyFilter(); render();
+      populateFilters(); state.page=1; applyFilter(); render();
     }
 
-    // ====== Bindings ======
+    // ====== Events
     let t=null;
     $('#q').addEventListener('input',e=>{ clearTimeout(t); t=setTimeout(()=>{ state.q=(e.target.value||'').trim(); load(); },180); });
     $('#fOwner').addEventListener('change',e=>{ state.owner=e.target.value||''; applyFilter(); state.page=1; render(); });
@@ -382,26 +394,11 @@
     $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
     $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
 
-    // Preview UI + guard
-    $('#pvClose').onclick=()=>{ renderToken++; pv.classList.remove('show'); currentPdf=null; pvPages.innerHTML=''; };
-    $('#zoomIn').onclick=()=>{ if(!currentPdf) return; scale=Math.min(3, scale+0.1); rerenderAll(); };
-    $('#zoomOut').onclick=()=>{ if(!currentPdf) return; scale=Math.max(0.5, scale-0.1); rerenderAll(); };
-    $('#goBtn').onclick=()=>{
-      if(!currentPdf) return;
-      const n=Math.max(1, Math.min(parseInt($('#goto').value,10)||1, currentPdf.numPages));
-      const nodes=[...pvPages.querySelectorAll('canvas')];
-      const target=nodes[n-1]; if(target){ target.scrollIntoView({behavior:'smooth',block:'start'}); }
-    };
-
-    // Anti print/save
-    window.addEventListener('keydown', (e)=>{
+    // Anti print/save (opsional) + Esc close
+    window.addEventListener('keydown', e=>{
       const k=e.key.toLowerCase();
-      if ((e.ctrlKey||e.metaKey) && (k==='p' || k==='s')) {
-        e.preventDefault(); e.stopPropagation();
-        if(k==='p') alert('Pencetakan dinonaktifkan untuk dokumen ini.');
-        if(k==='s') alert('Pengunduhan dinonaktifkan pada pratinjau.');
-        return false;
-      }
+      if((e.ctrlKey||e.metaKey)&&(k==='p'||k==='s')){ e.preventDefault(); e.stopPropagation(); }
+      if(e.key==='Escape') closePreview();
     }, true);
 
     load();
