@@ -1,15 +1,15 @@
 package com.sarinah.peoplecounter.configuration;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sarinah.peoplecounter.entity.ProductScanLog;
 import com.sarinah.peoplecounter.entity.ScanSource;
 import com.sarinah.peoplecounter.repository.ProductScanLogRepository;
 import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,28 +24,40 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+
+// ====== GANTI sesuai paketmu ======
+               // <-- sesuaikan
+// ===================================
 
 @Configuration
 @RequiredArgsConstructor
 public class LoggingFilterConfig {
 
-    /**
-     * Kunci attribute global (ServletContext) – dibaca Controller/Thymeleaf melalui model
-     */
-    public static final String ATTR_LAST_SCAN_USER = "LAST_SCAN_USER_GLOBAL";
+    /* ===== Atribut global untuk UI/Thymeleaf ===== */
+    public static final String ATTR_LAST_SCAN_USER  = "LAST_SCAN_USER_GLOBAL";
     public static final String ATTR_LAST_SCAN_VALUE = "LAST_SCAN_VALUE_GLOBAL";
-    public static final String ATTR_LAST_SCAN_NAME = "LAST_SCAN_NAME_GLOBAL";   // <<— BARU
-    public static final String ATTR_LAST_SCAN_AT = "LAST_SCAN_AT_GLOBAL";
-    public static final String ATTR_SCAN_TODAY = "SCAN_TODAY_LIST";
+    public static final String ATTR_LAST_SCAN_NAME  = "LAST_SCAN_NAME_GLOBAL";
+    public static final String ATTR_LAST_SCAN_AT    = "LAST_SCAN_AT_GLOBAL";
+    public static final String ATTR_SCAN_TODAY      = "SCAN_TODAY_LIST";
+
+    /* ===== Correlation ===== */
     public static final String HDR_CID  = "X-Correlation-ID";
     public static final String ATTR_CID = "REQ_CID";
-    private  final ProductScanLogRepository productScanLogRepository;
+
+    /* ===== Cache CID → username (ServletContext) ===== */
+    private static final String ATTR_CID_USER_MAP    = "CID_USER_MAP";
+    private static final String ATTR_CID_USER_TS_MAP = "CID_USER_TS_MAP";
+    private static final long   CID_USER_TTL_MS      = 15 * 60_000L; // 15 menit
+
+    private final ProductScanLogRepository productScanLogRepository;
 
     @Bean
     public ApiLoggingFilter apiLoggingFilter() {
@@ -78,10 +90,10 @@ public class LoggingFilterConfig {
                     if (request.isAsyncStarted()) {
                         try {
                             request.getAsyncContext().addListener(new AsyncListener() {
-                                @Override public void onComplete(AsyncEvent event) { MDC.remove("cid"); }
-                                @Override public void onTimeout(AsyncEvent event) {}
-                                @Override public void onError(AsyncEvent event) {}
-                                @Override public void onStartAsync(AsyncEvent event) {}
+                                @Override public void onComplete(AsyncEvent e) { MDC.remove("cid"); }
+                                @Override public void onTimeout(AsyncEvent e) {}
+                                @Override public void onError(AsyncEvent e) {}
+                                @Override public void onStartAsync(AsyncEvent e) {}
                             });
                         } catch (IllegalStateException ignore) {}
                     }
@@ -92,102 +104,104 @@ public class LoggingFilterConfig {
         };
     }
 
-
     @Bean
     public FilterRegistrationBean<ApiLoggingFilter> loggingFilterRegistration(ApiLoggingFilter filter) {
-        FilterRegistrationBean<ApiLoggingFilter> reg = new FilterRegistrationBean<>();
+        var reg = new FilterRegistrationBean<ApiLoggingFilter>();
         reg.setFilter(filter);
         reg.setName("apiLoggingFilter");
-        reg.setOrder(Ordered.HIGHEST_PRECEDENCE); // log duluan
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);
         reg.addUrlPatterns("/*");
         reg.setDispatcherTypes(EnumSet.of(DispatcherType.REQUEST, DispatcherType.ERROR, DispatcherType.ASYNC));
         return reg;
     }
+
+    /* ===================================================================== */
 
     static class ApiLoggingFilter extends OncePerRequestFilter {
         private static final Logger log = LoggerFactory.getLogger(ApiLoggingFilter.class);
         private static final ObjectMapper OM = new ObjectMapper();
         private static final int MAX = 4096;
 
-        private final ProductScanLogRepository productScanLogRepository; // ← DI via ctor
+        private final ProductScanLogRepository productScanLogRepository;
 
-        ApiLoggingFilter(ProductScanLogRepository repo) {
-            this.productScanLogRepository = repo;
-        }
+        ApiLoggingFilter(ProductScanLogRepository repo) { this.productScanLogRepository = repo; }
 
-
-        /**
-         * Ambil {"value":"..."} dari request body
-         */
+        /* Parsers */
         private static final Pattern P_VALUE = Pattern.compile("\"value\"\\s*:\\s*\"([^\"]+)\"");
-        /**
-         * Ambil {"name":"..."} dari response body (fallback bila bukan JSON valid)
-         */
-        private static final Pattern P_NAME = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+        private static final Pattern P_NAME  = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
 
-        /**
-         * Endpoint yang kita catat riwayatnya
-         */
+        /* Endpoints */
+        private static final String LOGIN_ENDPOINT          = "/api/auth/login";
         private static final String BARCODE_ENDPOINT_PREFIX = "/sarinah-forwarder/v1/modul/barcode";
 
-        @Override
-        protected boolean shouldNotFilterErrorDispatch() {
-            return false;
-        }
-
-        @Override
-        protected boolean shouldNotFilterAsyncDispatch() {
-            return false;
-        }
+        @Override protected boolean shouldNotFilterErrorDispatch() { return false; }
+        @Override protected boolean shouldNotFilterAsyncDispatch() { return false; }
 
         @Override
         protected void doFilterInternal(HttpServletRequest request,
                                         HttpServletResponse response,
                                         FilterChain chain) throws ServletException, IOException {
 
-            ContentCachingRequestWrapper req = new ContentCachingRequestWrapper(request);
+            ContentCachingRequestWrapper  req = new ContentCachingRequestWrapper(request);
             ContentCachingResponseWrapper res = new ContentCachingResponseWrapper(response);
 
             final String cid = getCid(req);
-            MDC.put("traceId", cid); // kompat nama lama
+            MDC.put("traceId", cid); // kompat nama lama untuk log pattern lama
 
             long start = System.currentTimeMillis();
             try {
-                // JANGAN resolve username di sini (SecurityContext belum siap)
                 chain.doFilter(req, res);
 
-                // === Setelah filter chain lewat, SecurityContext sudah terisi ===
-                String username = resolveUsername(req);
-                MDC.put("username", username); // set MDC setelahnya
-
-                long dur = System.currentTimeMillis() - start;
-                String method = req.getMethod();
                 String uri = req.getRequestURI();
-                int status = res.getStatus();
+                String username = resolveUsername(req); // principal/session
 
+                // Jika login sukses tapi masih "anonymous", baca username dari body login
+                if ("anonymous".equals(username) && LOGIN_ENDPOINT.equals(uri) && res.getStatus() < 400) {
+                    String u = parseUsernameFromLogin(req);
+                    if (u != null && !u.isBlank()) username = u;
+                }
+
+                // Login sukses → cache CID→username (TTL)
+                if (LOGIN_ENDPOINT.equals(uri) && res.getStatus() < 400 && !"anonymous".equals(username)) {
+                    cacheCidUser(req.getServletContext(), cid, username);
+                }
+
+                // Fallback umum → ambil dari cache CID→username
+                if ("anonymous".equals(username)) {
+                    String cached = lookupCidUser(req.getServletContext(), cid);
+                    if (cached != null) username = cached;
+                }
+
+                MDC.put("username", username);
+
+                int status = res.getStatus();
+                long dur   = System.currentTimeMillis() - start;
+                String method  = req.getMethod();
                 String reqBody = sanitize(bytesToString(req.getContentAsByteArray()));
                 String resBody = sanitize(bytesToString(res.getContentAsByteArray()));
 
-                String scanVal = extractScanValue(reqBody);
+                String scanVal     = extractScanValue(reqBody);
                 String productName = extractJsonField(resBody, "name");
 
                 if (scanVal != null && !scanVal.isBlank()) {
                     log.info("SCAN user={} value={} name={}", username, scanVal,
                             (productName == null || productName.isBlank()) ? "-" : productName);
 
+                    // Session (untuk UI)
                     HttpSession s = req.getSession(false);
                     if (s != null) {
-                        s.setAttribute("LAST_SCAN_USER", username);
+                        s.setAttribute("LAST_SCAN_USER",  username);
                         s.setAttribute("LAST_SCAN_VALUE", scanVal);
-                        s.setAttribute("LAST_SCAN_NAME", productName);
-                        s.setAttribute("LAST_SCAN_AT", Instant.now());
+                        s.setAttribute("LAST_SCAN_NAME",  productName);
+                        s.setAttribute("LAST_SCAN_AT",    Instant.now());
                     }
 
+                    // ServletContext (untuk UI global)
                     ServletContext ctx = request.getServletContext();
-                    ctx.setAttribute(ATTR_LAST_SCAN_USER, username);
+                    ctx.setAttribute(ATTR_LAST_SCAN_USER,  username);
                     ctx.setAttribute(ATTR_LAST_SCAN_VALUE, scanVal);
-                    ctx.setAttribute(ATTR_LAST_SCAN_NAME, productName);
-                    ctx.setAttribute(ATTR_LAST_SCAN_AT, Instant.now());
+                    ctx.setAttribute(ATTR_LAST_SCAN_NAME,  productName);
+                    ctx.setAttribute(ATTR_LAST_SCAN_AT,    Instant.now());
 
                     if (uri != null && uri.startsWith(BARCODE_ENDPOINT_PREFIX)) {
                         @SuppressWarnings("unchecked")
@@ -198,30 +212,32 @@ public class LoggingFilterConfig {
                             ctx.setAttribute(ATTR_SCAN_TODAY, buf);
                         }
                         Map<String, Object> row = new LinkedHashMap<>();
-                        row.put("time", LocalDateTime.now());
-                        row.put("user", username);
+                        row.put("time",  LocalDateTime.now());
+                        row.put("user",  username);
                         row.put("value", scanVal);
-                        row.put("name", productName);
-                        row.put("traceId", cid);
-
+                        row.put("name",  productName);
+                        // >>> Tidak menaruh trace/cid di row untuk menghindari kebiasaan simpan trace
                         buf.add(0, row);
                         while (buf.size() > 1000) buf.remove(buf.size() - 1);
                     }
 
+                    // Simpan ke DB (TANPA trace id)
                     try {
+                        var src = resolveSource(request);
                         String pname = (productName == null || productName.isBlank()) ? "-" : productName;
-                        ProductScanLog logRow = new ProductScanLog();
+
+                        var logRow =  new ProductScanLog(); // <-- sesuaikan paket Entity
                         logRow.setUsername(username);
                         logRow.setValue(scanVal);
                         logRow.setProductName(pname);
-                        logRow.setSource(resolveSource(request));
+                        logRow.setSource(src);
                         productScanLogRepository.save(logRow);
                     } catch (Exception e) {
                         log.warn("Gagal simpan product_scan_log: {}", e.toString());
                     }
                 }
 
-                log.info("API {} {} → status={} ({} ms) traceId={} user={}",
+                log.info("API {} {} → status={} ({} ms) cid={} user={}",
                         method, uri, status, dur, cid, username);
                 if (!reqBody.isBlank()) log.info("reqBody: {}", reqBody);
                 if (!resBody.isBlank()) log.info("resBody: {}", resBody);
@@ -233,6 +249,8 @@ public class LoggingFilterConfig {
             }
         }
 
+        /* ===== Helpers umum ===== */
+
         private static String getCid(HttpServletRequest req) {
             Object attr = req.getAttribute(ATTR_CID);
             if (attr instanceof String s && !s.isBlank()) return s;
@@ -240,8 +258,37 @@ public class LoggingFilterConfig {
             return (h == null || h.isBlank()) ? "cid-missing" : h;
         }
 
+        private static void cacheCidUser(ServletContext ctx, String cid, String username) {
+            @SuppressWarnings("unchecked")
+            Map<String,String> map = (Map<String,String>) ctx.getAttribute(ATTR_CID_USER_MAP);
+            if (map == null) { map = new ConcurrentHashMap<>(); ctx.setAttribute(ATTR_CID_USER_MAP, map); }
+            map.put(cid, username);
 
-        // === Username resolver ===================================================
+            @SuppressWarnings("unchecked")
+            Map<String,Long> ts = (Map<String,Long>) ctx.getAttribute(ATTR_CID_USER_TS_MAP);
+            if (ts == null) { ts = new ConcurrentHashMap<>(); ctx.setAttribute(ATTR_CID_USER_TS_MAP, ts); }
+            ts.put(cid, System.currentTimeMillis());
+        }
+
+        private static String lookupCidUser(ServletContext ctx, String cid) {
+            if (cid == null) return null;
+            @SuppressWarnings("unchecked")
+            Map<String,String> map = (Map<String,String>) ctx.getAttribute(ATTR_CID_USER_MAP);
+            @SuppressWarnings("unchecked")
+            Map<String,Long> ts = (Map<String,Long>) ctx.getAttribute(ATTR_CID_USER_TS_MAP);
+            if (map == null || ts == null) return null;
+
+            String u = map.get(cid);
+            Long t   = ts.get(cid);
+            long now = System.currentTimeMillis();
+
+            if (u != null && t != null && now - t <= CID_USER_TTL_MS) return u;
+
+            // expired → bersihkan
+            map.remove(cid);
+            ts.remove(cid);
+            return null;
+        }
 
         private String resolveUsername(HttpServletRequest request) {
             String username = "anonymous";
@@ -256,8 +303,7 @@ public class LoggingFilterConfig {
                         username = p;
                     }
                 }
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) { }
 
             // 2) Session attribute
             if ("anonymous".equals(username)) {
@@ -267,22 +313,12 @@ public class LoggingFilterConfig {
                 }
             }
 
-            // 3) IP→user map fallback
+            // 3) Fallback CID→username
             if ("anonymous".equals(username)) {
-                String clientIp = clientIpFromXffOrRemote(request);
-                ServletContext ctx = request.getServletContext();
-                @SuppressWarnings("unchecked")
-                Map<String, String> ipUserMap = (Map<String, String>) ctx.getAttribute("IP_USER_MAP");
-                if (ipUserMap != null) {
-                    String mapped = ipUserMap.get(clientIp);
-                    if (mapped == null) {
-                        String alt = request.getHeader("X-Real-IP");
-                        if (alt != null) mapped = ipUserMap.get(alt);
-                    }
-                    if (mapped != null) username = mapped;
-                }
+                String cid = getCid(request);
+                String cached = lookupCidUser(request.getServletContext(), cid);
+                if (cached != null) username = cached;
             }
-
             return username;
         }
 
@@ -293,36 +329,13 @@ public class LoggingFilterConfig {
             String src = req.getParameter("src");
             if (src != null && src.equalsIgnoreCase("ANDROID")) return ScanSource.ANDROID;
 
-
             String ua = req.getHeader("User-Agent");
             if (ua != null) {
                 String ual = ua.toLowerCase();
                 if (ual.contains("android") || ual.contains("okhttp") || ual.contains("dalvik"))
                     return ScanSource.ANDROID;
             }
-
-            String uri = req.getRequestURI();
-            if ("/api/auth/login".equals(uri)) {
-                // UA bisa null di beberapa stack => treat as ANDROID untuk endpoint ini
-                return ScanSource.ANDROID;
-            }
-
             return ScanSource.WEB;
-        }
-
-        private static String clientIpFromXffOrRemote(HttpServletRequest req) {
-            String xff = req.getHeader("X-Forwarded-For");
-            if (xff != null && !xff.isBlank()) {
-                return xff.split(",")[0].trim();
-            }
-            return req.getRemoteAddr();
-        }
-
-        // === Helpers =============================================================
-
-        private static String headerOrNew(HttpServletRequest req, String name) {
-            String v = req.getHeader(name);
-            return (v == null || v.isBlank()) ? UUID.randomUUID().toString() : v;
         }
 
         private static String bytesToString(byte[] arr) {
@@ -332,10 +345,7 @@ public class LoggingFilterConfig {
         private static String sanitize(String raw) {
             if (raw == null || raw.isBlank()) return "";
             String s = raw;
-            try {
-                s = OM.writeValueAsString(OM.readTree(raw));
-            } catch (Exception ignored) {
-            }
+            try { s = OM.writeValueAsString(OM.readTree(raw)); } catch (Exception ignored) {}
             s = s.replaceAll("[\\r\\n\\t]+", " ").replaceAll(" +", " ").trim();
             if (s.length() > MAX) s = s.substring(0, MAX) + "...(truncated)";
             return s;
@@ -347,8 +357,7 @@ public class LoggingFilterConfig {
                 JsonNode n = OM.readTree(body);
                 JsonNode v = n.get("value");
                 if (v != null && !v.isNull()) return v.asText();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
             var m = P_VALUE.matcher(body);
             return m.find() ? m.group(1) : null;
         }
@@ -359,15 +368,32 @@ public class LoggingFilterConfig {
                 JsonNode n = OM.readTree(body);
                 JsonNode v = n.get(field);
                 if (v != null && !v.isNull()) return v.asText();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
             Pattern p = "name".equals(field) ? P_NAME :
                     Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:\\s*\"([^\"]+)\"");
             var m = p.matcher(body);
             return m.find() ? m.group(1) : null;
         }
 
+        private static String parseUsernameFromLogin(ContentCachingRequestWrapper req) {
+            String body = bytesToString(req.getContentAsByteArray());
+            if (body == null || body.isBlank()) return null;
+
+            try { // JSON
+                JsonNode n = OM.readTree(body);
+                if (n.hasNonNull("username")) return n.get("username").asText();
+            } catch (Exception ignore) { }
+
+            // x-www-form-urlencoded
+            for (String part : body.split("&")) {
+                String[] kv = part.split("=", 2);
+                if (kv.length == 2 &&
+                        "username".equalsIgnoreCase(URLDecoder.decode(kv[0], StandardCharsets.UTF_8))) {
+                    return URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+                }
+            }
+            return null;
+        }
     }
-
-
 }
+
