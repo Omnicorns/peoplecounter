@@ -43,11 +43,6 @@
         .btn-ghost{padding:.45rem .8rem;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
         .btn-ghost:hover{background:rgba(255,255,255,.1)}
 
-        /* Mobile switcher */
-        .segmob-wrap{background:#fff;border-bottom:1px solid var(--ring)}
-        .segmob{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
-          background:#fff;color:#0f172a;border:1px solid #e6ebf2;box-shadow:inset 0 -1px 0 rgba(2,6,23,.03)}
-        .segmob.active{border-color:#cfd8e7;box-shadow:0 3px 10px rgba(2,6,23,.06)}
 
         /* Cards */
         .cardx{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
@@ -89,18 +84,17 @@
           width:36px;height:36px;border-radius:10px;
           border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
         }
-        @media (max-width: 720px){
-          .segmob-wrap{display:block}
-          .spv-box{
-            border-radius:0; width:100svw; height:100dvh; max-height:100dvh;
-            padding:12px 10px;
-            padding-top:calc(12px + var(--safe-top));
-            padding-bottom:calc(12px + var(--safe-bottom));
-            border-left:0;border-right:0;
-          }
-          .spv-pages{padding:10px; gap:10px}
-        }
-        @media print { body{ display:none !important; } }
+
+
+          /* ===== MOBILE SWITCHER ===== */
+    .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+    @media (min-width:720px){.mobile-switch-wrap{display:none}}
+    .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+    .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
+    .segbtn:hover{filter:brightness(1.02)}
+    .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+    :root{--appbarH:56px}
+    @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -112,6 +106,7 @@
             <div class="brand"><img src="/promis.png" alt="PROMIS"><span>PROMIS</span></div>
             <nav class="d-none d-md-flex gap-2 ms-2" aria-label="Primary">
                 <a class="pill" th:href="@{/web/product}">Produk</a>
+                <a class="pill" th:href="@{/web/home}">Home</a>
                 <span class="pill active">Manajemen SOP</span>
             </nav>
             <div class="ms-auto d-flex align-items-center gap-2">
@@ -131,14 +126,13 @@
 </header>
 
 <!-- MOBILE SWITCHER -->
-<div class="segmob-wrap d-md-none">
-    <div class="container py-2">
-        <div class="d-flex gap-2">
-            <a class="segmob" th:href="@{/web/product}">Produk</a>
-            <span class="segmob active">SOP</span>
-        </div>
+<nav class="mobile-switch-wrap sticky" aria-label="Navigasi utama">
+    <div class="mobile-switch" role="tablist">
+        <a class="segbtn" th:href="@{/web/home}" role="tab" aria-selected="false">Home</a>
+        <a class="segbtn " th:href="@{/web/product}" role="tab" aria-selected="false">Produk</a>
+        <a class="segbtn" th:href="@{/web/sop}" role="tab" aria-selected="false">SOP</a>
     </div>
-</div>
+</nav>
 
 <main class="container my-3">
     <h1 class="h4 fw-bold mb-3">Daftar SOP</h1>

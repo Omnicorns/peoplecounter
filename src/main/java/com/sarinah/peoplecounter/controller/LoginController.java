@@ -105,7 +105,7 @@ public class LoginController {
         session.setAttribute(AUTH_FULLNAME, user.getFullName());
 
         // arahkan ke redirect (jika ada) atau ke dashboard (/)
-        String target = (redirect != null && !redirect.isBlank()) ? redirect : "/web/product";
+        String target = (redirect != null && !redirect.isBlank()) ? redirect : "/web/home";
         return "redirect:" + target;
     }
 
@@ -114,6 +114,9 @@ public class LoginController {
         session.invalidate();
         return "redirect:/web/login";
     }
+
+
+
 
 
     @GetMapping("/product")
@@ -261,6 +264,23 @@ public class LoginController {
         model.addAttribute("history", getSkuHistory(session));
 
         return "product-detail";
+    }
+
+
+    @GetMapping("/home")
+    public String manajemenHome(@RequestParam(value = "sku", required = false) String sku,
+                               @RequestParam(value = "code", required = false) String code,
+                               Model model,
+                               HttpServletRequest request,
+                               HttpSession session) {
+        if (session.getAttribute(AUTH_USER_ID) == null) {
+            // simpan url tujuan (termasuk query) agar bisa balik setelah login
+            String full = request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+            String redirect = UriUtils.encode(full, StandardCharsets.UTF_8);
+            return "redirect:/web/login";
+        }
+        model.addAttribute("apiKey", apiKey);
+        return "home";
     }
 
     @PostMapping("/product/history/clear")

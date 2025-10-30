@@ -135,17 +135,17 @@
         .btn-ghost:hover{ background:rgba(255,255,255,.12); }
         @media (max-width:360px){ .appbar-inner{ padding: calc(8px + env(safe-area-inset-top,0px)) 12px 8px; gap:8px; } .btn-ghost{ padding:6px 10px; } }
 
-        /* ==== Mobile switcher (di bawah appbar) ==== */
-        .mobile-switch-wrap{ display:block; background:#fff; border-bottom:1px solid var(--ring); }
-        @media (min-width: 720px){ .mobile-switch-wrap{ display:none; } }
-        .mobile-switch{ max-width:1100px; margin:0 auto; padding:8px 16px; display:flex; gap:8px; }
-        .segbtn{ flex:1 1 0; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:1px solid var(--ring); background:#fff; color:var(--ink); border-radius:999px; font-weight:800; text-align:center; cursor:pointer; user-select:none; }
-        .segbtn:hover{ filter:brightness(1.02); }
-        .segbtn.active{ background:var(--pri); color:#fff; border-color:var(--pri); }
-        :root{ --appbarH: 56px; }
-        @media (max-width: 720px){
-          .mobile-switch-wrap.sticky{ position: sticky; top: var(--appbarH); z-index: 45; }
-        }
+
+
+        /* ===== MOBILE SWITCHER ===== */
+    .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+    @media (min-width:720px){.mobile-switch-wrap{display:none}}
+    .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+    .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
+    .segbtn:hover{filter:brightness(1.02)}
+    .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+    :root{--appbarH:56px}
+    @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
     </style>
 </head>
 <body>
@@ -163,6 +163,10 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
                 Manajemen SOP
             </a>
+            <a class="brand-chip" title="SOP" th:href="@{/web/home}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Home
+            </a>
         </div>
         <div class="flex-1"></div>
         <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
@@ -176,14 +180,11 @@
 </header>
 
 <!-- ===== MOBILE SWITCHER Tepat di bawah Appbar ===== -->
-<nav class="mobile-switch-wrap sticky" aria-label="Switcher Produk/SOP">
+<nav class="mobile-switch-wrap sticky" aria-label="Navigasi utama">
     <div class="mobile-switch" role="tablist">
-        <a class="segbtn"
-           th:classappend="${page}=='product' ? 'active' : ''"
-           th:href="@{/web/product}" role="tab" aria-selected="${page}=='product'">Produk</a>
-        <a class="segbtn"
-           th:classappend="${page}=='sop' ? 'active' : ''"
-           th:href="@{/web/sop}" role="tab" aria-selected="${page}=='sop'">SOP</a>
+        <a class="segbtn" th:href="@{/web/home}" role="tab" aria-selected="false">Home</a>
+        <a class="segbtn active" th:href="@{/web/product}" role="tab" aria-selected="true">Produk</a>
+        <a class="segbtn" th:href="@{/web/sop}" role="tab" aria-selected="false">SOP</a>
     </div>
 </nav>
 

@@ -46,6 +46,7 @@ public class SecurityConfig {
             "/web/product/history/clear",
             "/web/sop",
             "/middleware/sop-bo",
+            "/web/home",
 
             // API tertentu (kalau memang publik)
             "/api/admin/users/import-csv",
