@@ -55,7 +55,7 @@ public class LoggingFilterConfig {
     /* ===== Cache CID → username (ServletContext) ===== */
     private static final String ATTR_CID_USER_MAP    = "CID_USER_MAP";
     private static final String ATTR_CID_USER_TS_MAP = "CID_USER_TS_MAP";
-    private static final long   CID_USER_TTL_MS      = 15 * 60_000L; // 15 menit
+    private static final long CID_USER_TTL_MS = 6L * 60 * 60 * 1000; // 6 jam
 
     private final ProductScanLogRepository productScanLogRepository;
 
