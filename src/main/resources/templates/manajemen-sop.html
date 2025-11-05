@@ -8,6 +8,8 @@
     <!-- inject dari controller -->
     <meta name="api-base" th:content="${apiBase}" content="/api">
     <meta name="x-api-key" th:content="${apiKey}"  content="">
+    <!-- optional: kirimkan username ke watermark preview -->
+    <meta name="auth-user" th:if="${session.AUTH_USERNAME != null}" th:content="${session.AUTH_USERNAME}" content="User"/>
 
     <!-- Bootstrap & PDF.js -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,6 +25,8 @@
           --safe-right: env(safe-area-inset-right, 0px);
           --safe-bottom: env(safe-area-inset-bottom, 0px);
           --safe-left: env(safe-area-inset-left, 0px);
+          --pri:#2DB36D; /* warna tab aktif seperti gambar 2 */
+          --appbarH:56px;
         }
         *{box-sizing:border-box}
         html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -43,7 +47,6 @@
         .btn-ghost{padding:.45rem .8rem;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
         .btn-ghost:hover{background:rgba(255,255,255,.1)}
 
-
         /* Cards */
         .cardx{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
         .cardx .top{display:flex;align-items:center;gap:8px}
@@ -60,11 +63,11 @@
         .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
         .file{display:flex;align-items:center;gap:8px;font-weight:700;word-break:break-word}
         .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
-        .btnx{padding:8px 12px;border-radius:12px;border:1px solid var(--ring);background:#fff;color:var(--ink);font-weight:800;cursor:pointer}
+        .btnx{padding:8px 12px;border-radius:12px;border:1px solid var(--ring);background:#fff;color:#000;font-weight:800;cursor:pointer}
         .btnx:hover{background:#f8fafc}
         .btnx[disabled]{opacity:.6;cursor:not-allowed}
 
-        /* Preview overlay – mobile fullscreen, tidak kepotong */
+        /* Preview overlay */
         .spv{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.68);backdrop-filter:blur(1.5px)}
         .spv.show{display:flex}
         .spv-backdrop{position:absolute;inset:0}
@@ -85,16 +88,14 @@
           border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
         }
 
-
-          /* ===== MOBILE SWITCHER ===== */
-    .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
-    @media (min-width:720px){.mobile-switch-wrap{display:none}}
-    .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
-    .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
-    .segbtn:hover{filter:brightness(1.02)}
-    .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
-    :root{--appbarH:56px}
-    @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+        /* ===== MOBILE SWITCHER ===== */
+        .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+        @media (min-width:720px){.mobile-switch-wrap{display:none}}
+        .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+        .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none;text-decoration:none}
+        .segbtn:hover{filter:brightness(1.02)}
+        .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+        @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -125,12 +126,12 @@
     </div>
 </header>
 
-<!-- MOBILE SWITCHER -->
+<!-- MOBILE SWITCHER (aktif otomatis seperti gambar 2) -->
 <nav class="mobile-switch-wrap sticky" aria-label="Navigasi utama">
-    <div class="mobile-switch" role="tablist">
-        <a class="segbtn" th:href="@{/web/home}" role="tab" aria-selected="false">Home</a>
-        <a class="segbtn " th:href="@{/web/product}" role="tab" aria-selected="false">Produk</a>
-        <a class="segbtn" th:href="@{/web/sop}" role="tab" aria-selected="false">SOP</a>
+    <div class="mobile-switch" role="tablist" id="mobTabs">
+        <a class="segbtn" href="/web/home"    data-route="/web/home"    role="tab" aria-selected="false">Home</a>
+        <a class="segbtn" href="/web/product" data-route="/web/product" role="tab" aria-selected="false">Produk</a>
+        <a class="segbtn" href="/web/sop"     data-route="/web/sop"     role="tab" aria-selected="false">SOP</a>
     </div>
 </nav>
 
@@ -244,9 +245,54 @@
     const spv=$('#spv'), spvPages=$('#spvPages'), spvTitle=$('#spvTitle');
     const spvBackdrop=$('#spvBackdrop'), spvX=$('#spvX');
     let spvOpen=false;
-    if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+    if(window.pdfjsLib){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    (function injectProtectionCSS(){
+      try{
+        const st=document.createElement('style');
+        st.textContent = `
+          @media print{ body{ display:none !important; } }
+          body, #spv{ -webkit-user-select:none; user-select:none; }
+          canvas, img{ -webkit-user-drag:none; }
+        `;
+        document.head.appendChild(st);
+      }catch(_){}
+    })();
+
+    const AUTH_USER = (document.querySelector('meta[name="auth-user"]')?.content || window.AUTH_USER || 'User').toString().trim();
 
     function lockScroll(on){ document.body.style.overflow = on ? 'hidden' : ''; }
+
+    function drawWatermark(ctx, w, h, text){
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.translate(w/2, h/2);
+      ctx.rotate(-Math.PI/6);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold ${Math.floor(Math.min(w,h)/10)}px Inter, Arial, sans-serif`;
+      ctx.fillStyle = '#000';
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.font = `600 ${Math.floor(Math.min(w,h)/22)}px Inter, Arial, sans-serif`;
+      ctx.fillStyle = '#000';
+      const step = Math.floor(Math.min(w,h)/2.5);
+      for(let y = step/2; y < h+step; y += step){
+        for(let x = step/2; x < w+step; x += step){
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(-Math.PI/6);
+          ctx.fillText(text, 0, 0);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+    }
 
     async function openSimplePreviewById(docId, fileId, fileName){
       try{
@@ -271,10 +317,14 @@
       const pixelRatio=Math.min(window.devicePixelRatio||1,2);
       const containerWidth=Math.floor(spvPages.getBoundingClientRect().width);
 
+      const wmUser = AUTH_USER || 'User';
+      const wmTime = new Date().toLocaleString();
+      const wmText = `${wmUser} • ${wmTime} • CONFIDENTIAL`;
+
       for(let p=1;p<=pdf.numPages;p++){
         const page=await pdf.getPage(p);
         const base=page.getViewport({scale:1});
-        const scale=containerWidth/base.width; // fit width kontainer
+        const scale=containerWidth/base.width;
         const viewport=page.getViewport({scale});
         const canvas=document.createElement('canvas');
         canvas.setAttribute('aria-label',`Halaman ${p}`);
@@ -285,7 +335,12 @@
         canvas.style.height=`${Math.floor(viewport.height)}px`;
         ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
         spvPages.appendChild(canvas);
+
         await page.render({canvasContext:ctx, viewport}).promise;
+
+        const logicalW = canvas.width / pixelRatio;
+        const logicalH = canvas.height / pixelRatio;
+        drawWatermark(ctx, logicalW, logicalH, wmText);
       }
     }
 
@@ -298,6 +353,8 @@
     spvX.addEventListener('click', closePreview);
     window.addEventListener('keydown', e=>{ if(e.key==='Escape') closePreview(); });
     window.addEventListener('orientationchange', ()=>{ if(spvOpen) closePreview(); });
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden && spvOpen) closePreview(); }, true);
+    window.addEventListener('contextmenu', e=>e.preventDefault(), true);
 
     // ====== Render cards
     function render(){
@@ -342,7 +399,7 @@
               ${filesHtml}
               <div class="d-flex gap-2 mt-2">
                 <button class="btnx" ${previewDisabled}
-                  onclick="openSimplePreviewById(${s.id}, ${firstPdf? firstPdf.id : 'null'}, '${(firstPdf? (firstPdf.fileName||'').replace(/['\"<>&]/g,s=>({'\'':'&#39;','\"':'&quot;','<':'&lt;','>':'&gt;','&':'&amp;'}[s])) : '')}')">
+                  onclick="openSimplePreviewById(${s.id}, ${firstPdf? firstPdf.id : 'null'}, '${(firstPdf? (firstPdf.fileName||'').replace(/['\"<>&]/g,s=>({'\'':'&#39;','\"':'&quot;','<':'&lt;','&':'&amp;','>':'&gt;'}[s])) : '')}')">
                   Preview
                 </button>
               </div>
@@ -388,13 +445,39 @@
     $('#pgNext').onclick=()=>{ const pages=Math.max(1,Math.ceil(state.view.length/state.pageSize)); if(state.page<pages){ state.page++; render(); } };
     $('#pgSize').onchange=e=>{ state.pageSize=parseInt(e.target.value,10)||10; state.page=1; render(); };
 
-    // Anti print/save (opsional) + Esc close
     window.addEventListener('keydown', e=>{
       const k=e.key.toLowerCase();
       if((e.ctrlKey||e.metaKey)&&(k==='p'||k==='s')){ e.preventDefault(); e.stopPropagation(); }
       if(e.key==='Escape') closePreview();
     }, true);
 
+    // === Mobile switcher: set tab aktif sesuai path (seperti gambar 2)
+    (function setActiveMobileTab(){
+      try{
+        const tabs = document.querySelectorAll('#mobTabs .segbtn');
+        const norm = (p)=>{
+          if(!p) return '/web/home';
+          const n = p.replace(/\/+$/,'');
+          return (n==='/web'||n==='/web/') ? '/web/home' : n;
+        };
+        const current = norm(location.pathname);
+
+        let found=false;
+        tabs.forEach(a=>{
+          const r = norm(a.getAttribute('data-route')||a.getAttribute('href')||'');
+          const isActive = current.startsWith(r);
+          a.classList.toggle('active', isActive);
+          a.setAttribute('aria-selected', isActive ? 'true' : 'false');
+          if(isActive) found=true;
+        });
+        if(!found){
+          const home = document.querySelector('#mobTabs .segbtn[data-route="/web/home"]');
+          if(home){ home.classList.add('active'); home.setAttribute('aria-selected','true'); }
+        }
+      }catch(_){}
+    })();
+
+    // load awal
     load();
 </script>
 </body>
