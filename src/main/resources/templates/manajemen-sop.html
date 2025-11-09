@@ -76,10 +76,9 @@
           width:min(96vw, 1000px); max-height:92dvh; padding:12px; box-shadow:0 12px 32px rgba(0,0,0,.45);
           display:flex; flex-direction:column;
         }
-        .spv-head{display:flex;align-items:center;gap:10px;color:#e5edff;padding:6px 8px;border-bottom:1px solid #1e2a44}
+        .spv-head{display:flex;align-items:center;gap:10px;color:#e5edff;padding:6px 8px;border-bottom:1px solid #1e2a44;flex-wrap:wrap}
         .spv-head .sp{flex:1}
         .spv-pages{flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; align-items:center; gap:12px}
-        .spv-pages canvas{background:#fff;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%;max-width:100%;height:auto}
         .spv-x{
           position:absolute;
           top:calc(10px + var(--safe-top));
@@ -87,6 +86,13 @@
           width:36px;height:36px;border-radius:10px;
           border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
         }
+
+        /* PAGE + HIGHLIGHT LAYERS */
+        .spv-page{position:relative;width:100%;max-width:100%}
+        .spv-page canvas{display:block;background:#fff;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%;height:auto}
+        .hl-layer{position:absolute;inset:0;pointer-events:none;border-radius:8px;overflow:hidden}
+        .hl{position:absolute;background:rgba(255,230,0,.35);outline:1px solid rgba(180,140,0,.6);border-radius:2px}
+        .hl.active{background:rgba(255,230,0,.6);outline-color:#b38a00}
 
         /* ===== MOBILE SWITCHER ===== */
         .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
@@ -96,6 +102,12 @@
         .segbtn:hover{filter:brightness(1.02)}
         .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
         @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+
+        /* Find bar */
+        .findbar{display:flex;gap:8px;align-items:center}
+        .findbar input{background:#0f172a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;min-width:180px}
+        .findbar button{background:#16223a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;cursor:pointer}
+        .findbar small{opacity:.8}
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -181,6 +193,15 @@
         <div class="spv-head">
             <strong id="spvTitle">Pratinjau</strong>
             <div class="sp"></div>
+
+            <!-- === FIND BAR (baru) === -->
+            <div class="findbar" aria-label="Pencarian dokumen">
+                <input id="spvFind" type="search" placeholder="Cari di dokumen…" enterkeyhint="search" />
+                <button id="spvPrev" title="Sebelumnya (Shift+Enter)">⬆︎</button>
+                <button id="spvNext" title="Berikutnya (Enter)">⬇︎</button>
+                <small id="spvCount">0 / 0</small>
+                <button id="spvClear" title="Bersihkan">✖</button>
+            </div>
         </div>
         <div class="spv-pages" id="spvPages"></div>
     </div>
@@ -241,10 +262,13 @@
       state.view=arr;
     }
 
-    // ====== PREVIEW (multi-page)
+    // ====== PREVIEW + FIND
     const spv=$('#spv'), spvPages=$('#spvPages'), spvTitle=$('#spvTitle');
     const spvBackdrop=$('#spvBackdrop'), spvX=$('#spvX');
+    const findInput = $('#spvFind'), findPrev=$('#spvPrev'), findNext=$('#spvNext'), findCount=$('#spvCount'), findClear=$('#spvClear');
     let spvOpen=false;
+
+    // PDF.js worker
     if(window.pdfjsLib){
       pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
@@ -294,6 +318,13 @@
       ctx.restore();
     }
 
+    // ===== Find state/cache
+    let _pdfDoc=null;
+    const _pageMetas = []; // {pageNo, viewportScale, pageW, pageH, wrapper, hlLayer, textItems}
+    let _hits = []; // {pageNo, rect:{x,y,w,h}, idx}
+    let _hitIndex = -1;
+    const _textCache = new Map(); // pageNo -> items
+
     async function openSimplePreviewById(docId, fileId, fileName){
       try{
         const lower=String(fileName||'').toLowerCase();
@@ -310,44 +341,203 @@
       spvTitle.textContent=name||'Pratinjau';
       spv.classList.add('show'); spvOpen=true; lockScroll(true);
       spvPages.innerHTML='';
+      resetFind(); // clear find state
 
       const loadingTask=pdfjsLib.getDocument({data:arrayBuffer, disableCreateObjectURL:true});
-      const pdf=await loadingTask.promise;
+      _pdfDoc=await loadingTask.promise;
 
-      const pixelRatio=Math.min(window.devicePixelRatio||1,2);
       const containerWidth=Math.floor(spvPages.getBoundingClientRect().width);
-
       const wmUser = AUTH_USER || 'User';
       const wmTime = new Date().toLocaleString();
       const wmText = `${wmUser} • ${wmTime} • CONFIDENTIAL`;
 
-      for(let p=1;p<=pdf.numPages;p++){
-        const page=await pdf.getPage(p);
+      _pageMetas.length = 0;
+      _textCache.clear();
+
+      for(let p=1;p<=_pdfDoc.numPages;p++){
+        const page=await _pdfDoc.getPage(p);
         const base=page.getViewport({scale:1});
         const scale=containerWidth/base.width;
         const viewport=page.getViewport({scale});
+
+        // wrapper per halaman (untuk highlight layer)
+        const wrap=document.createElement('div'); wrap.className='spv-page';
         const canvas=document.createElement('canvas');
-        canvas.setAttribute('aria-label',`Halaman ${p}`);
+        const hlLayer=document.createElement('div'); hlLayer.className='hl-layer';
+        wrap.appendChild(canvas); wrap.appendChild(hlLayer);
+        spvPages.appendChild(wrap);
+
         const ctx=canvas.getContext('2d',{alpha:false});
+        const pixelRatio=Math.min(window.devicePixelRatio||1,2);
         canvas.width=Math.floor(viewport.width*pixelRatio);
         canvas.height=Math.floor(viewport.height*pixelRatio);
         canvas.style.width=`${Math.floor(viewport.width)}px`;
         canvas.style.height=`${Math.floor(viewport.height)}px`;
         ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
-        spvPages.appendChild(canvas);
 
         await page.render({canvasContext:ctx, viewport}).promise;
 
+        // watermark di atas raster
         const logicalW = canvas.width / pixelRatio;
         const logicalH = canvas.height / pixelRatio;
         drawWatermark(ctx, logicalW, logicalH, wmText);
+
+        _pageMetas.push({
+          pageNo:p, viewportScale:scale, pageW:viewport.width, pageH:viewport.height,
+          wrapper:wrap, hlLayer
+        });
       }
     }
+
+    async function ensureTextItems(pageNo){
+      if(_textCache.has(pageNo)) return _textCache.get(pageNo);
+      const page = await _pdfDoc.getPage(pageNo);
+      const text = await page.getTextContent();
+      // Map item -> absolute rect at current viewport scale (same scale we used to render)
+      const meta = _pageMetas.find(m=>m.pageNo===pageNo);
+      const viewport = await page.getViewport({ scale: meta.viewportScale });
+      const items = text.items.map(it=>{
+        // Estimate bounding box
+        const tx = pdfjsLib.Util.transform(viewport.transform, it.transform);
+        // tx = [a,b,c,d,e,f]; text is drawn at (e, f) with font size ~ d
+        const x = tx[4];
+        const yTop = tx[5];
+        const w = it.width * meta.viewportScale;
+        const h = Math.abs(tx[3]); // text height approx
+        const y = yTop - h;
+        return { str: it.str, x, y, w, h };
+      });
+      _textCache.set(pageNo, items);
+      return items;
+    }
+
+    function resetFindUI(){
+      findCount.textContent = '0 / 0';
+    }
+    function resetFind(highlightsOnly=false){
+      _hits = [];
+      _hitIndex = -1;
+      if(!highlightsOnly){
+        resetFindUI();
+        if(findInput) findInput.value = '';
+      }
+      // clear highlight layers
+      _pageMetas.forEach(m=>{ m.hlLayer.innerHTML=''; });
+    }
+
+    function renderHighlights(){
+      // clear all
+      _pageMetas.forEach(m=> m.hlLayer.innerHTML='');
+      // draw
+      _hits.forEach((h,i)=>{
+        const m = _pageMetas.find(mm=>mm.pageNo===h.pageNo);
+        if(!m) return;
+        const d = document.createElement('div');
+        d.className = 'hl' + (i===_hitIndex ? ' active' : '');
+        d.style.left = `${h.rect.x}px`;
+        d.style.top  = `${h.rect.y}px`;
+        d.style.width  = `${h.rect.w}px`;
+        d.style.height = `${h.rect.h}px`;
+        m.hlLayer.appendChild(d);
+      });
+      findCount.textContent = (_hits.length ? (_hitIndex+1) : 0) + ' / ' + _hits.length;
+    }
+
+    async function findAll(q){
+      const query = (q||'').trim();
+      resetFind(true);
+      if(!query){ renderHighlights(); return; }
+
+      const qLow = query.toLowerCase();
+      const isWord = qLow.split(/\s+/).filter(Boolean);
+      for(let p=1;p<=(_pdfDoc?.numPages||0);p++){
+        const items = await ensureTextItems(p);
+        for(const it of items){
+          const hay = it.str || '';
+          if(!hay) continue;
+          const low = hay.toLowerCase();
+          // Simple substring match (handles multi-word within same chunk)
+          let idx = 0;
+          while(true){
+            idx = low.indexOf(qLow, idx);
+            if(idx === -1) break;
+
+            // Approximate sub-rect for the substring portion within the chunk:
+            // Split width proportionally to substring length vs total string length.
+            const totalLen = Math.max(hay.length, 1);
+            const charW = it.w / totalLen;
+            const subX = it.x + (idx * charW);
+            const subW = charW * qLow.length;
+
+            _hits.push({ pageNo:p, rect:{ x:subX, y:it.y, w:Math.max(2, subW), h:it.h } });
+            idx += Math.max(1, qLow.length);
+          }
+
+          // Extra: if text layer chunks small, try word-by-word AND logic
+          if(!low.includes(qLow) && isWord.length>1){
+            const ok = isWord.every(w=>low.includes(w));
+            if(ok){
+              _hits.push({ pageNo:p, rect:{ x:it.x, y:it.y, w:it.w, h:it.h } });
+            }
+          }
+        }
+      }
+      // set first as active
+      if(_hits.length){ _hitIndex = 0; scrollToActive(); }
+      renderHighlights();
+    }
+
+    function scrollToActive(){
+      if(_hitIndex<0 || _hitIndex>=_hits.length) return;
+      const h = _hits[_hitIndex];
+      const m = _pageMetas.find(mm=>mm.pageNo===h.pageNo);
+      if(!m) return;
+      // Ensure the page is in view and then scroll inside page a bit
+      const pageRect = m.wrapper.getBoundingClientRect();
+      const container = spvPages;
+      container.scrollTo({ top: container.scrollTop + pageRect.top - 80, behavior:'smooth' });
+
+      // After page visible, also center around the highlight
+      setTimeout(()=>{
+        const targetY = h.rect.y - 40; // padding
+        container.scrollTo({ top: container.scrollTop + targetY, behavior:'smooth' });
+      }, 250);
+    }
+
+    function gotoNext(){
+      if(!_hits.length) return;
+      _hitIndex = (_hitIndex + 1) % _hits.length;
+      renderHighlights(); scrollToActive();
+    }
+    function gotoPrev(){
+      if(!_hits.length) return;
+      _hitIndex = (_hitIndex - 1 + _hits.length) % _hits.length;
+      renderHighlights(); scrollToActive();
+    }
+
+    // ===== Events for find
+    findInput?.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){
+        if(e.shiftKey) gotoPrev();
+        else if((findInput.value||'').trim()){
+          // If query unchanged and already have hits, go next; else compute
+          const label = findCount.textContent||'';
+          if(label.endsWith('/ 0') || label==='0 / 0'){ findAll(findInput.value); }
+          else gotoNext();
+        }
+        e.preventDefault();
+      }
+    });
+    findNext?.addEventListener('click', ()=>{ if(!_hits.length){ findAll(findInput.value); } else gotoNext(); });
+    findPrev?.addEventListener('click', ()=>{ if(!_hits.length){ findAll(findInput.value); } else gotoPrev(); });
+    findClear?.addEventListener('click', ()=>{ resetFind(); renderHighlights(); findInput.focus(); });
 
     function closePreview(){
       if(!spvOpen) return;
       spv.classList.remove('show'); spvOpen=false; lockScroll(false);
       spvPages.innerHTML='';
+      _pdfDoc=null; _pageMetas.length=0; _hits.length=0; _hitIndex=-1; _textCache.clear();
+      resetFind();
     }
     spvBackdrop.addEventListener('click', closePreview);
     spvX.addEventListener('click', closePreview);
@@ -399,7 +589,7 @@
               ${filesHtml}
               <div class="d-flex gap-2 mt-2">
                 <button class="btnx" ${previewDisabled}
-                  onclick="openSimplePreviewById(${s.id}, ${firstPdf? firstPdf.id : 'null'}, '${(firstPdf? (firstPdf.fileName||'').replace(/['\"<>&]/g,s=>({'\'':'&#39;','\"':'&quot;','<':'&lt;','&':'&amp;','>':'&gt;'}[s])) : '')}')">
+                  onclick="openSimplePreviewById(${s.id}, ${firstPdf? firstPdf.id : 'null'}, '${(firstPdf? (firstPdf.fileName||'').replace(/['\"<>&]/g,ss=>({'\'':'&#39;','\"':'&quot;','<':'&lt;','&':'&amp;','>':'&gt;'}[ss])) : '')}')">
                   Preview
                 </button>
               </div>
