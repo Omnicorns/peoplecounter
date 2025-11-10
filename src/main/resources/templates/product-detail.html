@@ -9,6 +9,7 @@
 
     <style>
         :root{--bg:#f5f7fb;--ink:#0b1220;--muted:#667085;--ring:#e6e8ee;--card:#ffffff;--pri:#2DB36D;--pri-2:#229957;--pri-3:#157248;--chip:#eef2f6;--chip-tx:#0b1220;--surface:#0b1220;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px;--table-stripe:#fafbfc;--ok-bg:#dcfce7;--ok-br:#86efac;--ok-tx:#065f46;--ring-focus:0 0 0 3px rgba(45,179,109,.25)}
+
         *{box-sizing:border-box}
         html,body{height:100%}
         body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -42,7 +43,13 @@
         .btn:hover{background:var(--pri-2)} .btn:active{background:var(--pri-3)} .btn:focus{outline:none;box-shadow:var(--ring-focus)}
         @media (max-width:720px){.group{flex-direction:column;border-radius:16px}.seg + .seg{border-left:0;border-top:1px solid var(--ring)}.btn{width:100%;height:44px}}
         .seg{min-width:0}
-        @media (max-width:480px){.search{padding:12px}.group .seg:nth-child(2){flex-wrap:wrap;gap:8px}.group .seg:nth-child(2) .inpt{flex:1 1 100%;min-width:0}.group .seg:nth-child(2) .scan-btn{flex:1 1 calc(50% - 4px);justify-content:center}.btn{width:100%;height:44px}}
+        @media (max-width:480px){
+          .search{padding:12px}
+          .group .seg:nth-child(2){flex-wrap:wrap;gap:8px}
+          .group .seg:nth-child(2) .inpt{flex:1 1 100%;min-width:0}
+          .group .seg:nth-child(2) .scan-btn{flex:1 1 calc(50% - 4px);justify-content:center}
+          .btn{width:100%;height:44px}
+        }
         html,body{max-width:100%;overflow-x:hidden}
         .scan-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--ring);background:#fff;color:#0b1220;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800}
         .scan-btn:hover{filter:brightness(1.05)} .scan-btn:focus{outline:none;box-shadow:var(--ring-focus)}
@@ -92,48 +99,53 @@
         .note{font-size:12px;color:#muted;margin-top:8px}.hide{display:none!important}
         .warn{margin-top:8px;padding:8px 10px;border:1px solid #f59e0b;background:#fffbeb;border-radius:10px;color:#92400e;font-weight:700}
 
-        .dp-grid{display:grid;grid-template-columns:1fr;gap:6px}
-        @media (min-width:720px){.dp-grid{grid-template-columns:1fr 1fr}}
-        .dp-grid .kv{border-bottom:1px solid var(--ring);padding:12px 0}
-        .dp-grid .kv:last-child{border-bottom:0}
+        /* layout dua kolom detail produk */
+        .dp-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+        @media (min-width: 720px){ .dp-grid { grid-template-columns: 1fr 1fr; } }
+        .dp-grid .kv { border-bottom: 1px solid var(--ring); padding: 12px 0; }
+        .dp-grid .kv:last-child { border-bottom: 0; }
 
-        .discount-badge{display:inline-block;padding:8px 12px;border-radius:999px;background:var(--ok-bg);border:1px solid var(--ok-br);color:var(--ok-tx);font-weight:800;letter-spacing:.2px}
-        .sku-pill{display:inline-block;background:var(--chip);color:var(--chip-tx);padding:6px 10px;border-radius:10px;border:1px solid var(--ring);font-weight:700}
-        .promo-wrap{display:flex;flex-direction:column;gap:8px}
-        .promo-list{display:flex;flex-wrap:wrap;gap:8px}
-        .promo-item{display:inline-flex;align-items:center;gap:8px;background:var(--chip);border:1px solid var(--ring);color:var(--ink);padding:6px 10px;border-radius:999px;font-weight:700;letter-spacing:.2px;line-height:1.2}
-        .promo-item .dot{width:6px;height:6px;border-radius:999px;background:var(--ok-br);flex:0 0 auto}
-        .promo-item.is-truncated{display:none}
-        .promo-more{border:1px dashed var(--ring);border-radius:10px;padding:8px 10px;background:rgba(0,0,0,.02)}
-        .promo-more>summary{cursor:pointer;list-style:none;font-weight:800;color:var(--muted)}
-        .promo-more>summary::-webkit-details-marker{display:none}
-        .promo-more[open]>summary{color:var(--ink)}
-        .promo-more[open]{background:#fff;border-style:solid}
-        .promo-more .promo-list{margin-top:10px}
+        .discount-badge{ display:inline-block; padding:8px 12px; border-radius:999px; background:var(--ok-bg); border:1px solid var(--ok-br); color:var(--ok-tx); font-weight:800; letter-spacing:.2px; }
+        .sku-pill{ display:inline-block; background:var(--chip); color:var(--chip-tx); padding:6px 10px; border-radius:10px; border:1px solid var(--ring); font-weight:700; }
+        .promo-wrap{ display:flex; flex-direction:column; gap:8px; }
+        .promo-list{ display:flex; flex-wrap:wrap; gap:8px; }
+        .promo-item{ display:inline-flex; align-items:center; gap:8px; background:var(--chip); border:1px solid var(--ring); color:var(--ink); padding:6px 10px; border-radius:999px; font-weight:700; letter-spacing:.2px; line-height:1.2; }
+        .promo-item .dot{ width:6px; height:6px; border-radius:999px; background:var(--ok-br); flex:0 0 auto }
+        .promo-item.is-truncated{ display:none; }
+        .promo-more { border:1px dashed var(--ring); border-radius:10px; padding:8px 10px; background:rgba(0,0,0,.02); }
+        .promo-more > summary{ cursor:pointer; list-style:none; font-weight:800; color:var(--muted); }
+        .promo-more > summary::-webkit-details-marker{ display:none; }
+        .promo-more[open] > summary{ color:var(--ink); }
+        .promo-more[open]{ background:#fff; border-style:solid; }
+        .promo-more .promo-list{ margin-top:10px; }
 
-        .appbar{position:sticky;top:0;z-index:50;color:#fff;background:linear-gradient(180deg,#0b1220 0%,#101a32 100%);border-bottom:1px solid rgba(255,255,255,.06)}
-        .appbar-inner{max-width:1100px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-        .brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
-        .logo{width:clamp(24px,6vw,32px);height:clamp(24px,6vw,32px);border-radius:10px;background:#fff;color:#0b1220;display:grid;place-items:center;font-weight:900}
-        .title{font-weight:800;font-size:clamp(14px,2.8vw,18px);letter-spacing:.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .brand-chip{display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-weight:700;white-space:nowrap}
-        @media (min-width:480px){.brand-chip{display:inline-flex}}
-        @media (max-width:640px){.brand-chip + .brand-chip{display:none}}
-        .flex-1{flex:0 0 auto;display:none}
-        .userbox{display:flex;align-items:center;gap:10px;margin-left:auto;flex:0 0 auto;min-width:0}
-        .userbox .chip{max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;cursor:pointer}
-        .btn-ghost:hover{background:rgba(255,255,255,.12)}
-        @media (max-width:360px){.appbar-inner{padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;gap:8px}.btn-ghost{padding:6px 10px}}
+        /* ==== Header responsif (perbaikan) ==== */
+        .appbar{ position: sticky; top: 0; z-index: 50; color:#fff; background: linear-gradient(180deg,#0b1220 0%,#101a32 100%); border-bottom:1px solid rgba(255,255,255,.06); }
+        .appbar-inner{ max-width:1100px; margin:0 auto; padding: calc(10px + env(safe-area-inset-top,0px)) 16px 10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; }
+        .logo{ width: clamp(24px, 6vw, 32px); height: clamp(24px, 6vw, 32px); border-radius:10px; background:#fff; color:#0b1220; display:grid; place-items:center; font-weight:900; }
+        .title{ font-weight:800; font-size:clamp(14px,2.8vw,18px); letter-spacing:.2px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .brand-chip{ display:none; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); font-weight:700; white-space:nowrap; }
+        @media (min-width:480px){ .brand-chip{ display:inline-flex; } }
+        @media (max-width:640px){ .brand-chip + .brand-chip{ display:none; } }
+        .flex-1{ flex:0 0 auto; display:none; }
+        .userbox{ display:flex; align-items:center; gap:10px; margin-left:auto; flex:0 0 auto; min-width:0; }
+        .userbox .chip{ max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .btn-ghost{ padding:8px 12px; border:1px solid rgba(255,255,255,.6); border-radius:12px; background:transparent; color:#fff; cursor:pointer; }
+        .btn-ghost:hover{ background:rgba(255,255,255,.12); }
+        @media (max-width:360px){ .appbar-inner{ padding: calc(8px + env(safe-area-inset-top,0px)) 12px 8px; gap:8px; } .btn-ghost{ padding:6px 10px; } }
 
-        .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
-        @media (min-width:720px){.mobile-switch-wrap{display:none}}
-        .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
-        .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
-        .segbtn:hover{filter:brightness(1.02)}
-        .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
-        :root{--appbarH:56px}
-        @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+
+
+        /* ===== MOBILE SWITCHER ===== */
+    .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+    @media (min-width:720px){.mobile-switch-wrap{display:none}}
+    .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+    .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
+    .segbtn:hover{filter:brightness(1.02)}
+    .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+    :root{--appbarH:56px}
+    @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
     </style>
 </head>
 <body>
@@ -167,6 +179,7 @@
     </div>
 </header>
 
+<!-- ===== MOBILE SWITCHER Tepat di bawah Appbar ===== -->
 <nav class="mobile-switch-wrap sticky" aria-label="Navigasi utama">
     <div class="mobile-switch" role="tablist">
         <a class="segbtn" th:href="@{/web/home}" role="tab" aria-selected="false">Home</a>
@@ -204,10 +217,19 @@
     </section>
 
     <section class="card" th:if="${sku != null}" aria-labelledby="detail-produk-title">
-        <div class="card-h"><div class="card-title" id="detail-produk-title">Detail Produk</div></div>
+        <div class="card-h">
+            <div class="card-title" id="detail-produk-title">Detail Produk</div>
+        </div>
+
         <div class="rows dp-grid">
-            <div class="kv"><div class="k">Nama Produk</div><div class="v" th:text="${name}">-</div></div>
-            <div class="kv"><div class="k">SKU</div><div class="v sku-pill" th:text="${sku}">-</div></div>
+            <div class="kv">
+                <div class="k">Nama Produk</div>
+                <div class="v" th:text="${name}">-</div>
+            </div>
+            <div class="kv">
+                <div class="k">SKU</div>
+                <div class="v sku-pill" th:text="${sku}">-</div>
+            </div>
             <div class="kv" th:with="promoItems=${promo != null ? #strings.listSplit(promo,';') : {}}">
                 <div class="k">Promo</div>
                 <div th:if="${#lists.isEmpty(promoItems)}" class="subtle">Tidak ada promo aktif</div>
@@ -279,7 +301,7 @@
 
 <script>
     (function(){
-      // ===== DOM =====
+      // ===== Helpers & State =====
       const openBtn   = document.getElementById('openCamBtn');
       const closeBtn  = document.getElementById('closeCamBtn');
       const stopBtn   = document.getElementById('stopCamBtn');
@@ -293,131 +315,96 @@
       const photoBtn  = document.getElementById('photoBtn');
       const photoInput= document.getElementById('photoInput');
 
-      // ===== State =====
       let stream = null, currentDeviceId = null, devices = [];
       let torchOn = false, modalOpen = false;
 
       const ua = navigator.userAgent || '';
       const isSafari = /^Apple/.test(navigator.vendor || '') || (/Safari/i.test(ua) && !/Chrome|Chromium|Edg|Firefox/i.test(ua));
       const isIOS    = /iphone|ipad|ipod/i.test(ua);
+      const isMac    = /Mac/i.test(navigator.platform);
       const isSecure = location.protocol === 'https:' || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|::1)$/i.test(location.hostname);
 
       if (!isSecure && (isIOS || isSafari)) { httpsWarn?.classList.remove('hide'); }
 
       async function listCameras(){
-        try{
-          const all = await navigator.mediaDevices.enumerateDevices();
-          return all.filter(d => d.kind === 'videoinput');
-        }catch(_){ return []; }
+        try{ const all=await navigator.mediaDevices.enumerateDevices(); return all.filter(d=>d.kind==='videoinput'); }
+        catch(_){ return[]; }
       }
       function setWrapRatio(){
         const vw=videoEl.videoWidth||1280, vh=videoEl.videoHeight||720;
         videoEl.parentElement?.style.setProperty('--vidratio', (vw/vh));
       }
 
-      // === iOS warm-up agar deviceId/labeI muncul & autoplay jalan ===
-      async function warmUpPermission(){
-        try{
-          const tmp = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-          tmp.getTracks().forEach(t=>{ try{ t.stop(); }catch(_){ }});
-          return true;
-        }catch(_){ return false; }
-      }
-
-      // ===== Start/Stop Camera (iOS friendly) =====
+      // ======== Start/Stop Camera ========
       async function startCamera(preferredDeviceId){
         stopCamera();
-
-        const baseVideo = preferredDeviceId
-          ? { deviceId: { exact: preferredDeviceId } }
-          : { facingMode: { ideal: 'environment' } };
-
-        const constraints = {
-          video: Object.assign({ width:{ideal:1920}, height:{ideal:1080} }, baseVideo),
-          audio: false
+        let constraints = isIOS ? {
+          video: preferredDeviceId ? { deviceId:{ exact: preferredDeviceId } } : { facingMode:{ ideal:'environment' } },
+          audio:false
+        } : {
+          video: preferredDeviceId
+            ? { deviceId:{ exact: preferredDeviceId }, width:{ideal:1920}, height:{ideal:1080} }
+            : { facingMode:{ ideal:'environment' }, width:{ideal:1920}, height:{ideal:1080} },
+          audio:false
         };
 
         try{
           stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-          // iOS autoplay/inline
-          videoEl.setAttribute('playsinline','');
-          videoEl.setAttribute('webkit-playsinline','');
-          videoEl.muted = true;
-          videoEl.autoplay = true;
-
-          videoEl.srcObject = stream;
-          await ensurePlay();
-          setWrapRatio();
-
-          const track = stream.getVideoTracks()[0];
+          wireVideoEl(); await ensurePlay(); setWrapRatio();
+          const track=stream.getVideoTracks()[0];
           currentDeviceId = track.getSettings().deviceId || preferredDeviceId || null;
-
           try{
-            const caps = track.getCapabilities?.()||{};
-            torchBtn && (torchBtn.disabled = !('torch' in caps));
-          }catch(_){ torchBtn && (torchBtn.disabled = true); }
-
-          // Kick lagi via gesture pertama (iOS)
-          const kick = ()=> videoEl.play().catch(()=>{});
-          videoEl.addEventListener('touchend', kick, { once:true });
-
+            const caps=track.getCapabilities?.()||{};
+            torchBtn&&(torchBtn.disabled = !(caps.torch || caps.torch !== undefined));
+          }catch(_){ torchBtn&&(torchBtn.disabled=true); }
           return true;
         }catch(err){
-          // Safari minimal fallback
-          try{
-            stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-            videoEl.setAttribute('playsinline','');
-            videoEl.setAttribute('webkit-playsinline','');
-            videoEl.muted = true; videoEl.autoplay = true;
-            videoEl.srcObject = stream; await ensurePlay(); setWrapRatio();
-            return true;
-          }catch(_){ return false; }
+          if (isSafari){
+            try{
+              stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+              wireVideoEl(); await ensurePlay(); setWrapRatio(); return true;
+            }catch(_){ return false; }
+          }
+          return false;
         }
       }
-
-      function stopCamera(){
-        if(stream){
-          stream.getTracks().forEach(t=>{ try{ t.stop(); t.enabled=false; }catch(_){ } });
-          stream = null;
-        }
-        torchOn=false;
-        if(torchBtn){ torchBtn.textContent='Nyalakan Lampu'; torchBtn.disabled=true; }
-        stopNativeLoop(); stopFallback();
+      function wireVideoEl(){
+        videoEl.srcObject = stream;
+        videoEl.setAttribute('playsinline','');
+        videoEl.setAttribute('webkit-playsinline','');
+        videoEl.setAttribute('autoplay','');
+        videoEl.muted = true;
       }
-
       async function ensurePlay(){
         await new Promise(r=>{ if(videoEl.readyState>=4) r(); else videoEl.onloadedmetadata=r; });
         try{ await videoEl.play(); }catch(_){ videoEl.muted=true; await videoEl.play().catch(()=>{}); }
       }
-
-      async function toggleTorch(){
-        if(!stream) return;
-        const track=stream.getVideoTracks()[0];
-        try{
-          torchOn=!torchOn;
-          await track.applyConstraints({advanced:[{torch:torchOn}]});
-          torchBtn.textContent = torchOn ? 'Matikan Lampu' : 'Nyalakan Lampu';
-        }catch(_){ torchBtn.disabled=true; }
+      function stopCamera(){
+        if(stream){ stream.getTracks().forEach(t=>{ try{ t.stop(); t.enabled=false; }catch(_){ } }); stream=null; }
+        torchOn=false; if(torchBtn){ torchBtn.textContent='Nyalakan Lampu'; torchBtn.disabled=true; }
+        stopNativeLoop(); stopFallback();
       }
-
+      async function toggleTorch(){
+        if(!stream) return; const track=stream.getVideoTracks()[0];
+        try{ torchOn=!torchOn; await track.applyConstraints({advanced:[{torch:torchOn}]}); torchBtn.textContent=torchOn?'Matikan Lampu':'Nyalakan Lampu'; }
+        catch(_){ torchBtn.disabled=true; }
+      }
       async function switchCamera(){
         if(!devices.length) devices = await listCameras();
         if(devices.length<2){ alert('Tidak ada kamera lain yang terdeteksi'); return; }
-        let idx=devices.findIndex(d=>d.deviceId===currentDeviceId);
-        idx=(idx+1)%devices.length;
-        const ok=await startCamera(devices[idx].deviceId);
-        if(ok) startDecoding();
+        let idx=devices.findIndex(d=>d.deviceId===currentDeviceId); idx=(idx+1)%devices.length;
+        const ok=await startCamera(devices[idx].deviceId); if(ok) startDecoding();
       }
 
-      // ===== BarcodeDetector (native) vs Fallback =====
+      // ======== BarcodeDetector (Native) vs Fallback ========
       let nativeDetector=null, nativeLoop=false;
       async function tryNativeDetector(){
         if(!('BarcodeDetector' in window)) return false;
         try{
           const supported = (await BarcodeDetector.getSupportedFormats?.()) || [];
-          const need = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'];
-          if(!need.some(f => supported.includes(f))) return false;
+          const needFormats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'];
+          const supportsLinear = needFormats.some(f => supported.includes(f));
+          if(!supportsLinear) return false;
           nativeDetector = new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
           return true;
         }catch(_){ return false; }
@@ -429,21 +416,16 @@
           if(!nativeLoop) return;
           if(videoEl.readyState>=2){
             nativeDetector.detect(videoEl).then(codes=>{
-              if(codes && codes.length){
-                const raw=codes[0].rawValue||'';
-                if(raw){ onScan(raw); return; }
-              }
+              if(codes&&codes.length){ const raw=codes[0].rawValue||''; if(raw){ onScan(raw); return; } }
               if(nativeLoop) requestAnimationFrame(tick);
             }).catch(()=>{ if(nativeLoop) requestAnimationFrame(tick); });
-          }else{
-            if(nativeLoop) requestAnimationFrame(tick);
-          }
+          } else { if(nativeLoop) requestAnimationFrame(tick); }
         };
         requestAnimationFrame(tick);
       }
       function stopNativeLoop(){ nativeLoop=false; }
 
-      // ===== Fallback decoder (EAN/UPC + CODE128 minimal) =====
+      // ======== Fallback decoder (EAN/UPC + CODE128) ========
       const canvas=document.createElement('canvas');
       const ctx=canvas.getContext('2d',{willReadFrequently:true});
       let fbActive=false, fbTimer=null;
@@ -460,7 +442,7 @@
         const vw=video.videoWidth, vh=video.videoHeight;
         const sw=Math.floor(vw*.82), sh=Math.floor(vh*.48);
         const sx=Math.floor((vw-sw)/2), sy=Math.floor((vh-sh)/2);
-        return {sx,sy,sw,sh}; /* <- FIX: tidak ada typo lagi */
+        return {sx,sy,sw,sh};
       }
       function rowThreshold(data,offset,w){
         const hist=new Uint16Array(256);
@@ -562,25 +544,17 @@
       }
       function decodeUPCA(e13){ return (e13 && e13.length===13 && e13[0]==='0') ? e13.slice(1) : null; }
 
-      // NB: kalau perlu Code128 lebih akurat, isi CODE128_PATTERNS lengkapmu
-      const CODE128_PATTERNS = []; // dibiarkan kosong agar tidak error referensi
+      const CODE128_PATTERNS = [/* dipotong di sini untuk singkat: pakai daftar aslimu */];
 
       const START_A=103, START_B=104, START_C=105, STOP=106;
       const CODE128_CODEB = (()=>{ const a=[]; for(let i=0;i<=95;i++) a[i]=String.fromCharCode(32+i);
         a[96]='FNC3'; a[97]='FNC2'; a[98]='SHIFT'; a[99]='CODE_C'; a[100]='CODE_B'; a[101]='CODE_A'; a[102]='FNC1';
         a[103]='START_A'; a[104]='START_B'; a[105]='START_C'; return a; })();
-      function matchSymbol(run6){
-        const nm = norm(run6,11); if(!nm) return -1;
-        let best=-1, bestErr=1e9;
-        for(let i=0;i<CODE128_PATTERNS.length;i++){
-          const pat=CODE128_PATTERNS[i]; let err=0;
-          for(let k=0;k<6;k++){ const diff=nm[k]-pat[k]; err += diff*diff; }
-          if(err<bestErr){ bestErr=err; best=i; }
-        }
-        return (bestErr<8 && best!==-1) ? best : -1;
+      function matchSymbol(run6){ const nm = norm(run6,11); if(!nm) return -1; let best=-1, bestErr=1e9;
+        for(let i=0;i<CODE128_PATTERNS.length;i++){ const pat=CODE128_PATTERNS[i]; let err=0; for(let k=0;k<6;k++){ const diff=nm[k]-pat[k]; err += diff*diff; } if(err<bestErr){ bestErr=err; best=i; } }
+        return bestErr<8 ? best : -1;
       }
       function decodeCode128(bits){
-        if(CODE128_PATTERNS.length===0) return null; // aman kalau belum diisi
         if(bits[0]===0){ bits = bits.slice(1); }
         const rl=RLE(bits);
         for(let s=0; s+11 < rl.length; s+=2){
@@ -614,7 +588,7 @@
       }
 
       function onScan(text){
-        if(barcodeInput) barcodeInput.value = text;
+        barcodeInput && (barcodeInput.value=text);
         closeCam();
       }
 
@@ -627,7 +601,6 @@
         const hasNative=await tryNativeDetector();
         if(hasNative) startNativeLoop(); else startFallback();
       }
-
       function closeCam(){
         backdrop?.classList.remove('show');
         document.body.classList.remove('scroll-lock');
@@ -635,7 +608,7 @@
         stopNativeLoop(); stopFallback(); stopCamera();
       }
 
-      // ==== Foto fallback ====
+      // ==== Foto fallback (gambar) ====
       photoBtn?.addEventListener('click',()=>photoInput.click());
       photoInput?.addEventListener('change',async(e)=>{
         const file=e.target.files&&e.target.files[0]; if(!file) return;
@@ -665,88 +638,53 @@
         return null;
       }
 
-      // ===== Open/Close Modal & events (FIXED) =====
+      // ====== Open/Close Modal & events ======
       openBtn?.addEventListener('click', async () => {
         if ((isIOS || isSafari) && !isSecure) {
           httpsWarn?.classList.remove('hide');
           return;
         }
         try{
-          // tampilkan modal dulu (gesture user), lalu warm-up iOS
+          devices = await listCameras();
           document.body.classList.add('scroll-lock');
           backdrop.classList.add('show');
           noteEl&&(noteEl.textContent='Arahkan barcode ke dalam kotak. Otomatis terdeteksi.');
           torchBtn&&(torchBtn.textContent='Nyalakan Lampu');
           modalOpen=true;
 
-          if (isIOS || isSafari) { await warmUpPermission().catch(()=>{}); }
-
-          devices = await listCameras();
-          const back = devices.find(d=>/back|rear|environment/i.test(d.label));
-          const preferId = currentDeviceId || (back && back.deviceId);
-
-          const ok = await startCamera(preferId);
-          if (!ok) throw new Error('Failed to start camera');
-
-          await startDecoding();
+          const back=devices.find(d=>/back|rear|environment/i.test(d.label));
+          const ok=await startCamera(currentDeviceId||(back&&back.deviceId));
+          if(ok) await startDecoding(); else throw new Error('Failed to start camera');
         }catch(_){
-          alert('Kamera tidak dapat diaktifkan di browser ini. Gunakan tombol Foto sebagai alternatif.');
+          alert('Kamera tidak dapat diaktifkan di browser ini.');
           closeCam();
-          photoBtn?.click();
         }
       });
-
       closeBtn?.addEventListener('click',closeCam);
       stopBtn?.addEventListener('click',stopCamera);
       torchBtn?.addEventListener('click',toggleTorch);
       switchBtn?.addEventListener('click',switchCamera);
       backdrop?.addEventListener('click',(e)=>{ if(e.target===backdrop) closeCam(); });
-
-      // Paksa resume play pada interaksi pertama (iOS)
-      ['touchstart','click'].forEach(ev=>{
-        document.addEventListener(ev, ()=>{
-          if(videoEl && videoEl.srcObject && videoEl.paused){
-            videoEl.play().catch(()=>{});
-          }
-        }, { passive:true, once:true });
-      });
-
       document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&backdrop?.classList.contains('show')) closeCam(); });
-
-      // Restart stream saat kembali dari background
       document.addEventListener('visibilitychange', async ()=>{
         if(!modalOpen) return;
-        if(document.visibilityState==='hidden'){
-          stopNativeLoop(); stopFallback(); stopCamera();
-        }else{
-          try{
-            if (isIOS || isSafari) { await warmUpPermission().catch(()=>{}); }
-            devices = await listCameras();
-            const back = devices.find(d => /back|rear|environment/i.test(d.label));
-            const preferId = currentDeviceId || (back && back.deviceId);
-            const ok = await startCamera(preferId);
-            if (ok) await startDecoding();
-          }catch(_){ /* biarkan user menutup modal jika gagal */ }
-        }
+        if(document.visibilityState==='hidden'){ stopNativeLoop(); stopFallback(); }
+        else { try{ await startCamera(currentDeviceId); await startDecoding(); }catch(_){ } }
       });
 
-      // ===== History (tetap) =====
+      // ====== History (tetap) ======
       const USER = (document.querySelector('.userbox .chip')?.textContent || 'guest').trim();
       const HIST_KEY = 'promis_sku_hist_' + encodeURIComponent(USER);
       const MAX_ITEMS = 15;
-
       function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY))||[];}catch(_){return[];} }
       function saveHist(list){ localStorage.setItem(HIST_KEY, JSON.stringify(list)); }
-
       function getCurrentSku(){
         const p=new URLSearchParams(location.search); const qs=(p.get('sku')||'').trim(); if(qs) return qs;
         const inpt=document.querySelector('input[name="sku"]'); if(inpt&&inpt.value.trim()) return inpt.value.trim();
         const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(2) .v'); return el?(el.textContent||'').trim():'';
       }
       function getCurrentName(){ const el=document.querySelector('section[aria-labelledby="detail-produk-title"] .kv:nth-child(1) .v'); return el?(el.textContent||'').trim():''; }
-
       function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
       function upsertHist(sku, name){
         sku  = (sku  || '').trim();
         name = (name || '').trim();
@@ -758,14 +696,10 @@
         if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
         saveHist(list);
       }
-
       function renderHist(){
         const card=document.querySelector('section.card[aria-labelledby="riwayat-title"]'); if(!card) return;
         const serverEmpty=card.querySelector('.rows .empty'); let rows=card.querySelector('.rows[data-client]');
-        if(!rows){
-          rows=document.createElement('div'); rows.className='rows'; rows.setAttribute('data-client','');
-          if(serverEmpty&&serverEmpty.parentElement){serverEmpty.parentElement.replaceWith(rows);}else{card.appendChild(rows);}
-        }
+        if(!rows){ rows=document.createElement('div'); rows.className='rows'; rows.setAttribute('data-client',''); if(serverEmpty&&serverEmpty.parentElement){serverEmpty.parentElement.replaceWith(rows);}else{card.appendChild(rows);} }
         rows.innerHTML='';
         const list=loadHist();
         if(!list.length){
@@ -795,7 +729,6 @@
           grid.appendChild(main); grid.appendChild(actions); rows.appendChild(grid);
         });
       }
-
       (function initHist(){
         const sku=getCurrentSku(), name=getCurrentName(); if(sku) upsertHist(sku,name);
         const form=document.querySelector('form.group');
