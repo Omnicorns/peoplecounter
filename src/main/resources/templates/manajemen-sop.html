@@ -17,123 +17,131 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root{
-          --bg:#f5f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --ring:#e6ebf2;
-          --brand:#0b1322; --brand2:#101a2f; --warn:#f59e0b; --arch:#cbd5e1; --pub:#2563eb;
-          --shadow:0 10px 28px rgba(2,6,23,.08); --r:20px;
-          --safe-top: env(safe-area-inset-top, 0px);
-          --safe-right: env(safe-area-inset-right, 0px);
-          --safe-bottom: env(safe-area-inset-bottom, 0px);
-          --safe-left: env(safe-area-inset-left, 0px);
-          --pri:#2DB36D; /* warna tab aktif seperti gambar 2 */
-          --appbarH:56px;
-        }
-        *{box-sizing:border-box}
-        html,body{margin:0;background:var(--bg);color:var(--ink);
-          font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+        :root{--bg:#f5f7fb;--ink:#0b1220;--muted:#667085;--ring:#e6e8ee;--card:#ffffff;--pri:#2DB36D;--pri-2:#229957;--pri-3:#157248;--chip:#eef2f6;--chip-tx:#0b1220;--surface:#0b1220;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px;--table-stripe:#fafbfc;--ok-bg:#dcfce7;--ok-br:#86efac;--ok-tx:#065f46;--ring-focus:0 0 0 3px rgba(45,179,109,.25)}
 
-        /* Appbar */
-        .appbar{
-          position:sticky;top:0;z-index:60;
-          background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;
-          border-bottom:1px solid rgba(255,255,255,.08);
-          padding-top:calc(6px + var(--safe-top));
-        }
-        .brand{display:flex;align-items:center;gap:10px;font-weight:800}
-        .brand img{width:28px;height:28px;border-radius:10px;background:#fff}
-        .pill{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1rem;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff;font-weight:800}
-        .pill.active{background:#1a2337}
-        .chip{background:#fff;color:#0f172a;border-radius:999px;padding:.45rem .8rem;font-weight:800}
-        .btn-ghost{padding:.45rem .8rem;border:1px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer}
-        .btn-ghost:hover{background:rgba(255,255,255,.1)}
+ *{box-sizing:border-box}
+ html,body{height:100%}
+ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+ a{color:inherit;text-decoration:none} button,input,select{font:inherit}
 
-        /* Cards */
-        .cardx{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
-        .cardx .top{display:flex;align-items:center;gap:8px}
-        .cardx .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
-        .badgex{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
-        .Published{background:var(--pub)}
-        .Draft{background:var(--warn);color:#111827}
-        .Archived{background:var(--arch);color:#111827}
-        .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
-        .chips{display:flex;gap:8px;flex-wrap:wrap}
-        .chipx{background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
-        .chipx.owner{background:#dfeaff;color:#1e40af}
-        .chipx.ghost{background:#f1f5f9;color:#0f172a}
-        .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
-        .file{display:flex;align-items:center;gap:8px;font-weight:700;word-break:break-word}
-        .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
-        .btnx{padding:8px 12px;border-radius:12px;border:1px solid var(--ring);background:#fff;color:#000;font-weight:800;cursor:pointer}
-        .btnx:hover{background:#f8fafc}
-        .btnx[disabled]{opacity:.6;cursor:not-allowed}
 
-        /* Preview overlay */
-        .spv{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.68);backdrop-filter:blur(1.5px)}
-        .spv.show{display:flex}
-        .spv-backdrop{position:absolute;inset:0}
-        .spv-box{
-          position:relative;background:#0b1220;border:1px solid #1e2a44;border-radius:14px;
-          width:min(96vw, 1000px); max-height:92dvh; padding:12px; box-shadow:0 12px 32px rgba(0,0,0,.45);
-          display:flex; flex-direction:column;
-        }
-        .spv-head{display:flex;align-items:center;gap:10px;color:#e5edff;padding:6px 8px;border-bottom:1px solid #1e2a44;flex-wrap:wrap}
-        .spv-head .sp{flex:1}
-        .spv-pages{flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; align-items:center; gap:12px}
-        .spv-x{
-          position:absolute;
-          top:calc(10px + var(--safe-top));
-          right:calc(10px + var(--safe-right));
-          width:36px;height:36px;border-radius:10px;
-          border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
-        }
+ /* Appbar */
+.appbar{position:sticky;top:0;z-index:50;color:#fff;background:linear-gradient(180deg,#0b1220 0%,#101a32 100%);border-bottom:1px solid rgba(255,255,255,.06)}
+ .appbar-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+ .logo{width:32px;height:32px;border-radius:10px;background:#fff;color:#0b1220;display:grid;place-items:center;font-weight:900;box-shadow:0 4px 14px rgba(255,255,255,.15) inset,0 8px 20px rgba(0,0,0,.25)}
+ .brand{display:flex;align-items:center;gap:10px}.title{font-weight:800;letter-spacing:.2px}
+ .brand-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-weight:700}
+ .flex-1{flex:1}.userbox{display:flex;align-items:center;gap:10px}
+ .chip{background:#fff;color:#111827;border-radius:999px;padding:6px 12px;font-weight:700}
+ .btn-ghost{padding:8px 12px;border:1px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;cursor:pointer}
+ .btn-ghost:hover{background:rgba(255,255,255,.12)} .btn-ghost:focus{outline:none;box-shadow:var(--ring-focus)}
 
-        /* PAGE + HIGHLIGHT LAYERS */
-        .spv-page{position:relative;width:100%;max-width:100%}
-        .spv-page canvas{display:block;background:#fff;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%;height:auto}
-        .hl-layer{position:absolute;inset:0;pointer-events:none;border-radius:8px;overflow:hidden}
-        .hl{position:absolute;background:rgba(255,230,0,.35);outline:1px solid rgba(180,140,0,.6);border-radius:2px}
-        .hl.active{background:rgba(255,230,0,.6);outline-color:#b38a00}
+ /* Cards */
+ .cardx{background:#fff;border:1px solid var(--ring);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
+ .cardx .top{display:flex;align-items:center;gap:8px}
+ .cardx .top h3{margin:0;font-size:18px;line-height:1.2;word-break:break-word}
+ .badgex{margin-left:auto;border-radius:999px;padding:8px 12px;font-weight:800;font-size:12px;color:#fff}
+ .Published{background:var(--pub)}
+ .Draft{background:var(--warn);color:#111827}
+ .Archived{background:var(--arch);color:#111827}
+ .meta{color:#94a3b8;font-weight:700;margin:6px 0 8px}
+ .chips{display:flex;gap:8px;flex-wrap:wrap}
+ .chipx{background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
+ .chipx.owner{background:#dfeaff;color:#1e40af}
+ .chipx.ghost{background:#f1f5f9;color:#0f172a}
+ .hr{height:1px;background:var(--ring);margin:10px 0;border:0}
+ .file{display:flex;align-items:center;gap:8px;font-weight:700;word-break:break-word}
+ .file .size{color:#94a3b8;margin-left:6px;font-weight:600}
+ .btnx{padding:8px 12px;border-radius:12px;border:1px solid var(--ring);background:#fff;color:#000;font-weight:800;cursor:pointer}
+ .btnx:hover{background:#f8fafc}
+ .btnx[disabled]{opacity:.6;cursor:not-allowed}
 
-        /* ===== MOBILE SWITCHER ===== */
-        .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
-        @media (min-width:720px){.mobile-switch-wrap{display:none}}
-        .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
-        .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none;text-decoration:none}
-        .segbtn:hover{filter:brightness(1.02)}
-        .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
-        @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+ /* Preview overlay */
+ .spv{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.68);backdrop-filter:blur(1.5px)}
+ .spv.show{display:flex}
+ .spv-backdrop{position:absolute;inset:0}
+ .spv-box{
+   position:relative;background:#0b1220;border:1px solid #1e2a44;border-radius:14px;
+   width:min(96vw, 1000px); max-height:92dvh; padding:12px; box-shadow:0 12px 32px rgba(0,0,0,.45);
+   display:flex; flex-direction:column;
+ }
+ .spv-head{display:flex;align-items:center;gap:10px;color:#e5edff;padding:6px 8px;border-bottom:1px solid #1e2a44;flex-wrap:wrap}
+ .spv-head .sp{flex:1}
+ .spv-pages{flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; align-items:center; gap:12px}
+ .spv-x{
+   position:absolute;
+   top:calc(10px + var(--safe-top));
+   right:calc(10px + var(--safe-right));
+   width:36px;height:36px;border-radius:10px;
+   border:1px solid #24304c;background:#121b31;color:#e5edff;font-weight:800;line-height:34px;text-align:center;cursor:pointer;
+ }
 
-        /* Find bar */
-        .findbar{display:flex;gap:8px;align-items:center}
-        .findbar input{background:#0f172a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;min-width:180px}
-        .findbar button{background:#16223a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;cursor:pointer}
-        .findbar small{opacity:.8}
+ /* PAGE + HIGHLIGHT LAYERS */
+ .spv-page{position:relative;width:100%;max-width:100%}
+ .spv-page canvas{display:block;background:#fff;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%;height:auto}
+ .hl-layer{position:absolute;inset:0;pointer-events:none;border-radius:8px;overflow:hidden}
+ .hl{position:absolute;background:rgba(255,230,0,.35);outline:1px solid rgba(180,140,0,.6);border-radius:2px}
+ .hl.active{background:rgba(255,230,0,.6);outline-color:#b38a00}
+
+ /* ===== MOBILE SWITCHER ===== */
+ .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+ @media (min-width:720px){.mobile-switch-wrap{display:none}}
+ .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+ .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none;text-decoration:none}
+ .segbtn:hover{filter:brightness(1.02)}
+ .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+ @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+
+ /* Find bar */
+ .findbar{display:flex;gap:8px;align-items:center}
+ .findbar input{background:#0f172a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;min-width:180px}
+ .findbar button{background:#16223a;border:1px solid #24304c;color:#e5edff;border-radius:10px;padding:.45rem .6rem;cursor:pointer}
+ .findbar small{opacity:.8}
+
+ .appbar{ position: sticky; top: 0; z-index: 50; color:#fff; background: linear-gradient(180deg,#0b1220 0%,#101a32 100%); border-bottom:1px solid rgba(255,255,255,.06); }
+ .appbar-inner{ max-width:1100px; margin:0 auto; padding: calc(10px + env(safe-area-inset-top,0px)) 16px 10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+ .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; }
+ .logo{ width: clamp(24px, 6vw, 32px); height: clamp(24px, 6vw, 32px); border-radius:10px; background:#fff; color:#0b1220; display:grid; place-items:center; font-weight:900; }
+ .title{ font-weight:800; font-size:clamp(14px,2.8vw,18px); letter-spacing:.2px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .brand-chip{ display:none; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); font-weight:700; white-space:nowrap; }
+ @media (min-width:480px){ .brand-chip{ display:inline-flex; } }
+ @media (max-width:640px){ .brand-chip + .brand-chip{ display:none; } }
+ .flex-1{ flex:0 0 auto; display:none; }
+ .userbox{ display:flex; align-items:center; gap:10px; margin-left:auto; flex:0 0 auto; min-width:0; }
+ .userbox .chip{ max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .btn-ghost{ padding:8px 12px; border:1px solid rgba(255,255,255,.6); border-radius:12px; background:transparent; color:#fff; cursor:pointer; }
+ .btn-ghost:hover{ background:rgba(255,255,255,.12); }
+ @media (max-width:360px){ .appbar-inner{ padding: calc(8px + env(safe-area-inset-top,0px)) 12px 8px; gap:8px; } .btn-ghost{ padding:6px 10px; } }
     </style>
 </head>
 <body oncontextmenu="return false">
 
 <!-- APPBAR -->
 <header class="appbar">
-    <div class="container py-2">
-        <div class="d-flex align-items-center gap-3 flex-nowrap">
-            <div class="brand"><img src="/promis.png" alt="PROMIS"><span>PROMIS</span></div>
-            <nav class="d-none d-md-flex gap-2 ms-2" aria-label="Primary">
-                <a class="pill" th:href="@{/web/product}">Produk</a>
-                <a class="pill" th:href="@{/web/home}">Home</a>
-                <span class="pill active">Manajemen SOP</span>
-            </nav>
-            <div class="ms-auto d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center gap-2" th:if="${session.AUTH_USERNAME != null}">
-                    <span class="chip" th:text="${session.AUTH_USERNAME}">aloy</span>
-                    <form th:action="@{/web/logout}" method="post" data-loading class="m-0">
-                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <button type="submit" class="btn-ghost">Logout</button>
-                    </form>
-                </div>
-                <div th:if="${session.AUTH_USERNAME == null}">
-                    <a class="btn-ghost" th:href="@{/web/login}">Login</a>
-                </div>
-            </div>
+    <div class="appbar-inner">
+        <div class="brand">
+            <img class="logo" src="/promis.png" alt="PROMIS" width="96" height="96">
+            <div class="title">PROMIS</div>
+            <a class="brand-chip" title="Produk & Stok" th:href="@{/web/product}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Produk
+            </a>
+            <a class="brand-chip" title="SOP" th:href="@{/web/sop}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Manajemen SOP
+            </a>
+            <a class="brand-chip" title="SOP" th:href="@{/web/home}">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v2H4zm2 4h12v12H6zM8 10v8h8v-8z"/></svg>
+                Home
+            </a>
+        </div>
+        <div class="flex-1"></div>
+        <div class="userbox" th:if="${session.AUTH_USERNAME != null}">
+            <span class="chip" th:text="${session.AUTH_USERNAME}">john</span>
+            <form th:action="@{/web/logout}" method="post" data-loading><button type="submit" class="btn-ghost">Logout</button></form>
+        </div>
+        <div class="userbox" th:if="${session.AUTH_USERNAME == null}">
+            <a class="btn-ghost" th:href="@{/web/login}" data-loading>Login</a>
         </div>
     </div>
 </header>

@@ -81,17 +81,22 @@
     </div>
     <div class="spacer"></div>
 
-    <div class="userwrap">
+    <div class="userwrap"  th:with="uname=${session.AUTH_USERNAME} ?: 'Guest',
+              initial=${#strings.toUpperCase(#strings.substring(uname,0,1))}">
       <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
-        <div class="avatar">P</div>
-        <div><div class="uname">promisadmin</div><div class="udesc">promisadmin</div></div>
+        <div class="avatar" th:text="${initial}">P</div>
+        <div><div class="uname"th:text="${uname}">promisadmin</div>
+          <div class="udesc" th:text="${uname}">promisadmin</div></div>
       </button>
 
       <div class="menu" id="usermenu" role="menu" aria-label="Menu pengguna">
-        <div class="top">
-          <div class="avatar">P</div>
-          <div><div class="name">promisadmin</div><div class="meta">promisadmin</div></div>
+        <div class="top" th:with="uname=${session.AUTH_USERNAME} ?: 'Guest',
+              initial=${#strings.toUpperCase(#strings.substring(uname,0,1))}">
+          <div class="avatar"th:text="${initial}">P</div>
+          <div><div class="name" th:text="${uname}">promisadmin</div>
+            <div class="meta" th:text="${uname}">promisadmin</div></div>
         </div>
+
 
         <div class="item" role="menuitem">
           <!-- HOME -->
