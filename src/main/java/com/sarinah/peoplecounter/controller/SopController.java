@@ -10,6 +10,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
 
 import java.time.LocalDate;
 import java.util.*;
@@ -65,7 +67,9 @@ public class SopController {
 
     @GetMapping("/{id}")
     public Map<String,Object> get(@PathVariable Long id){
-        var d = docs.findById(id).orElseThrow();
+        var d = docs.findById(id).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "File dengan id " + id+ " tidak ditemukan"));;
 
         var fs = files.findBySopId(id).stream()
                 .map(f -> {
@@ -132,7 +136,9 @@ public class SopController {
                                      @RequestParam(required =false) String version,
                                      @RequestParam(required=false, name="change") String change,
                                      @RequestParam(required=false, name="files") MultipartFile[] uploads) throws Exception {
-        var d = docs.findById(id).orElseThrow();
+        var d = docs.findById(id).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "File dengan id " + id + " tidak ditemukan"));
 
         if(code != null && !code.isBlank() && !code.equals(d.getCode())){
             if(docs.findByCode(code).isPresent()) throw new IllegalArgumentException("code exists");
@@ -155,7 +161,10 @@ public class SopController {
     /* ========= DELETE ========= */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        var d = docs.findById(id).orElseThrow();
+        var d = docs.findById(id).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "File dengan id " + id + " tidak ditemukan"));
+
         files.deleteAll(files.findBySopId(id));
         docs.delete(d);
         return ResponseEntity.noContent().build();
@@ -164,7 +173,10 @@ public class SopController {
     /* ========= DOWNLOAD ========= */
     @GetMapping("/{id}/files/{fileId}")
     public ResponseEntity<Resource> download(@PathVariable Long id, @PathVariable Long fileId) {
-        var f = files.findById(fileId).orElseThrow();
+        var f = files.findById(fileId).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "File dengan id " + fileId + " tidak ditemukan"));
+
         if(!Objects.equals(f.getSop().getId(), id)) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
         var res = new ByteArrayResource(f.getData());

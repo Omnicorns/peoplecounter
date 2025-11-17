@@ -126,10 +126,17 @@
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || DEFAULT_PDF;
 
+    // ==== DETEKSI MOBILE & TUNING KHUSUS HP ====
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
-    const MAX_DPR_SLIDE=3, MAX_DPR_READ=3;
+
+    // DPR DI-BATASI AGAK RENDAH UNTUK HP
+    const MAX_DPR_SLIDE = isMobile ? 1.5 : 3;
+    const MAX_DPR_READ  = isMobile ? 1.5 : 3;
+
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
 
@@ -176,8 +183,16 @@
     A('miMode').addEventListener('click', stopThen(()=>{ viewMode==='slide' ? enterReadMode() : exitReadMode(); }));
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
-    function updateIndicator(){ indicator.textContent=`Page ${pageNum} / ${numPages}`; const pct=Math.round(((pageNum-1)/(numPages-1||1))*100); progressBar.style.setProperty('--p', pct+'%'); prog.style.inset=`0 ${100-pct}% 0 0`; }
-    const renderIntentFor=(pct,dpr)=> (pct>=150||dpr>=2.5)?'print':'display';
+
+    // Intent "print" hanya kalau zoom tinggi & bukan mobile, supaya HP tidak berat
+    const renderIntentFor=(pct,dpr)=> (pct>=180 && !isMobile && dpr>=2.5)?'print':'display';
+
+    function updateIndicator(){
+      indicator.textContent=`Page ${pageNum} / ${numPages}`;
+      const pct=Math.round(((pageNum-1)/(numPages-1||1))*100);
+      progressBar.style.setProperty('--p', pct+'%');
+      prog.style.inset=`0 ${100-pct}% 0 0`;
+    }
 
     async function calcViewportSlide(page){
       const base=page.getViewport({scale:1});
@@ -215,6 +230,9 @@
       ctx.imageSmoothingEnabled=false; ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
       await page.render({canvasContext:ctx,viewport,intent:renderIntentFor(zoomPct,devicePixelRatio||1)}).promise;
     }
+
+    const wrapOf = ()=> (active===1?wrap1:wrap2);
+    const canvasOf = ()=> (active===1?c1:c2);
 
     function setTransform(){
       const w=wrapOf();
@@ -257,7 +275,7 @@
       prevBtn.disabled=nextBtn.disabled=false; animating=false;
     }
 
-    /* === Revisi: Next/Prev TETAP jalan di semua zoom === */
+    /* === Next/Prev TETAP jalan di semua zoom === */
     prevBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum>1) show(pageNum-1); };
     nextBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum<numPages) show(pageNum+1); };
 
@@ -283,12 +301,15 @@
       if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
       if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
       if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
-      /* === Revisi: panah kiri/kanan juga boleh saat zoom === */
+      /* panah kiri/kanan juga boleh saat zoom */
       if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
       if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
     });
 
+    // ==== LIVE RENDER DEBOUNCE (lebih santai di mobile) ====
+    const LIVE_DEBOUNCE = isMobile ? 160 : 80;
     const live = { target: 100, rendering:false, scheduled:false };
+
     function requestLiveRender(pct){
       live.target = clamp(Math.round(pct), ZMIN, ZMAX);
       if(live.scheduled || live.rendering) return;
@@ -298,10 +319,11 @@
         if(live.rendering) return;
         live.rendering = true;
         zoomPct = live.target;
-        clampPan(); setTransform();                    // CSS dulu (mulus)
+        gesture.scaleTmp = 1;          // scaleTmp dilipat masuk zoomPct
+        clampPan(); setTransform();    // CSS dulu (mulus)
         await renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2));  // lalu tajam
         live.rendering = false;
-      }, 80);
+      }, LIVE_DEBOUNCE);
     }
 
     const gesture = {
@@ -311,8 +333,7 @@
       startZoom:100, startTx:0, startTy:0,
       livePct:100, _tap:{t:0,x:0,y:0}
     };
-    const wrapOf = ()=> (active===1?wrap1:wrap2);
-    const canvasOf = ()=> (active===1?c1:c2);
+
     const getMid=()=>{ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
     const dist=()=>{ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
 
@@ -361,8 +382,12 @@
 
         clampPan(); setTransform();
 
+        // Di mobile: JANGAN render terus-terusan saat pinch.
+        // Hanya simpan target zoom; render tajam saat pinch selesai.
         gesture.livePct = newPct;
-        requestLiveRender(newPct);
+        if(!isMobile){
+          requestLiveRender(newPct);
+        }
         return;
       }
 
@@ -379,8 +404,13 @@
 
       if(gesture.mode==='pinch' && gesture.pointers.size<2){
         gesture.mode='idle'; gesture._anchor=null;
-        gesture.scaleTmp = 1;  // lipat ke skala permanen (zoomPct)
-        clampPan(); setTransform();
+        // Di mobile: baru render tajam di sini (sekali saja)
+        if(isMobile){
+          requestLiveRender(gesture.livePct || zoomPct);
+        }else{
+          gesture.scaleTmp = 1;
+          clampPan(); setTransform();
+        }
         return;
       }
       if(gesture.mode==='pan' && gesture.pointers.size===0){
@@ -503,10 +533,17 @@
     (async function(){
       const task=pdfjsLib.getDocument({
         url:PDF_URL,
-        cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/", cMapPacked:true,
+        cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/",
+        cMapPacked:true,
+        // standardFontDataUrl bisa dihapus kalau mau ngurangin request,
+        // tapi kalau PDF-mu pakai font aneh, lebih aman dibiarkan.
         standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
-        useSystemFonts:true, disableAutoFetch:true, disableStream:false, rangeChunkSize:524288,
-        isEvalSupported:true, enableXfa:false
+        useSystemFonts:true,
+        disableAutoFetch:true,
+        disableStream:false,
+        rangeChunkSize:524288,
+        isEvalSupported:true,
+        enableXfa:false
       });
       pdfDoc=await task.promise;
       numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
@@ -516,5 +553,6 @@
       clampPan(); setTransform();
     })();
 </script>
+
 </body>
 </html>
