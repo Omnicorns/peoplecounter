@@ -45,7 +45,7 @@ public class SatudataRootRedirectController {
      *  - GET /catalogue    -> redirect ke URL di DB
      *  - GET /peoplecounter -> redirect ke URL di DB
      */
-    @GetMapping("/{pathKey}")
+    @GetMapping("/browse/{pathKey}")
     public ResponseEntity<?> redirectByPathKey(@PathVariable String pathKey) {
         return routeService.findActiveByPathKey(pathKey)
                 .map(route -> ResponseEntity

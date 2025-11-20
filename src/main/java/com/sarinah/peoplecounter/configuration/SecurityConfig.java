@@ -47,6 +47,7 @@ public class SecurityConfig {
             "/web/sop",
             "/middleware/sop-bo",
             "/web/home",
+            "/browse/**",
 
             // API tertentu (kalau memang publik)
             "/api/admin/users/import-csv",
