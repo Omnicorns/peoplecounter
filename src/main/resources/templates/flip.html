@@ -133,9 +133,9 @@
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-    // DPR DI-BATASI AGAK RENDAH UNTUK HP
-    const MAX_DPR_SLIDE = isMobile ? 1.5 : 3;
-    const MAX_DPR_READ  = isMobile ? 1.5 : 3;
+    // ⬇⬇ PERUBAHAN 1: DPR dinaikkan supaya lebih tajam (tanpa ubah API sama sekali)
+    const MAX_DPR_SLIDE = isMobile ? 2.5 : 3;
+    const MAX_DPR_READ  = isMobile ? 2.5 : 3;
 
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
@@ -184,8 +184,14 @@
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
-    // Intent "print" hanya kalau zoom tinggi & bukan mobile, supaya HP tidak berat
-    const renderIntentFor=(pct,dpr)=> (pct>=180 && !isMobile && dpr>=2.5)?'print':'display';
+    // ⬇⬇ PERUBAHAN 2: Intent render dibuat sedikit lebih agresif ke 'print' supaya tajam
+    const renderIntentFor = (pct, dpr) => {
+      // Desktop dengan DPR cukup tinggi: selalu print
+      if (!isMobile && dpr >= 1.5) return 'print';
+      // Mobile: kalau sudah di-zoom cukup besar, pakai print
+      if (isMobile && pct >= 120) return 'print';
+      return 'display';
+    };
 
     function updateIndicator(){
       indicator.textContent=`Page ${pageNum} / ${numPages}`;
