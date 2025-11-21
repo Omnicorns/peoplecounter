@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sarinah Catalogue</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <!-- ❌ HAPUS pdf.js 2.x lama -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script> -->
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
     <style>
         :root{
@@ -51,8 +53,8 @@
         .layer{position:absolute; inset:0; display:grid; place-items:center}
         .pageWrap{
           position:relative; will-change:transform;
-          touch-action:none;                 /* penting untuk mobile */
-          transform-origin:center center;    /* akan di-“pindah” ke anchor saat pinch */
+          touch-action:none;
+          transform-origin:center center;
         }
         canvas{
           max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block;
@@ -114,26 +116,32 @@
     </div>
 </div>
 
+<!-- ✅ Thymeleaf: bikin global supaya module bisa baca -->
 <script th:inline="javascript">
-    /*<![CDATA[*/ const DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf'; /*]]>*/
+    /*<![CDATA[*/
+    window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
+    /*]]>*/
 </script>
 
-<script>
+<!-- ✅ PDF.js 5.x + kode kamu jalan di module -->
+<script type="module">
+    // === IMPORT PDF.js TERBARU (5.4.394) ===
+    import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs";
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-    pdfjsLib.disableCreateObjectURL = true;
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.mjs";
+
+    // optional (biar gak error kalau property masih ada)
+    if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
     const params = new URLSearchParams(location.search);
-    let PDF_URL = params.get('pdf') || DEFAULT_PDF;
+    let PDF_URL = params.get('pdf') || window.DEFAULT_PDF;
 
-    // ==== DETEKSI MOBILE & TUNING KHUSUS HP ====
     const isMobile = /Android|webOS|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
 
     let pdfDoc=null, pageNum=1, numPages=0;
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-    // ⬇⬇ PERUBAHAN 1: DPR dinaikkan supaya lebih tajam (tanpa ubah API sama sekali)
     const MAX_DPR_SLIDE = isMobile ? 2.5 : 3;
     const MAX_DPR_READ  = isMobile ? 2.5 : 3;
 
@@ -184,11 +192,8 @@
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
-    // ⬇⬇ PERUBAHAN 2: Intent render dibuat sedikit lebih agresif ke 'print' supaya tajam
     const renderIntentFor = (pct, dpr) => {
-      // Desktop dengan DPR cukup tinggi: selalu print
       if (!isMobile && dpr >= 1.5) return 'print';
-      // Mobile: kalau sudah di-zoom cukup besar, pakai print
       if (isMobile && pct >= 120) return 'print';
       return 'display';
     };
@@ -206,8 +211,8 @@
       const H = Math.max(1,stage.clientHeight-24);
       const fitScale=(fitMode==='width')?(W/base.width):Math.min(W/base.width,H/base.height);
       const dpr=Math.min(MAX_DPR_SLIDE,Math.max(1,devicePixelRatio||1));
-      const rasterScale = fitScale * dpr * (zoomPct/100);    // tajam sesuai zoom
-      const cssScale = fitScale;                             // CSS tetap fit
+      const rasterScale = fitScale * dpr * (zoomPct/100);
+      const cssScale = fitScale;
       return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr, fitScale };
     }
 
@@ -230,7 +235,6 @@
       if (token !== renderToken) return;
       const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
       canvas.width=w; canvas.height=h;
-      // CSS size = ukuran dasar (tanpa zoom), agar transform CSS (zoomPct) yang membesarkan
       canvas.style.width=Math.floor(w/dpr/(zoomPct/100))+'px';
       canvas.style.height=Math.floor(h/dpr/(zoomPct/100))+'px';
       ctx.imageSmoothingEnabled=false; ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
@@ -248,7 +252,7 @@
 
     function clampPan(limit=120){
       const cnv=canvasOf();
-      const w=cnv.clientWidth, h=cnv.clientHeight;       // ukuran dasar (tanpa zoom)
+      const w=cnv.clientWidth, h=cnv.clientHeight;
       const totalScale = (zoomPct/100) * gesture.scaleTmp;
       const maxX=(w*(totalScale)-w)/2 + limit;
       const maxY=(h*(totalScale)-h)/2 + limit;
@@ -256,15 +260,14 @@
       gesture.ty = clamp(gesture.ty,-maxY,maxY);
     }
 
-    /* ===== Helper reset ke FIT PAGE + CENTER ===== */
     async function resetZoomToFit() {
-      zoomPct = 100;            // balik ke 100% (basis fit)
-      gesture.scaleTmp = 1;     // hilangkan skala sementara pinch
-      gesture.tx = 0;           // center secara horizontal
-      gesture.ty = 0;           // center secara vertikal
-      fitMode = 'page';         // pastikan balik ke mode fit-page
+      zoomPct = 100;
+      gesture.scaleTmp = 1;
+      gesture.tx = 0;
+      gesture.ty = 0;
+      fitMode = 'page';
       clampPan(); setTransform();
-      await renderFit(pageNum, (active===1?c1:c2), (active===1?ctx1:ctx2)); // render tajam tanpa debounce
+      await renderFit(pageNum, (active===1?c1:c2), (active===1?ctx1:ctx2));
     }
 
     async function show(p){
@@ -276,17 +279,15 @@
       await renderFit(p,nxtC,nxtCtx);
       (active===1?L1:L2).style.display='none'; nxtL.style.display='grid';
       active=(active===1)?2:1; pageNum=p; updateIndicator();
-      // pertahankan zoom & pan
       clampPan(); setTransform();
       prevBtn.disabled=nextBtn.disabled=false; animating=false;
     }
 
-    /* === Next/Prev TETAP jalan di semua zoom === */
     prevBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum>1) show(pageNum-1); };
     nextBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum<numPages) show(pageNum+1); };
 
     progressBar.addEventListener('click',(e)=>{
-      if(zoomPct>100) return; // progress bar tetap nonaktif saat zoom agar tak loncat tak sengaja
+      if(zoomPct>100) return;
       const r=progressBar.getBoundingClientRect();
       const pct=clamp((e.clientX-r.left)/r.width,0,1);
       const target=Math.max(1,Math.round(1+pct*(numPages-1)));
@@ -298,7 +299,7 @@
       if(viewMode==='read'){ readZoomPct=clamp(pct,ZMIN,ZMAX); buildReadPages(); return; }
       zoomPct=clamp(pct,ZMIN,ZMAX);
       clearTimeout(zoomTimer);
-      clampPan(); setTransform(); // CSS dulu, halus
+      clampPan(); setTransform();
       zoomTimer=setTimeout(()=>renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2)),80);
     }
 
@@ -307,12 +308,10 @@
       if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
       if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
       if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
-      /* panah kiri/kanan juga boleh saat zoom */
       if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
       if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    // ==== LIVE RENDER DEBOUNCE (lebih santai di mobile) ====
     const LIVE_DEBOUNCE = isMobile ? 160 : 80;
     const live = { target: 100, rendering:false, scheduled:false };
 
@@ -325,9 +324,9 @@
         if(live.rendering) return;
         live.rendering = true;
         zoomPct = live.target;
-        gesture.scaleTmp = 1;          // scaleTmp dilipat masuk zoomPct
-        clampPan(); setTransform();    // CSS dulu (mulus)
-        await renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2));  // lalu tajam
+        gesture.scaleTmp = 1;
+        clampPan(); setTransform();
+        await renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2));
         live.rendering = false;
       }, LIVE_DEBOUNCE);
     }
@@ -388,8 +387,6 @@
 
         clampPan(); setTransform();
 
-        // Di mobile: JANGAN render terus-terusan saat pinch.
-        // Hanya simpan target zoom; render tajam saat pinch selesai.
         gesture.livePct = newPct;
         if(!isMobile){
           requestLiveRender(newPct);
@@ -410,7 +407,6 @@
 
       if(gesture.mode==='pinch' && gesture.pointers.size<2){
         gesture.mode='idle'; gesture._anchor=null;
-        // Di mobile: baru render tajam di sini (sekali saja)
         if(isMobile){
           requestLiveRender(gesture.livePct || zoomPct);
         }else{
@@ -460,7 +456,6 @@
       setTransform();
     }, { passive: false });
 
-    /* Swipe geser halaman tetap nonaktif saat zoom > 100 agar tidak mengganggu pan */
     let swipeX=null;
     stage.addEventListener('pointerdown', (e)=>{ if(viewMode==='slide' && zoomPct<=100){ swipeX=e.clientX; }});
     stage.addEventListener('pointerup', (e)=>{
@@ -490,20 +485,20 @@
 
     let io=null;
     const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=>{
-        for(const ent of ents){
-          if(!ent.isIntersecting) continue;
-          const cnv=ent.target; if(cnv.dataset.rendered) continue;
-          const i=+cnv.dataset.page;
-          const page=await pdfDoc.getPage(i);
-          const {viewport,cssScale,dpr}=await calcViewportRead(page);
-          const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
-          cnv.width=w; cnv.height=h;
-          cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
-          const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
-          await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
-          cnv.dataset.rendered='1';
-        }
-      },{root:read,rootMargin:'200px 0px',threshold:0.01}));
+      for(const ent of ents){
+        if(!ent.isIntersecting) continue;
+        const cnv=ent.target; if(cnv.dataset.rendered) continue;
+        const i=+cnv.dataset.page;
+        const page=await pdfDoc.getPage(i);
+        const {viewport,cssScale,dpr}=await calcViewportRead(page);
+        const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
+        cnv.width=w; cnv.height=h;
+        cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
+        const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
+        await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
+        cnv.dataset.rendered='1';
+      }
+    },{root:read,rootMargin:'200px 0px',threshold:0.01}));
 
     function buildReadPages(){
       const obs=ensureObserver();
@@ -539,11 +534,9 @@
     (async function(){
       const task=pdfjsLib.getDocument({
         url:PDF_URL,
-        cMapUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/",
+        cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
         cMapPacked:true,
-        // standardFontDataUrl bisa dihapus kalau mau ngurangin request,
-        // tapi kalau PDF-mu pakai font aneh, lebih aman dibiarkan.
-        standardFontDataUrl:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/",
+        standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
         useSystemFonts:true,
         disableAutoFetch:true,
         disableStream:false,
