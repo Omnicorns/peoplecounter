@@ -60,80 +60,43 @@ public class UserImportApi {
             @PathVariable Long id,
             @RequestHeader HttpHeaders headers) {
 
-        // --- Ambil sekali dari DB tiap request (tanpa cache) ---
+        // 1) Ambil entity TANPA langsung sentuh BLOB
         PdfDocs doc = pdfDocRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        byte[] data = Objects.requireNonNull(doc.getData(), "PDF kosong");
-        long len = data.length;
 
-        // ETag sederhana dari isi (tanpa kolom tambahan)
-        String etag = "\"" + Integer.toHexString(Arrays.hashCode(data)) + "\"";
+        // 2) ETag ringan: berdasarkan id saja
+        //    Asumsi: kalau isi PDF berubah => pakai id baru.
+        String etag = "\"pdf-" + id + "\"";
 
-        // 304 Not Modified (ETag)
-        if (headers.getIfNoneMatch() != null && headers.getIfNoneMatch().contains(etag)) {
-            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+        // 3) Cek If-None-Match dulu => bisa 304 tanpa baca BLOB
+        List<String> ifNoneMatch = headers.getIfNoneMatch();
+        if (ifNoneMatch != null && ifNoneMatch.contains(etag)) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_MODIFIED)
                     .eTag(etag)
                     .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic())
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                     .build();
         }
 
-        // Header umum
-        String filename = (doc.getFilename()!=null && !doc.getFilename().isBlank())
-                ? doc.getFilename() : (id + ".pdf");
+        // 4) Baru sekarang akses data (BLOB) karena memang harus kirim konten
+        byte[] data = Objects.requireNonNull(doc.getData(), "PDF kosong");
+        long len = data.length;
 
-        HttpHeaders base = new HttpHeaders();
-        base.setContentType(MediaType.APPLICATION_PDF);
-        base.setContentDisposition(ContentDisposition.inline()
-                .filename(filename, StandardCharsets.UTF_8).build());
-        base.setCacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic());
-        base.setETag(etag);
-        base.set(HttpHeaders.ACCEPT_RANGES, "bytes");
+        String filename = (doc.getFilename() != null && !doc.getFilename().isBlank())
+                ? doc.getFilename()
+                : (id + ".pdf");
 
-        // If-Range berbasis ETag (opsional, aman)
-        boolean ignoreRange = false;
-        String ifRange = headers.getFirst(HttpHeaders.IF_RANGE);
-        if (ifRange != null && ifRange.startsWith("\"") && !etag.equals(ifRange)) {
-            ignoreRange = true;
-        }
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_PDF);
+        h.setContentDisposition(ContentDisposition.inline()
+                .filename(filename, StandardCharsets.UTF_8)
+                .build());
+        h.setCacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic());
+        h.setETag(etag);
+        h.setContentLength(len);
+        // Nggak perlu ACCEPT_RANGES kalau kamu selalu kirim full body
 
-        List<HttpRange> ranges = ignoreRange ? Collections.emptyList() : headers.getRange();
-
-        if (ranges == null || ranges.isEmpty()) {
-            // Full content 200
-            ByteArrayResource body = new ByteArrayResource(data);
-            base.setContentLength(len);
-            return new ResponseEntity<>(body, base, HttpStatus.OK);
-        }
-
-        // Partial content 206 (ambil satu range)
-        HttpRange r = ranges.get(0);
-        long start = r.getRangeStart(len);
-        long end   = r.getRangeEnd(len);
-
-        if (start < 0 || start >= len) {
-            return new ResponseEntity<>(base, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
-        }
-        if (end < 0 || end >= len) end = len - 1;
-        if (end < start) {
-            return new ResponseEntity<>(base, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
-        }
-
-        long chunk = end - start + 1;
-        if (chunk > Integer.MAX_VALUE) { // jaga2 file super besar
-            end = start + Integer.MAX_VALUE - 1;
-            chunk = end - start + 1;
-        }
-
-        InputStreamResource body =
-                new InputStreamResource(new ByteArrayInputStream(data, (int) start, (int) chunk));
-
-        HttpHeaders part = new HttpHeaders();
-        part.addAll(base);
-        part.setContentLength(chunk);
-        part.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + len);
-
-        return new ResponseEntity<>(body, part, HttpStatus.PARTIAL_CONTENT);
+        return new ResponseEntity<>(new ByteArrayResource(data), h, HttpStatus.OK);
     }
 
     // ====== sesuai schema kamu (tanpa ubah tabel) ======
