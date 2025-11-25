@@ -28,27 +28,41 @@
           border:1px solid #161a22; box-shadow:0 30px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
           backdrop-filter:none;
         }
-        @supports(height:100svh){#viewer{width:min(100svw,1400px);height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)}}
+        @supports(height:100svh){
+          #viewer{
+            width:min(100svw,1400px);
+            height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)
+          }
+        }
 
         #top{
           position:absolute; inset:0 0 auto 0; height:56px; display:flex; align-items:center; justify-content:flex-end;
           padding:calc(8px + var(--safe-top)) 10px 8px; z-index:50;
           background:transparent; border-bottom:0; box-shadow:none; backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
         }
-        .iconbtn{height:36px; width:36px; border-radius:12px; background:rgba(255,255,255,0.02);
-          border:1px solid rgba(255,255,255,0.08); display:grid; place-items:center; color:#eaf0ff; cursor:pointer; box-shadow:none;}
+        .iconbtn{
+          height:36px; width:36px; border-radius:12px; background:rgba(255,255,255,0.02);
+          border:1px solid rgba(255,255,255,0.08); display:grid; place-items:center; color:#eaf0ff; cursor:pointer; box-shadow:none;
+        }
         .iconbtn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.14)}
         .kebab{font:700 18px/0 system-ui; letter-spacing:2px}
-        .popover{position:absolute; top:calc(48px + var(--safe-top)); right:10px; width:220px; z-index:60; display:none;
-          background:#0f1218; border:1px solid #232a39; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.45); padding:6px;}
+        .popover{
+          position:absolute; top:calc(48px + var(--safe-top)); right:10px; width:220px; z-index:60; display:none;
+          background:#0f1218; border:1px solid #232a39; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.45); padding:6px;
+        }
         .popover.show{display:block}
-        .popitem{width:100%; text-align:left; background:transparent; border:0; color:#cfd7e6; cursor:pointer;
-          display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px}
+        .popitem{
+          width:100%; text-align:left; background:transparent; border:0; color:#cfd7e6; cursor:pointer;
+          display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px
+        }
         .popitem:hover{background:#1a1f28}
         .popitem[aria-disabled="true"]{opacity:.45; pointer-events:none}
         .sep{height:1px; background:#232a39; margin:6px 0; border:0}
 
-        #stage{position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%); overflow:hidden; display:grid; place-items:center}
+        #stage{
+          position:relative; flex:1; background:radial-gradient(ellipse at 50% 35%,#0e1118,#090c12 70%);
+          overflow:hidden; display:grid; place-items:center
+        }
         .deck{position:absolute; inset:12px; display:grid; place-items:center; isolation:isolate}
         .layer{position:absolute; inset:0; display:grid; place-items:center}
         .pageWrap{
@@ -74,11 +88,20 @@
         .nav:disabled{opacity:.35; pointer-events:none}
         #prev{left:14px} #next{right:14px}
 
-        #footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px; border-top:1px solid var(--ring);
-          background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))}
+        #footer{
+          display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px; border-top:1px solid var(--ring);
+          background:rgba(16,18,24,.7); padding-bottom:calc(8px + var(--safe-bottom))
+        }
         #indicator{font-variant-numeric:tabular-nums; color:#9aa3b2}
-        .bar{--p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1; overflow:hidden; border:1px solid #232a39; cursor:pointer}
-        .bar>i{position:absolute; inset:0 calc(100% - var(--p)) 0 0; background:linear-gradient(90deg, var(--acc), var(--acc2)); transition:inset .18s linear}
+        .bar{
+          --p:0%; position:relative; height:8px; border-radius:999px; background:#11151d; flex:1;
+          overflow:hidden; border:1px solid #232a39; cursor:pointer
+        }
+        .bar>i{
+          position:absolute; inset:0 calc(100% - var(--p)) 0 0;
+          background:linear-gradient(90deg, var(--acc), var(--acc2));
+          transition:inset .18s linear
+        }
     </style>
 </head>
 <body>
@@ -142,8 +165,9 @@
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-    const MAX_DPR_SLIDE = isMobile ? 2.5 : 3;
-    const MAX_DPR_READ  = isMobile ? 2.5 : 3;
+    // 🔧 DPR dibatasi supaya lebih ringan
+    const MAX_DPR_SLIDE = isMobile ? 1.5 : 1.75;
+    const MAX_DPR_READ  = isMobile ? 1.75 : 2;
 
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
@@ -172,29 +196,55 @@
     kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
     document.addEventListener('click',closePop);
 
-    A('miDownload').addEventListener('click', stopThen(()=>{ const a=document.createElement('a'); a.href=PDF_URL; a.download='file.pdf'; a.click(); }));
-    A('miFullscreen').addEventListener('click', stopThen(()=>{ (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.()); }));
-    A('miFitWidth').addEventListener('click', stopThen(()=>{ fitMode='width'; if(viewMode==='slide') show(pageNum); }));
+    A('miDownload').addEventListener('click', stopThen(()=>{
+        const a=document.createElement('a');
+        a.href=PDF_URL; a.download='file.pdf'; a.click();
+    }));
+    A('miFullscreen').addEventListener('click', stopThen(()=>{
+        (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.());
+    }));
+    A('miFitWidth').addEventListener('click', stopThen(()=>{
+        fitMode='width';
+        if(viewMode==='slide') show(pageNum);
+    }));
 
     A('miZoomIn').addEventListener('click', stopThen(()=> setZoom(zoomPct+ZSTEP)));
     A('miZoomOut').addEventListener('click', stopThen(()=> setZoom(zoomPct-ZSTEP)));
     A('miZoomReset').addEventListener('click', stopThen(()=> { resetZoomToFit(); }));
 
     function setPlayEnabled(on){ A('miPlay').setAttribute('aria-disabled', on? 'false':'true'); }
-    function updateModeLabel(){ A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Read' : '🖼️ Mode Slide'; setPlayEnabled(viewMode==='slide'); }
+    function updateModeLabel(){
+      A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Read' : '🖼️ Mode Slide';
+      setPlayEnabled(viewMode==='slide');
+    }
     function updatePlayLabel(){ A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
 
-    function startAuto(){ if(viewMode!=='slide' || auto || !numPages) return; auto=true; updatePlayLabel(); timer=setInterval(()=>{ const nxt=(pageNum<numPages)?pageNum+1:1; show(nxt); }, SLIDE_MS); }
-    function stopAuto(){ if(timer){clearInterval(timer); timer=null;} if(auto){auto=false; updatePlayLabel();} }
+    function startAuto(){
+      if(viewMode!=='slide' || auto || !numPages) return;
+      auto=true; updatePlayLabel();
+      timer=setInterval(()=>{
+        const nxt=(pageNum<numPages)?pageNum+1:1;
+        show(nxt);
+      }, SLIDE_MS);
+    }
+    function stopAuto(){
+      if(timer){clearInterval(timer); timer=null;}
+      if(auto){auto=false; updatePlayLabel();}
+    }
     const stopAutoOnInteraction = ()=>{ if(auto) stopAuto(); };
-    A('miPlay').addEventListener('click', stopThen(()=>{ if(viewMode!=='slide') return; auto?stopAuto():startAuto(); }));
-    A('miMode').addEventListener('click', stopThen(()=>{ viewMode==='slide' ? enterReadMode() : exitReadMode(); }));
+    A('miPlay').addEventListener('click', stopThen(()=>{
+      if(viewMode!=='slide') return;
+      auto?stopAuto():startAuto();
+    }));
+    A('miMode').addEventListener('click', stopThen(()=>{
+      viewMode==='slide' ? enterReadMode() : exitReadMode();
+    }));
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
+    // 🔧 Intent diringankan: pakai display, print hanya zoom tinggi
     const renderIntentFor = (pct, dpr) => {
-      if (!isMobile && dpr >= 1.5) return 'print';
-      if (isMobile && pct >= 120) return 'print';
+      if (pct >= 180) return 'print';
       return 'display';
     };
 
@@ -205,15 +255,31 @@
       prog.style.inset=`0 ${100-pct}% 0 0`;
     }
 
+    let firstPaintDone = false;
+
     async function calcViewportSlide(page){
-      const base=page.getViewport({scale:1});
-      const W = Math.max(1,stage.clientWidth-24);
-      const H = Math.max(1,stage.clientHeight-24);
-      const fitScale=(fitMode==='width')?(W/base.width):Math.min(W/base.width,H/base.height);
-      const dpr=Math.min(MAX_DPR_SLIDE,Math.max(1,devicePixelRatio||1));
-      const rasterScale = fitScale * dpr * (zoomPct/100);
+      const base = page.getViewport({scale:1});
+      const W = Math.max(1, stage.clientWidth - 24);
+      const H = Math.max(1, stage.clientHeight - 24);
+
+      const fitScale = (fitMode === 'width')
+        ? (W / base.width)
+        : Math.min(W / base.width, H / base.height);
+
+      const dprBase = Math.min(MAX_DPR_SLIDE, Math.max(1, devicePixelRatio || 1));
+      // 🔥 First paint pakai DPR lebih kecil biar cepat muncul
+      const dpr = firstPaintDone ? dprBase : Math.min(1.25, dprBase);
+
+      const effectiveZoom = zoomPct / 100;
+      const rasterScale = fitScale * dpr * effectiveZoom;
       const cssScale = fitScale;
-      return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr, fitScale };
+
+      return {
+        viewport: page.getViewport({scale:rasterScale}),
+        cssScale,
+        dpr,
+        fitScale
+      };
     }
 
     async function calcViewportRead(page){
@@ -238,11 +304,23 @@
       canvas.style.width=Math.floor(w/dpr/(zoomPct/100))+'px';
       canvas.style.height=Math.floor(h/dpr/(zoomPct/100))+'px';
       ctx.imageSmoothingEnabled=false; ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
-      await page.render({canvasContext:ctx,viewport,intent:renderIntentFor(zoomPct,devicePixelRatio||1)}).promise;
+      await page.render({
+        canvasContext:ctx,
+        viewport,
+        intent:renderIntentFor(zoomPct,devicePixelRatio||1)
+      }).promise;
     }
 
     const wrapOf = ()=> (active===1?wrap1:wrap2);
     const canvasOf = ()=> (active===1?c1:c2);
+
+    const gesture = {
+      pointers:new Map(), mode:'idle',
+      dist0:1, scaleTmp:1, tx:0, ty:0,
+      anchor:{x:0,y:0}, mid0:{x:0,y:0},
+      startZoom:100, startTx:0, startTy:0,
+      livePct:100, _tap:{t:0,x:0,y:0}
+    };
 
     function setTransform(){
       const w=wrapOf();
@@ -294,7 +372,10 @@
       if(target!==pageNum){ stopAutoOnInteraction(); show(target); }
     });
 
+    // 🔧 Debounce zoom live render diperbesar biar gak terlalu sering render
+    const LIVE_DEBOUNCE = isMobile ? 220 : 100;
     let zoomTimer=null;
+
     function setZoom(pct){
       if(viewMode==='read'){ readZoomPct=clamp(pct,ZMIN,ZMAX); buildReadPages(); return; }
       zoomPct=clamp(pct,ZMIN,ZMAX);
@@ -303,16 +384,6 @@
       zoomTimer=setTimeout(()=>renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2)),80);
     }
 
-    document.addEventListener('keydown',(e)=>{
-      if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); }
-      if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
-      if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
-      if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
-      if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
-      if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
-    });
-
-    const LIVE_DEBOUNCE = isMobile ? 160 : 80;
     const live = { target: 100, rendering:false, scheduled:false };
 
     function requestLiveRender(pct){
@@ -330,14 +401,6 @@
         live.rendering = false;
       }, LIVE_DEBOUNCE);
     }
-
-    const gesture = {
-      pointers:new Map(), mode:'idle',
-      dist0:1, scaleTmp:1, tx:0, ty:0,
-      anchor:{x:0,y:0}, mid0:{x:0,y:0},
-      startZoom:100, startTx:0, startTy:0,
-      livePct:100, _tap:{t:0,x:0,y:0}
-    };
 
     const getMid=()=>{ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
     const dist=()=>{ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
@@ -457,7 +520,9 @@
     }, { passive: false });
 
     let swipeX=null;
-    stage.addEventListener('pointerdown', (e)=>{ if(viewMode==='slide' && zoomPct<=100){ swipeX=e.clientX; }});
+    stage.addEventListener('pointerdown', (e)=>{
+      if(viewMode==='slide' && zoomPct<=100){ swipeX=e.clientX; }
+    });
     stage.addEventListener('pointerup', (e)=>{
       if(viewMode!=='slide' || swipeX===null) return;
       const dx=e.clientX-swipeX;
@@ -495,7 +560,11 @@
         cnv.width=w; cnv.height=h;
         cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
         const cctx=cnv.getContext('2d',{alpha:false}); cctx.fillStyle='#fff'; cctx.fillRect(0,0,w,h);
-        await page.render({canvasContext:cctx,viewport,intent:renderIntentFor(readZoomPct,devicePixelRatio||1)}).promise;
+        await page.render({
+          canvasContext:cctx,
+          viewport,
+          intent:renderIntentFor(readZoomPct,devicePixelRatio||1)
+        }).promise;
         cnv.dataset.rendered='1';
       }
     },{root:read,rootMargin:'200px 0px',threshold:0.01}));
@@ -531,7 +600,18 @@
       show(pageNum);
     }
 
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); }
+      if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
+      if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
+      if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
+      if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
+      if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
+    });
+
     (async function(){
+      const startedAt = performance.now();
+
       const task=pdfjsLib.getDocument({
         url:PDF_URL,
         cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
@@ -540,13 +620,22 @@
         useSystemFonts:true,
         disableAutoFetch:true,
         disableStream:false,
-        rangeChunkSize:524288,
+        rangeChunkSize:262144, // 256 KB
         isEvalSupported:true,
         enableXfa:false
       });
+
+      task.onProgress = (p) => {
+        const pct = p.total ? Math.round(p.loaded / p.total * 100) : null;
+        console.log('PDF loading...', p.loaded, '/', p.total, pct ? pct + '%' : '');
+      };
+
       pdfDoc=await task.promise;
+      console.log('PDF loaded in', Math.round(performance.now() - startedAt), 'ms');
+
       numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum,c1,ctx1);
+      firstPaintDone = true;
       L1.style.display='grid'; L2.style.display='none';
       updatePlayLabel(); updateModeLabel();
       clampPan(); setTransform();
