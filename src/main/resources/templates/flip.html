@@ -165,9 +165,9 @@
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-    // 🔧 DPR dibatasi supaya lebih ringan
-    const MAX_DPR_SLIDE = isMobile ? 1.5 : 1.75;
-    const MAX_DPR_READ  = isMobile ? 1.75 : 2;
+    // 🔧 DPR dibuat tinggi (HD) tapi masih dibatesin dikit
+    const MAX_DPR_SLIDE = isMobile ? 2.5 : 3.0;
+    const MAX_DPR_READ  = isMobile ? 3.0 : 3.5;
 
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
@@ -242,9 +242,9 @@
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
-    // 🔧 Intent diringankan: pakai display, print hanya zoom tinggi
+    // 🔧 Intent: pakai print kalau zoom cukup besar / DPR tinggi (lebih tajam)
     const renderIntentFor = (pct, dpr) => {
-      if (pct >= 180) return 'print';
+      if (pct >= 120 || dpr >= 2.5) return 'print';
       return 'display';
     };
 
@@ -254,8 +254,6 @@
       progressBar.style.setProperty('--p', pct+'%');
       prog.style.inset=`0 ${100-pct}% 0 0`;
     }
-
-    let firstPaintDone = false;
 
     async function calcViewportSlide(page){
       const base = page.getViewport({scale:1});
@@ -267,17 +265,15 @@
         : Math.min(W / base.width, H / base.height);
 
       const dprBase = Math.min(MAX_DPR_SLIDE, Math.max(1, devicePixelRatio || 1));
-      // 🔥 First paint pakai DPR lebih kecil biar cepat muncul
-      const dpr = firstPaintDone ? dprBase : Math.min(1.25, dprBase);
 
       const effectiveZoom = zoomPct / 100;
-      const rasterScale = fitScale * dpr * effectiveZoom;
+      const rasterScale = fitScale * dprBase * effectiveZoom;
       const cssScale = fitScale;
 
       return {
         viewport: page.getViewport({scale:rasterScale}),
         cssScale,
-        dpr,
+        dpr: dprBase,
         fitScale
       };
     }
@@ -297,7 +293,7 @@
       const token = ++renderToken;
       if(!pdfDoc) return;
       const page=await pdfDoc.getPage(p);
-      const {viewport, cssScale, dpr}=await calcViewportSlide(page);
+      const {viewport, dpr}=await calcViewportSlide(page);
       if (token !== renderToken) return;
       const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
       canvas.width=w; canvas.height=h;
@@ -372,7 +368,6 @@
       if(target!==pageNum){ stopAutoOnInteraction(); show(target); }
     });
 
-    // 🔧 Debounce zoom live render diperbesar biar gak terlalu sering render
     const LIVE_DEBOUNCE = isMobile ? 220 : 100;
     let zoomTimer=null;
 
@@ -555,7 +550,7 @@
         const cnv=ent.target; if(cnv.dataset.rendered) continue;
         const i=+cnv.dataset.page;
         const page=await pdfDoc.getPage(i);
-        const {viewport,cssScale,dpr}=await calcViewportRead(page);
+        const {viewport,dpr}=await calcViewportRead(page);
         const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
         cnv.width=w; cnv.height=h;
         cnv.style.width=Math.floor(w/dpr)+'px'; cnv.style.height=Math.floor(h/dpr)+'px';
@@ -609,33 +604,34 @@
       if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
     });
 
+    // 🔥 Bagian ini yang bikin API cuma ke-hit 1x:
+    // kita fetch PDF_URL sekali, dapat ArrayBuffer, lalu pass ke pdf.js sebagai data.
     (async function(){
       const startedAt = performance.now();
 
+      const resp = await fetch(PDF_URL);
+      if (!resp.ok) {
+        console.error('Gagal fetch PDF', resp.status, resp.statusText);
+        return;
+      }
+      const pdfBytes = await resp.arrayBuffer();
+      console.log('PDF fetched bytes:', pdfBytes.byteLength, 'in', Math.round(performance.now() - startedAt), 'ms');
+
       const task=pdfjsLib.getDocument({
-        url:PDF_URL,
+        data: pdfBytes,
         cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
         cMapPacked:true,
         standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
         useSystemFonts:true,
-        disableAutoFetch:true,
-        disableStream:false,
-        rangeChunkSize:262144, // 256 KB
+        disableAutoFetch:false,
+        disableStream:true,
         isEvalSupported:true,
         enableXfa:false
       });
 
-      task.onProgress = (p) => {
-        const pct = p.total ? Math.round(p.loaded / p.total * 100) : null;
-        console.log('PDF loading...', p.loaded, '/', p.total, pct ? pct + '%' : '');
-      };
-
       pdfDoc=await task.promise;
-      console.log('PDF loaded in', Math.round(performance.now() - startedAt), 'ms');
-
       numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
       await renderFit(pageNum,c1,ctx1);
-      firstPaintDone = true;
       L1.style.display='grid'; L2.style.display='none';
       updatePlayLabel(); updateModeLabel();
       clampPan(); setTransform();
