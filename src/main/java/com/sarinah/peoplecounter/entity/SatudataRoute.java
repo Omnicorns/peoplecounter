@@ -11,7 +11,7 @@ public class SatudataRoute {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "path_key", nullable = false, unique = true, length = 100)
+    @Column(name = "path_key", nullable = false, length = 100)
     private String pathKey;
 
     @Column(name = "target_url", nullable = false, columnDefinition = "TEXT")
