@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sarinah Catalogue</title>
 
-    <!-- ❌ HAPUS pdf.js 2.x lama -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script> -->
-
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
@@ -139,21 +136,19 @@
     </div>
 </div>
 
-<!-- ✅ Thymeleaf: bikin global supaya module bisa baca -->
+<!-- Thymeleaf: URL PDF -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
     /*]]>*/
 </script>
 
-<!-- ✅ PDF.js 5.x + kode kamu jalan di module -->
 <script type="module">
-    // === IMPORT PDF.js TERBARU (5.4.394) ===
     import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs";
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.mjs";
 
-    // optional (biar gak error kalau property masih ada)
+    // optional
     if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
     const params = new URLSearchParams(location.search);
@@ -165,7 +160,6 @@
     let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
     const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-    // 🔧 DPR dibuat tinggi (HD) tapi masih dibatesin dikit
     const MAX_DPR_SLIDE = isMobile ? 2.5 : 3.0;
     const MAX_DPR_READ  = isMobile ? 3.0 : 3.5;
 
@@ -242,7 +236,6 @@
 
     const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 
-    // 🔧 Intent: pakai print kalau zoom cukup besar / DPR tinggi (lebih tajam)
     const renderIntentFor = (pct, dpr) => {
       if (pct >= 120 || dpr >= 2.5) return 'print';
       return 'display';
@@ -604,8 +597,7 @@
       if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    // 🔥 Bagian ini yang bikin API cuma ke-hit 1x:
-    // kita fetch PDF_URL sekali, dapat ArrayBuffer, lalu pass ke pdf.js sebagai data.
+    // ==== INIT: fetch PDF & load ke pdf.js (sekali fetch) ====
     (async function(){
       const startedAt = performance.now();
 
@@ -617,20 +609,24 @@
       const pdfBytes = await resp.arrayBuffer();
       console.log('PDF fetched bytes:', pdfBytes.byteLength, 'in', Math.round(performance.now() - startedAt), 'ms');
 
-      const task=pdfjsLib.getDocument({
+      const task = pdfjsLib.getDocument({
         data: pdfBytes,
-        cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
-        cMapPacked:true,
-        standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
-        useSystemFonts:true,
-        disableAutoFetch:false,
-        disableStream:true,
-        isEvalSupported:true,
-        enableXfa:false
+        cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
+        cMapPacked: true,
+        standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
+        useSystemFonts: true,
+        disableAutoFetch: false,
+        disableStream: true,
+        isEvalSupported: true,
+        enableXfa: false,
+        // ⬇️ penting untuk JPEG2000 / JPX
+        wasmUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/wasm/"
       });
 
-      pdfDoc=await task.promise;
-      numPages=pdfDoc.numPages; pageNum=1; updateIndicator();
+      pdfDoc = await task.promise;
+      numPages = pdfDoc.numPages;
+      pageNum = 1;
+      updateIndicator();
       await renderFit(pageNum,c1,ctx1);
       L1.style.display='grid'; L2.style.display='none';
       updatePlayLabel(); updateModeLabel();
