@@ -63,13 +63,31 @@
         .deck{position:absolute; inset:12px; display:grid; place-items:center; isolation:isolate}
         .layer{position:absolute; inset:0; display:grid; place-items:center}
         .pageWrap{
-          position:relative; will-change:transform;
+          position:relative;
+          will-change:transform;
           touch-action:none;
           transform-origin:center center;
         }
         canvas{
           max-width:100%; max-height:100%; background:#fff; border-radius:14px; box-shadow:0 28px 60px rgba(0,0,0,.6); display:block;
           image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
+        }
+
+        /* overlay link di atas canvas */
+        .linkLayer{
+          position:absolute;
+          inset:0;
+          pointer-events:none;
+        }
+        .linkLayer .pdf-link{
+          position:absolute;
+          display:block;
+          pointer-events:auto;
+          text-decoration:none;
+        }
+        .linkLayer .pdf-link:hover{
+          outline:2px solid rgba(37,99,235,.6);
+          cursor:pointer;
         }
 
         #read{flex:1; overflow:auto; background:#0b0f15; display:none}
@@ -122,8 +140,18 @@
     <div id="stage" aria-live="polite">
         <button class="nav" id="prev" aria-label="Sebelumnya">❮</button>
         <div class="deck">
-            <div id="L1" class="layer"><div class="pageWrap" id="wrap1"><canvas id="c1"></canvas></div></div>
-            <div id="L2" class="layer"><div class="pageWrap" id="wrap2"><canvas id="c2"></canvas></div></div>
+            <div id="L1" class="layer">
+                <div class="pageWrap" id="wrap1">
+                    <canvas id="c1"></canvas>
+                    <div class="linkLayer" id="links1"></div>
+                </div>
+            </div>
+            <div id="L2" class="layer">
+                <div class="pageWrap" id="wrap2">
+                    <canvas id="c2"></canvas>
+                    <div class="linkLayer" id="links2"></div>
+                </div>
+            </div>
         </div>
         <button class="nav" id="next" aria-label="Berikutnya">❯</button>
     </div>
@@ -175,6 +203,7 @@
     const ctx1=c1.getContext('2d',{alpha:false,desynchronized:true});
     const ctx2=c2.getContext('2d',{alpha:false,desynchronized:true});
     const wrap1=document.getElementById('wrap1'), wrap2=document.getElementById('wrap2');
+    const links1=document.getElementById('links1'), links2=document.getElementById('links2');
 
     const prevBtn=document.getElementById('prev');
     const nextBtn=document.getElementById('next');
@@ -186,6 +215,10 @@
     const A=(id)=>document.getElementById(id);
     const closePop=()=>pop.classList.remove('show');
     const stopThen=(fn)=>(e)=>{e.stopPropagation(); fn(); closePop();};
+
+    const wrapOf = ()=> (active===1?wrap1:wrap2);
+    const canvasOf = ()=> (active===1?c1:c2);
+    const linksOf  = ()=> (active===1?links1:links2);
 
     kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
     document.addEventListener('click',closePop);
@@ -281,13 +314,50 @@
       return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr };
     }
 
+    // bangun overlay link di atas canvas slide
+    async function buildLinks(page, viewport, layer, dpr){
+      if (!layer) return;
+      layer.innerHTML = '';
+
+      const annotations = await page.getAnnotations();
+      const factor = 1 / (dpr * (zoomPct / 100)); // viewport -> CSS sebelum transform pageWrap
+
+      for (const ann of annotations){
+        if (ann.subtype !== 'Link' || !ann.url) continue;
+
+        const rect = viewport.convertToViewportRectangle(ann.rect);
+        const x1 = Math.min(rect[0], rect[2]);
+        const x2 = Math.max(rect[0], rect[2]);
+        const y1 = Math.min(rect[1], rect[3]);
+        const y2 = Math.max(rect[1], rect[3]);
+
+        const left   = x1 * factor;
+        const top    = y1 * factor;
+        const width  = (x2 - x1) * factor;
+        const height = (y2 - y1) * factor;
+
+        const a = document.createElement('a');
+        a.className = 'pdf-link';
+        a.href      = ann.url;
+        a.target    = '_blank';
+        a.rel       = 'noopener noreferrer';
+        a.style.left   = left + 'px';
+        a.style.top    = top  + 'px';
+        a.style.width  = width + 'px';
+        a.style.height = height + 'px';
+
+        layer.appendChild(a);
+      }
+    }
+
     let renderToken = 0;
-    async function renderFit(p,canvas,ctx){
+    async function renderFit(p,canvas,ctx,linkLayer){
       const token = ++renderToken;
       if(!pdfDoc) return;
       const page=await pdfDoc.getPage(p);
       const {viewport, dpr}=await calcViewportSlide(page);
       if (token !== renderToken) return;
+
       const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
       canvas.width=w; canvas.height=h;
       canvas.style.width=Math.floor(w/dpr/(zoomPct/100))+'px';
@@ -298,10 +368,9 @@
         viewport,
         intent:renderIntentFor(zoomPct,devicePixelRatio||1)
       }).promise;
-    }
 
-    const wrapOf = ()=> (active===1?wrap1:wrap2);
-    const canvasOf = ()=> (active===1?c1:c2);
+      await buildLinks(page, viewport, linkLayer, dpr);
+    }
 
     const gesture = {
       pointers:new Map(), mode:'idle',
@@ -334,7 +403,7 @@
       gesture.ty = 0;
       fitMode = 'page';
       clampPan(); setTransform();
-      await renderFit(pageNum, (active===1?c1:c2), (active===1?ctx1:ctx2));
+      await renderFit(pageNum, canvasOf(), (active===1?ctx1:ctx2), linksOf());
     }
 
     async function show(p){
@@ -342,8 +411,9 @@
       animating=true; prevBtn.disabled=nextBtn.disabled=true;
       const nxtL=(active===1)?L2:L1;
       const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
+      const nxtLinks=(active===1)?links2:links1;
       nxtL.style.display='none';
-      await renderFit(p,nxtC,nxtCtx);
+      await renderFit(p,nxtC,nxtCtx,nxtLinks);
       (active===1?L1:L2).style.display='none'; nxtL.style.display='grid';
       active=(active===1)?2:1; pageNum=p; updateIndicator();
       clampPan(); setTransform();
@@ -369,7 +439,9 @@
       zoomPct=clamp(pct,ZMIN,ZMAX);
       clearTimeout(zoomTimer);
       clampPan(); setTransform();
-      zoomTimer=setTimeout(()=>renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2)),80);
+      zoomTimer=setTimeout(()=>{
+        renderFit(pageNum, canvasOf(), (active===1?ctx1:ctx2), linksOf());
+      },80);
     }
 
     const live = { target: 100, rendering:false, scheduled:false };
@@ -385,7 +457,7 @@
         zoomPct = live.target;
         gesture.scaleTmp = 1;
         clampPan(); setTransform();
-        await renderFit(pageNum,(active===1?c1:c2),(active===1?ctx1:ctx2));
+        await renderFit(pageNum, canvasOf(), (active===1?ctx1:ctx2), linksOf());
         live.rendering = false;
       }, LIVE_DEBOUNCE);
     }
@@ -399,6 +471,7 @@
     }
 
     function onPointerDown(e){
+      if (e.target.closest('.pdf-link')) return; // biarkan klik link
       if(viewMode!=='slide') return;
       stopAutoOnInteraction();
       const w=wrapOf(); w.setPointerCapture?.(e.pointerId);
@@ -509,9 +582,11 @@
 
     let swipeX=null;
     stage.addEventListener('pointerdown', (e)=>{
+      if (e.target.closest('.pdf-link')) return;
       if(viewMode==='slide' && zoomPct<=100){ swipeX=e.clientX; }
     });
     stage.addEventListener('pointerup', (e)=>{
+      if (e.target.closest('.pdf-link')) { swipeX=null; return; }
       if(viewMode!=='slide' || swipeX===null) return;
       const dx=e.clientX-swipeX;
       if(Math.abs(dx)>60 && zoomPct<=100){
@@ -523,6 +598,7 @@
     });
 
     stage.addEventListener('pointerup', (e)=>{
+      if (e.target.closest('.pdf-link')) return;
       if(viewMode!=='slide') return;
       const now=Date.now();
       const pos={x:e.clientX,y:e.clientY};
@@ -627,7 +703,7 @@
       numPages = pdfDoc.numPages;
       pageNum = 1;
       updateIndicator();
-      await renderFit(pageNum,c1,ctx1);
+      await renderFit(pageNum,c1,ctx1,links1);
       L1.style.display='grid'; L2.style.display='none';
       updatePlayLabel(); updateModeLabel();
       clampPan(); setTransform();
