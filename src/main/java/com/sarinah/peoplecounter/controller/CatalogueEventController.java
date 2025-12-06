@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class CatalogueEventController {
-    @GetMapping("/catalogue/event-mills")
+    @GetMapping("/SarinahForSEAGames2025")
     public String catalogue(
             Model model) {
 

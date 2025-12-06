@@ -30,7 +30,7 @@ public class SecurityConfig {
             "/api/health/**",
             "/",
             "/catalogue",
-            "/catalogue/event-mills",
+            "/SarinahForSEAGames2025",
 
             // Web pages kamu
             "/middleware/dashboard",
