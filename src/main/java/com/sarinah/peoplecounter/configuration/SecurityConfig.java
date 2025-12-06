@@ -30,6 +30,7 @@ public class SecurityConfig {
             "/api/health/**",
             "/",
             "/catalogue",
+            "/catalogue/event-mils",
 
             // Web pages kamu
             "/middleware/dashboard",
