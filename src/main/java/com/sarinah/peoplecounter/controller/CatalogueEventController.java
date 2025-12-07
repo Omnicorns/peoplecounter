@@ -13,7 +13,7 @@ public class CatalogueEventController {
             Model model) {
 
         String pdfUrl;
-        pdfUrl = "/api/admin/users/pdf/645";
+        pdfUrl = "/api/admin/users/pdf/646";
 
 
 
