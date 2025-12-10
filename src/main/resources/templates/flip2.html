@@ -10,7 +10,6 @@
 
   <style>
     :root{
-      /* background lebih cerah */
       --bg:#e5e7eb;
       --ring:#cbd5f5;
       --acc:#2db36d;
@@ -53,22 +52,20 @@
     }
 
     #top{
-  /* JANGAN absolute lagi */
-  position:relative;          /* <— sebelumnya absolute + inset... */
-  width:100%;
-
-  height:56px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  padding:8px 10px;
-  z-index:50;
-  background:linear-gradient(90deg, rgba(255,255,255,.92), rgba(248,250,252,.96));
-  border-bottom:1px solid rgba(203,213,225,.9);
-  box-shadow:0 8px 18px rgba(15,23,42,.15);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-}
+      position:relative;
+      width:100%;
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      padding:8px 10px;
+      z-index:50;
+      background:linear-gradient(90deg, rgba(255,255,255,.92), rgba(248,250,252,.96));
+      border-bottom:1px solid rgba(203,213,225,.9);
+      box-shadow:0 8px 18px rgba(15,23,42,.15);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
 
     .iconbtn{
       height:36px;
@@ -126,7 +123,6 @@
     #stage{
       position:relative;
       flex:1;
-      /* background lebih terang */
       background:radial-gradient(ellipse at 50% 30%, #ffffff 0%, #e5e7eb 55%, #d1d5db 100%);
       overflow:hidden;
       display:grid;
@@ -152,7 +148,6 @@
       image-rendering:pixelated;
     }
 
-    /* overlay link di atas canvas */
     .linkLayer{
       position:absolute;
       inset:0;
@@ -247,7 +242,6 @@
   <div id="top">
     <button id="kebabBtn" class="iconbtn kebab" aria-label="Menu">⋮</button>
     <div id="pop" class="popover" role="menu" aria-label="Menu">
-
       <button class="popitem" id="miFullscreen">⤢ Fullscreen</button>
       <button class="popitem" id="miMode">📖 Mode Read</button>
       <hr class="sep">
@@ -287,10 +281,9 @@
   </div>
 </div>
 
-<!-- Thymeleaf: URL PDF -->
 <script th:inline="javascript">
   /*<![CDATA[*/
-  window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
+  window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf';
   /*]]>*/
 </script>
 
@@ -299,7 +292,6 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.mjs";
 
-  // optional
   if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
   const params = new URLSearchParams(location.search);
@@ -311,7 +303,6 @@
   let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
   const ZMIN=25, ZMAX=600, ZSTEP=12;
 
-  // DPR dinaikkan sedikit supaya lebih HD
   const MAX_DPR_SLIDE = isMobile ? 3.0 : 4.0;
   const MAX_DPR_READ  = isMobile ? 3.0 : 4.0;
 
@@ -346,7 +337,6 @@
 
   kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
   document.addEventListener('click',closePop);
-
 
   A('miFullscreen').addEventListener('click', stopThen(()=>{
       (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.());
@@ -435,13 +425,12 @@
     return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr };
   }
 
-  // bangun overlay link di atas canvas slide
   async function buildLinks(page, viewport, layer, dpr){
     if (!layer) return;
     layer.innerHTML = '';
 
     const annotations = await page.getAnnotations();
-    const factor = 1 / (dpr * (zoomPct / 100)); // viewport -> CSS sebelum transform pageWrap
+    const factor = 1 / (dpr * (zoomPct / 100));
 
     for (const ann of annotations){
       if (ann.subtype !== 'Link' || !ann.url) continue;
@@ -484,7 +473,6 @@
     canvas.style.width=Math.floor(w/dpr/(zoomPct/100))+'px';
     canvas.style.height=Math.floor(h/dpr/(zoomPct/100))+'px';
 
-    // smoothing high quality
     ctx.imageSmoothingEnabled=true;
     ctx.imageSmoothingQuality='high';
     ctx.fillStyle='#fff';
@@ -499,37 +487,59 @@
     await buildLinks(page, viewport, linkLayer, dpr);
   }
 
+  // ========== PERBAIKAN PINCH ZOOM ==========
   const gesture = {
-    pointers:new Map(), mode:'idle',
-    dist0:1, scaleTmp:1, tx:0, ty:0,
-    anchor:{x:0,y:0}, mid0:{x:0,y:0},
-    startZoom:100, startTx:0, startTy:0,
-    livePct:100, _tap:{t:0,x:0,y:0}
+    pointers: new Map(),
+    mode: 'idle',
+    // Pinch state
+    startDist: 0,
+    startZoom: 100,
+    startTx: 0,
+    startTy: 0,
+    pinchCenter: {x: 0, y: 0},
+    // Pan state
+    panStart: {x: 0, y: 0},
+    // Double tap
+    lastTap: {t: 0, x: 0, y: 0}
   };
 
+  function getMidpoint(){
+    const arr = [...gesture.pointers.values()];
+    return {
+      x: (arr[0].x + arr[1].x) / 2,
+      y: (arr[0].y + arr[1].y) / 2
+    };
+  }
+
+  function getDistance(){
+    const arr = [...gesture.pointers.values()];
+    const dx = arr[0].x - arr[1].x;
+    const dy = arr[0].y - arr[1].y;
+    return Math.hypot(dx, dy);
+  }
+
   function setTransform(){
-    const w=wrapOf();
-    const totalScale = (zoomPct/100) * gesture.scaleTmp;
-    w.style.transform = `translate(${gesture.tx}px, ${gesture.ty}px) scale(${totalScale})`;
+    const w = wrapOf();
+    w.style.transform = `translate(${gesture.startTx}px, ${gesture.startTy}px) scale(${zoomPct/100})`;
   }
 
   function clampPan(limit=120){
-    const cnv=canvasOf();
-    const w=cnv.clientWidth, h=cnv.clientHeight;
-    const totalScale = (zoomPct/100) * gesture.scaleTmp;
-    const maxX=(w*(totalScale)-w)/2 + limit;
-    const maxY=(h*(totalScale)-h)/2 + limit;
-    gesture.tx = clamp(gesture.tx,-maxX,maxX);
-    gesture.ty = clamp(gesture.ty,-maxY,maxY);
+    const cnv = canvasOf();
+    const w = cnv.clientWidth;
+    const h = cnv.clientHeight;
+    const scale = zoomPct / 100;
+    const maxX = (w * scale - w) / 2 + limit;
+    const maxY = (h * scale - h) / 2 + limit;
+    gesture.startTx = clamp(gesture.startTx, -maxX, maxX);
+    gesture.startTy = clamp(gesture.startTy, -maxY, maxY);
   }
 
   async function resetZoomToFit() {
     zoomPct = 100;
-    gesture.scaleTmp = 1;
-    gesture.tx = 0;
-    gesture.ty = 0;
+    gesture.startTx = 0;
+    gesture.startTy = 0;
     fitMode = 'page';
-    clampPan(); setTransform();
+    setTransform();
     await renderFit(pageNum, canvasOf(), (active===1?ctx1:ctx2), linksOf());
   }
 
@@ -543,7 +553,12 @@
     await renderFit(p,nxtC,nxtCtx,nxtLinks);
     (active===1?L1:L2).style.display='none'; nxtL.style.display='grid';
     active=(active===1)?2:1; pageNum=p; updateIndicator();
-    clampPan(); setTransform();
+
+    // Reset transformasi saat ganti halaman
+    gesture.startTx = 0;
+    gesture.startTy = 0;
+    setTransform();
+
     prevBtn.disabled=nextBtn.disabled=false; animating=false;
   }
 
@@ -586,95 +601,125 @@
       if(live.rendering) return;
       live.rendering = true;
       zoomPct = live.target;
-      gesture.scaleTmp = 1;
       clampPan(); setTransform();
       await renderFit(pageNum, canvasOf(), (active===1?ctx1:ctx2), linksOf());
       live.rendering = false;
     }, LIVE_DEBOUNCE);
   }
 
-  const getMid=()=>{ const v=[...gesture.pointers.values()]; return {x:(v[0].x+v[1].x)/2, y:(v[0].y+v[1].y)/2}; }
-  const dist=()=>{ const v=[...gesture.pointers.values()]; const dx=v[0].x-v[1].x, dy=v[0].y-v[1].y; return Math.hypot(dx,dy); }
-
-  function clientToWrapLocal(mid){
-    const w=wrapOf(); const r=w.getBoundingClientRect();
-    return { x: mid.x - (r.left + r.width/2), y: mid.y - (r.top + r.height/2) };
-  }
-
   function onPointerDown(e){
-    if (e.target.closest('.pdf-link')) return; // biarkan klik link
+    if (e.target.closest('.pdf-link')) return;
     if(viewMode!=='slide') return;
     stopAutoOnInteraction();
-    const w=wrapOf(); w.setPointerCapture?.(e.pointerId);
-    gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
-    if(gesture.pointers.size===2){
-      gesture.mode='pinch';
-      gesture.dist0=dist();
-      gesture.scaleTmp=1;
-      gesture.mid0=getMid();
-      gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
+    const w = wrapOf();
+    w.setPointerCapture?.(e.pointerId);
+    gesture.pointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+
+    if(gesture.pointers.size === 2){
+      // Mulai pinch
+      gesture.mode = 'pinch';
+      gesture.startDist = getDistance();
       gesture.startZoom = zoomPct;
-      gesture.livePct  = zoomPct;
-      gesture.anchor = clientToWrapLocal(gesture.mid0);
-    }else if(gesture.pointers.size===1 && zoomPct>100){
-      gesture.mode='pan'; gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
-      gesture._anchor = {x:e.clientX,y:e.clientY};
+      gesture.pinchCenter = getMidpoint();
+      // Simpan posisi pan saat ini dari transform
+      const currentTransform = wrapOf().style.transform;
+      const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
+      if(match){
+        gesture.startTx = parseFloat(match[1]) || 0;
+        gesture.startTy = parseFloat(match[2]) || 0;
+      }
+    } else if(gesture.pointers.size === 1 && zoomPct > 100){
+      // Mulai pan
+      gesture.mode = 'pan';
+      gesture.panStart = {x: e.clientX, y: e.clientY};
+      // Simpan base position
+      const currentTransform = wrapOf().style.transform;
+      const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
+      if(match){
+        gesture.startTx = parseFloat(match[1]) || 0;
+        gesture.startTy = parseFloat(match[2]) || 0;
+      }
     }
   }
 
   function onPointerMove(e){
     if(!gesture.pointers.has(e.pointerId)) return;
-    gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    gesture.pointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
 
-    if(gesture.mode==='pinch'){
-      const mid=getMid();
-      const factor = clamp(dist()/gesture.dist0, 0.5, 3);
-      const newPct = clamp(gesture.startZoom * factor, ZMIN, ZMAX);
+    if(gesture.mode === 'pinch' && gesture.pointers.size === 2){
+      const currentDist = getDistance();
+      const scale = currentDist / gesture.startDist;
+      const newZoom = clamp(gesture.startZoom * scale, ZMIN, ZMAX);
 
-      gesture.scaleTmp = newPct / gesture.startZoom;
+      // Update zoom
+      const oldZoom = zoomPct;
+      zoomPct = newZoom;
 
-      const w=wrapOf(); const r=w.getBoundingClientRect();
-      const centerX = r.left + r.width/2, centerY = r.top + r.height/2;
-      const totalScale = (gesture.startZoom/100) * gesture.scaleTmp;
-      gesture.tx = (mid.x - centerX) - gesture.anchor.x * totalScale;
-      gesture.ty = (mid.y - centerY) - gesture.anchor.y * totalScale;
+      // Hitung pergeseran untuk zoom di titik tengah pinch
+      const currentCenter = getMidpoint();
+      const w = wrapOf();
+      const rect = w.getBoundingClientRect();
 
-      clampPan(); setTransform();
+      // Offset dari center wrap ke pinch center (dalam koordinat layar)
+      const offsetX = currentCenter.x - (rect.left + rect.width / 2);
+      const offsetY = currentCenter.y - (rect.top + rect.height / 2);
 
-      gesture.livePct = newPct;
-      // sekarang mobile juga dapat re-render live (lebih HD)
-      requestLiveRender(newPct);
+      // Adjust posisi agar zoom terfokus di pinch center
+      const zoomRatio = newZoom / oldZoom;
+      const centerShiftX = offsetX * (1 - zoomRatio);
+      const centerShiftY = offsetY * (1 - zoomRatio);
+
+      gesture.startTx += centerShiftX;
+      gesture.startTy += centerShiftY;
+
+      clampPan();
+      setTransform();
+      requestLiveRender(newZoom);
       return;
     }
 
-    if(gesture.mode==='pan'){
-      const p=[...gesture.pointers.values()][0];
-      gesture.tx = gesture.startTx + (p.x - gesture._anchor.x);
-      gesture.ty = gesture.startTy + (p.y - gesture._anchor.y);
-      clampPan(); setTransform();
+    if(gesture.mode === 'pan' && gesture.pointers.size === 1){
+      const pointer = [...gesture.pointers.values()][0];
+      const dx = pointer.x - gesture.panStart.x;
+      const dy = pointer.y - gesture.panStart.y;
+
+      // Parse base transform untuk mendapat posisi awal
+      const w = wrapOf();
+      const currentTransform = w.style.transform;
+      const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
+
+      let baseTx = gesture.startTx;
+      let baseTy = gesture.startTy;
+
+      // Update posisi dengan delta
+      gesture.startTx = baseTx + dx;
+      gesture.startTy = baseTy + dy;
+
+      // Reset panStart untuk frame berikutnya
+      gesture.panStart = {x: pointer.x, y: pointer.y};
+
+      clampPan();
+      setTransform();
     }
   }
 
   function onPointerUp(e){
-    if(gesture.pointers.has(e.pointerId)) gesture.pointers.delete(e.pointerId);
+    gesture.pointers.delete(e.pointerId);
 
-    if(gesture.mode==='pinch' && gesture.pointers.size<2){
-      gesture.mode='idle'; gesture._anchor=null;
-      // pastikan resolusi akhir pakai livePct
-      requestLiveRender(gesture.livePct || zoomPct);
-      return;
-    }
-    if(gesture.mode==='pan' && gesture.pointers.size===0){
-      gesture.mode='idle'; gesture._anchor=null;
+    if(gesture.mode === 'pinch' && gesture.pointers.size < 2){
+      gesture.mode = 'idle';
+      requestLiveRender(zoomPct);
+    } else if(gesture.mode === 'pan' && gesture.pointers.size === 0){
+      gesture.mode = 'idle';
     }
   }
 
-  [wrap1,wrap2].forEach(w=>{
-    w.addEventListener('pointerdown',onPointerDown,{passive:false});
-    w.addEventListener('pointermove',onPointerMove,{passive:false});
-    w.addEventListener('pointerup',onPointerUp);
-    w.addEventListener('pointercancel',onPointerUp);
+  [wrap1, wrap2].forEach(w => {
+    w.addEventListener('pointerdown', onPointerDown, {passive: false});
+    w.addEventListener('pointermove', onPointerMove, {passive: false});
+    w.addEventListener('pointerup', onPointerUp);
+    w.addEventListener('pointercancel', onPointerUp);
   });
 
   stage.addEventListener('wheel', (e) => {
@@ -700,8 +745,8 @@
     }
     e.preventDefault();
     stopAutoOnInteraction();
-    gesture.tx += -e.deltaX;
-    gesture.ty += -e.deltaY;
+    gesture.startTx += -e.deltaX;
+    gesture.startTy += -e.deltaY;
     clampPan();
     setTransform();
   }, { passive: false });
@@ -723,20 +768,23 @@
     swipeX=null;
   });
 
-  // double-tap zoom in/out
+  // Double-tap zoom
   stage.addEventListener('pointerup', (e)=>{
     if (e.target.closest('.pdf-link')) return;
-    if(viewMode!=='slide') return;
-    const now=Date.now();
-    const pos={x:e.clientX,y:e.clientY};
-    const gap = now - gesture._tap.t;
-    const moved = Math.hypot(pos.x-(gesture._tap.x||0), pos.y-(gesture._tap.y||0));
-    if(gap<280 && moved<20){
+    if(viewMode!=='slide' || gesture.mode !== 'idle') return;
+
+    const now = Date.now();
+    const pos = {x: e.clientX, y: e.clientY};
+    const gap = now - gesture.lastTap.t;
+    const moved = Math.hypot(pos.x - gesture.lastTap.x, pos.y - gesture.lastTap.y);
+
+    if(gap < 280 && moved < 20){
       stopAutoOnInteraction();
-      gesture.anchor = clientToWrapLocal(pos);
-      requestLiveRender(zoomPct<=100 ? 180 : 100);
+      const targetZoom = zoomPct <= 100 ? 180 : 100;
+      requestLiveRender(targetZoom);
     }
-    gesture._tap={t:now,x:pos.x,y:pos.y};
+
+    gesture.lastTap = {t: now, x: pos.x, y: pos.y};
   });
 
   let io=null;
@@ -796,7 +844,9 @@
     read.style.display='none';
     stage.style.display='grid';
     fitMode='page';
-    clampPan(); setTransform();
+    gesture.startTx = 0;
+    gesture.startTy = 0;
+    setTransform();
     show(pageNum);
   }
 
@@ -809,7 +859,7 @@
     if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
   });
 
-  // ==== INIT: fetch PDF & load ke pdf.js (sekali fetch) ====
+  // ==== INIT: fetch PDF & load ====
   (async function(){
     const startedAt = performance.now();
 
@@ -831,7 +881,6 @@
       disableStream: true,
       isEvalSupported: true,
       enableXfa: false,
-      // ⬇️ penting untuk JPEG2000 / JPX
       wasmUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/wasm/"
     });
 
@@ -842,7 +891,7 @@
     await renderFit(pageNum,c1,ctx1,links1);
     L1.style.display='grid'; L2.style.display='none';
     updatePlayLabel(); updateModeLabel();
-    clampPan(); setTransform();
+    setTransform();
   })();
 </script>
 
