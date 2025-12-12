@@ -17,6 +17,46 @@
         html,body{height:100%}
         body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
 
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 8, 11, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .loading-overlay.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(45, 179, 109, 0.2);
+            border-top-color: #2db36d;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 20px;
+            color: #9aa3b2;
+            font-size: 14px;
+        }
+        .loading-progress {
+            margin-top: 10px;
+            color: #2db36d;
+            font-size: 18px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
         #viewer{
           width:min(100vw,1400px);
           height:min(100vh,900px);
@@ -73,7 +113,6 @@
           image-rendering: crisp-edges; image-rendering:-webkit-optimize-contrast; image-rendering:pixelated;
         }
 
-        /* overlay link di atas canvas */
         .linkLayer{
           position:absolute;
           inset:0;
@@ -120,6 +159,13 @@
     </style>
 </head>
 <body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading PDF...</div>
+    <div class="loading-progress" id="loadingProgress">0%</div>
+</div>
+
 <div id="viewer" aria-label="PDF Pro Viewer">
     <div id="top">
         <button id="kebabBtn" class="iconbtn kebab" aria-label="Menu">⋮</button>
@@ -164,7 +210,6 @@
     </div>
 </div>
 
-<!-- Thymeleaf: URL PDF -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
@@ -176,11 +221,17 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.mjs";
 
-    // optional
     if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || window.DEFAULT_PDF;
+
+    // Cache-busting: tambahkan timestamp jika URL tidak punya query string
+    if (PDF_URL && !PDF_URL.includes('?') && !PDF_URL.startsWith('data:') && !PDF_URL.startsWith('blob:')) {
+      const separator = PDF_URL.includes('#') ? '&' : '?';
+      const timestamp = Date.now();
+      PDF_URL = PDF_URL.split('#')[0] + separator + '_t=' + timestamp + (PDF_URL.includes('#') ? PDF_URL.substring(PDF_URL.indexOf('#')) : '');
+    }
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
 
@@ -193,6 +244,9 @@
 
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingProgress = document.getElementById('loadingProgress');
 
     const viewer=document.getElementById('viewer');
     const stage =document.getElementById('stage');
@@ -225,7 +279,9 @@
 
     A('miDownload').addEventListener('click', stopThen(()=>{
         const a=document.createElement('a');
-        a.href=PDF_URL; a.download='file.pdf'; a.click();
+        a.href=PDF_URL.split('?')[0]; // Remove cache-busting param for download
+        a.download='file.pdf';
+        a.click();
     }));
     A('miFullscreen').addEventListener('click', stopThen(()=>{
         (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.());
@@ -314,13 +370,12 @@
       return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr };
     }
 
-    // bangun overlay link di atas canvas slide
     async function buildLinks(page, viewport, layer, dpr){
       if (!layer) return;
       layer.innerHTML = '';
 
       const annotations = await page.getAnnotations();
-      const factor = 1 / (dpr * (zoomPct / 100)); // viewport -> CSS sebelum transform pageWrap
+      const factor = 1 / (dpr * (zoomPct / 100));
 
       for (const ann of annotations){
         if (ann.subtype !== 'Link' || !ann.url) continue;
@@ -471,7 +526,7 @@
     }
 
     function onPointerDown(e){
-      if (e.target.closest('.pdf-link')) return; // biarkan klik link
+      if (e.target.closest('.pdf-link')) return;
       if(viewMode!=='slide') return;
       stopAutoOnInteraction();
       const w=wrapOf(); w.setPointerCapture?.(e.pointerId);
@@ -673,40 +728,85 @@
       if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
     });
 
-    // ==== INIT: fetch PDF & load ke pdf.js (sekali fetch) ====
+    // ==== ENHANCED LOADING WITH PROGRESS ====
     (async function(){
       const startedAt = performance.now();
 
-      const resp = await fetch(PDF_URL);
-      if (!resp.ok) {
-        console.error('Gagal fetch PDF', resp.status, resp.statusText);
-        return;
+      try {
+        const resp = await fetch(PDF_URL);
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+        // Get content length for progress
+        const contentLength = resp.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+        let loaded = 0;
+        const reader = resp.body.getReader();
+        const chunks = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          loaded += value.length;
+
+          if (total > 0) {
+            const pct = Math.round((loaded / total) * 100);
+            loadingProgress.textContent = pct + '%';
+          } else {
+            loadingProgress.textContent = Math.round(loaded / 1024) + ' KB';
+          }
+        }
+
+        // Combine chunks
+        const pdfBytes = new Uint8Array(loaded);
+        let position = 0;
+        for (const chunk of chunks) {
+          pdfBytes.set(chunk, position);
+          position += chunk.length;
+        }
+
+        console.log('PDF loaded:', pdfBytes.byteLength, 'bytes in', Math.round(performance.now() - startedAt), 'ms');
+
+        loadingProgress.textContent = 'Rendering...';
+
+        const task = pdfjsLib.getDocument({
+          data: pdfBytes,
+          cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
+          cMapPacked: true,
+          standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
+          useSystemFonts: true,
+          disableAutoFetch: false,
+          disableStream: false,
+          isEvalSupported: true,
+          enableXfa: false,
+          wasmUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/wasm/"
+        });
+
+        pdfDoc = await task.promise;
+        numPages = pdfDoc.numPages;
+        pageNum = 1;
+        updateIndicator();
+        await renderFit(pageNum,c1,ctx1,links1);
+        L1.style.display='grid'; L2.style.display='none';
+        updatePlayLabel(); updateModeLabel();
+        clampPan(); setTransform();
+
+        // Hide loading overlay
+        setTimeout(() => {
+          loadingOverlay.classList.add('hide');
+        }, 200);
+
+        console.log('Total load time:', Math.round(performance.now() - startedAt), 'ms');
+
+      } catch (error) {
+        console.error('Failed to load PDF:', error);
+        loadingProgress.textContent = 'Error loading PDF';
+        loadingProgress.style.color = '#ef4444';
       }
-      const pdfBytes = await resp.arrayBuffer();
-      console.log('PDF fetched bytes:', pdfBytes.byteLength, 'in', Math.round(performance.now() - startedAt), 'ms');
-
-      const task = pdfjsLib.getDocument({
-        data: pdfBytes,
-        cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/",
-        cMapPacked: true,
-        standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/",
-        useSystemFonts: true,
-        disableAutoFetch: false,
-        disableStream: true,
-        isEvalSupported: true,
-        enableXfa: false,
-        // ⬇️ penting untuk JPEG2000 / JPX
-        wasmUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/wasm/"
-      });
-
-      pdfDoc = await task.promise;
-      numPages = pdfDoc.numPages;
-      pageNum = 1;
-      updateIndicator();
-      await renderFit(pageNum,c1,ctx1,links1);
-      L1.style.display='grid'; L2.style.display='none';
-      updatePlayLabel(); updateModeLabel();
-      clampPan(); setTransform();
     })();
 </script>
 
