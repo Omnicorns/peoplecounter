@@ -3,259 +3,698 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Sarinah Catalogue</title>
+  <title>SARINAH — Digital Catalogue</title>
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#e5e7eb;
-      --ring:#cbd5f5;
-      --acc:#2db36d;
-      --acc2:#42c18b;
-      --text:#0f172a;
-      --sub:#6b7280;
+      --paper: #faf8f3;
+      --ink: #1a1a1a;
+      --accent: #e63946;
+      --accent-light: #ff6b7a;
+      --muted: #6b6b6b;
+      --border: #d4d4d4;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
+
+    *{
+      box-sizing:border-box;
       margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+      padding:0;
+    }
+
+    html,body{
+      height:100%;
       overflow:hidden;
+    }
+
+    body{
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      position: relative;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Brutalist grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 19px, var(--border) 19px, var(--border) 20px),
+        repeating-linear-gradient(90deg, transparent, transparent 19px, var(--border) 19px, var(--border) 20px);
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Noise texture */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+      mix-blend-mode: multiply;
     }
 
     #viewer{
-      width:min(100vw,1400px);
-      height:min(100vh,900px);
-      margin:auto;
-      display:flex;
-      flex-direction:column;
-      border-radius:18px;
-      overflow:hidden;
-      position:relative;
-      z-index:1;
-      background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(249,250,251,.98));
-      border:1px solid rgba(148,163,184,.7);
-      box-shadow:0 24px 70px rgba(15,23,42,.35);
-      backdrop-filter:none;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
     }
+
     @supports(height:100svh){
       #viewer{
-        width:min(100svw,1400px);
-        height:min(calc(100svh - var(--safe-top) - var(--safe-bottom)),900px)
+        height: 100svh;
       }
     }
 
+    /* Header with editorial style */
     #top{
-      position:relative;
-      width:100%;
-      height:56px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      padding:8px 10px;
-      z-index:50;
-      background:linear-gradient(90deg, rgba(255,255,255,.92), rgba(248,250,252,.96));
-      border-bottom:1px solid rgba(203,213,225,.9);
-      box-shadow:0 8px 18px rgba(15,23,42,.15);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
+      position: relative;
+      width: 100%;
+      height: auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      padding: 24px 32px 16px;
+      z-index: 50;
+      background: var(--paper);
+      border-bottom: 3px solid var(--ink);
+      gap: 20px;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .logo {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 42px;
+      font-weight: 600;
+      font-style: italic;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      line-height: 0.9;
+      position: relative;
+      width: fit-content;
+    }
+
+    .logo::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: underlineGrow 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+      animation-delay: 0.3s;
+    }
+
+    @keyframes underlineGrow {
+      to { transform: scaleX(1); }
+    }
+
+    .subtitle {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .center-info {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 8px;
+    }
+
+    .page-display {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .page-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .iconbtn{
-      height:36px;
-      width:36px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.02);
-      border:1px solid rgba(148,163,184,0.5);
-      display:grid;
-      place-items:center;
-      color:#111827;
-      cursor:pointer;
-      box-shadow:none;
+      height: 44px;
+      min-width: 44px;
+      padding: 0 16px;
+      background: var(--ink);
+      border: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--paper);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 18px;
+      font-family: inherit;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: relative;
+      overflow: hidden;
+      font-size: 11px;
     }
-    .iconbtn:hover{
-      background:rgba(15,23,42,0.06);
-      border-color:rgba(148,163,184,0.9)
-    }
-    .kebab{
-      font:700 18px/0 system-ui;
-      letter-spacing:2px;
-      color:#111827;
-    }
-    .popover{
-      position:absolute;
-      top:calc(48px + var(--safe-top));
-      right:10px;
-      width:220px;
-      z-index:60;
-      display:none;
-      background:#f9fafb;
-      border:1px solid #d1d5db;
-      border-radius:12px;
-      box-shadow:0 18px 40px rgba(15,23,42,.30);
-      padding:6px;
-    }
-    .popover.show{display:block}
-    .popitem{
-      width:100%;
-      text-align:left;
-      background:transparent;
-      border:0;
-      color:#111827;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:9px 10px;
-      border-radius:10px;
-      font-size:13px;
-    }
-    .popitem:hover{background:#e5e7eb}
-    .popitem[aria-disabled="true"]{opacity:.45; pointer-events:none}
-    .sep{height:1px; background:#e5e7eb; margin:6px 0; border:0}
 
+    .iconbtn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    .iconbtn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .iconbtn:hover::before {
+      transform: translateY(0);
+    }
+
+    .iconbtn:active {
+      transform: scale(0.97);
+    }
+
+    .popover{
+      position: absolute;
+      top: calc(100px + var(--safe-top));
+      right: 32px;
+      width: 240px;
+      z-index: 60;
+      display: none;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      padding: 0;
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.1);
+      animation: popDrop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popDrop {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) rotate(-2deg);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+      }
+    }
+
+    .popover.show{display: block;}
+
+    .popitem{
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.1s ease;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .popitem:last-child {
+      border-bottom: 0;
+    }
+
+    .popitem:hover{
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .popitem[aria-disabled="true"]{
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .sep{
+      height: 3px;
+      background: var(--ink);
+      margin: 0;
+      border: 0;
+    }
+
+    /* Main stage */
     #stage{
-      position:relative;
-      flex:1;
-      background:radial-gradient(ellipse at 50% 30%, #ffffff 0%, #e5e7eb 55%, #d1d5db 100%);
-      overflow:hidden;
-      display:grid;
-      place-items:center
+      position: relative;
+      flex: 1;
+      background:
+        linear-gradient(180deg, transparent 0%, rgba(230, 57, 70, 0.02) 100%);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      padding: 40px 20px;
     }
-    .deck{position:absolute; inset:12px; display:grid; place-items:center; isolation:isolate}
-    .layer{position:absolute; inset:0; display:grid; place-items:center}
+
+    .deck{
+      position: absolute;
+      inset: 40px 20px;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .layer{
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      transition: opacity 0.3s ease;
+    }
+
     .pageWrap{
-      position:relative;
-      will-change:transform;
-      touch-action:none;
-      transform-origin:center center;
+      position: relative;
+      will-change: transform;
+      touch-action: none;
+      transform-origin: center center;
+      transition: transform 0.2s ease;
     }
+
     canvas{
-      max-width:100%;
-      max-height:100%;
-      background:#fff;
-      border-radius:14px;
-      box-shadow:0 28px 60px rgba(15,23,42,.45);
-      display:block;
-      image-rendering:crisp-edges;
-      image-rendering:-webkit-optimize-contrast;
-      image-rendering:pixelated;
+      max-width: 100%;
+      max-height: 100%;
+      background: #fff;
+      border: 4px solid var(--ink);
+      box-shadow:
+        12px 12px 0 rgba(0, 0, 0, 0.1),
+        0 0 0 12px var(--paper);
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
 
     .linkLayer{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
+      position: absolute;
+      inset: 4px;
+      pointer-events: none;
     }
+
     .linkLayer .pdf-link{
-      position:absolute;
-      display:block;
-      pointer-events:auto;
-      text-decoration:none;
+      position: absolute;
+      display: block;
+      pointer-events: auto;
+      text-decoration: none;
+      transition: all 0.1s ease;
+      border: 2px solid transparent;
     }
+
     .linkLayer .pdf-link:hover{
-      outline:2px solid rgba(37,99,235,.6);
-      cursor:pointer;
+      border-color: var(--accent);
+      background: rgba(230, 57, 70, 0.1);
+      cursor: pointer;
     }
 
+    /* Read mode */
     #read{
-      flex:1;
-      overflow:auto;
-      background:#f3f4f6;
-      display:none
+      flex: 1;
+      overflow: auto;
+      background: var(--paper);
+      display: none;
+      padding: 40px 20px;
     }
+
+    #read::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    #read::-webkit-scrollbar-track {
+      background: var(--border);
+    }
+
+    #read::-webkit-scrollbar-thumb {
+      background: var(--ink);
+      border: 2px solid var(--paper);
+    }
+
+    #read::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
     #doc{
-      margin:0 auto;
-      padding:16px;
-      width:min(100%,1100px)
+      margin: 0 auto;
+      padding: 0;
+      width: min(100%, 1100px);
     }
+
     #doc canvas.page{
-      margin:0 auto 16px;
-      border-radius:14px;
-      box-shadow:0 18px 40px rgba(15,23,42,.20);
-      background:#ffffff;
-      display:block;
+      margin: 0 auto 40px;
+      border: 4px solid var(--ink);
+      box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      display: block;
+      animation: slideInPage 0.4s ease backwards;
     }
 
+    @keyframes slideInPage {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Navigation buttons */
     .nav{
-      position:absolute;
-      top:50%;
-      transform:translateY(-50%);
-      z-index:20;
-      width:44px;
-      height:44px;
-      display:grid;
-      place-items:center;
-      border-radius:999px;
-      background:rgba(255,255,255,.92);
-      border:1px solid rgba(148,163,184,.8);
-      backdrop-filter:blur(8px);
-      color:#111827;
-      box-shadow:0 4px 14px rgba(15,23,42,.30);
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      width: 60px;
+      height: 60px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      border: 0;
+      color: var(--paper);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 24px;
+      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.1);
     }
-    .nav:active{transform:translateY(-50%) scale(.97)}
-    .nav:disabled{opacity:.35; pointer-events:none}
-    #prev{left:14px} #next{right:14px}
 
+    .nav:hover {
+      background: var(--accent);
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    .nav:active{
+      transform: translateY(-50%) scale(0.95);
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .nav:disabled{
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    #prev{left: 20px;}
+    #next{right: 20px;}
+
+    /* Footer */
     #footer{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:8px 12px;
-      border-top:1px solid var(--ring);
-      background:rgba(248,250,252,.96);
-      padding-bottom:calc(8px + var(--safe-bottom));
-      font-size:12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 32px;
+      padding-bottom: calc(16px + var(--safe-bottom));
+      border-top: 3px solid var(--ink);
+      background: var(--paper);
+      font-size: 12px;
+      font-weight: 600;
     }
+
     #indicator{
-      font-variant-numeric:tabular-nums;
-      color:var(--sub)
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      min-width: 140px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
+
     .bar{
-      --p:0%;
-      position:relative;
-      height:8px;
-      border-radius:999px;
-      background:#e5e7eb;
-      flex:1;
-      overflow:hidden;
-      border:1px solid #cbd5f5;
-      cursor:pointer
+      --p: 0%;
+      position: relative;
+      height: 20px;
+      background: transparent;
+      border: 3px solid var(--ink);
+      flex: 1;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
     }
+
     .bar>i{
-      position:absolute;
-      inset:0 calc(100% - var(--p)) 0 0;
-      background:linear-gradient(90deg, var(--acc), var(--acc2));
-      transition:inset .18s linear
+      position: absolute;
+      inset: 0 calc(100% - var(--p)) 0 0;
+      background: var(--accent);
+      transition: inset 0.2s ease;
+      position: relative;
+    }
+
+    .bar>i::before {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      background: var(--ink);
+      animation: progressPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes progressPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .bar:hover>i {
+      background: var(--accent-light);
+    }
+
+    /* Zoom indicator */
+    .zoom-indicator {
+      position: absolute;
+      top: 120px;
+      left: 32px;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 12px 24px;
+      font-size: 24px;
+      font-weight: 700;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      border: 0;
+      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.1);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    .zoom-indicator::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid var(--accent);
+      transform: scale(1.05);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .zoom-indicator.show {
+      opacity: 1;
+    }
+
+    .zoom-indicator.show::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border: 6px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin 0.6s linear infinite;
+      z-index: 100;
+    }
+
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      #top {
+        grid-template-columns: 1fr;
+        padding: 16px 20px;
+        gap: 12px;
+      }
+
+      .logo {
+        font-size: 32px;
+      }
+
+      .center-info {
+        order: -1;
+      }
+
+      .controls {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .iconbtn {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .nav {
+        width: 50px;
+        height: 50px;
+      }
+
+      #prev { left: 12px; }
+      #next { right: 12px; }
+
+      .zoom-indicator {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .zoom-indicator.show {
+        transform: translateX(-50%);
+      }
+    }
+
+    /* Stamp decoration */
+    .stamp {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      width: 120px;
+      height: 120px;
+      border: 4px solid var(--accent);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      transform: rotate(-15deg);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 5;
+      font-family: 'Crimson Pro', serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .stamp::before {
+      content: 'Sarinah';
+      position: absolute;
+    }
+
+    .stamp::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+    }
+
+    @media (max-width: 768px) {
+      .stamp {
+        width: 80px;
+        height: 80px;
+        bottom: 20px;
+        right: 20px;
+        font-size: 11px;
+      }
+
+      .stamp::after {
+        inset: 8px;
+      }
     }
   </style>
 </head>
 <body>
-<div id="viewer" aria-label="PDF Pro Viewer">
+
+<div class="stamp"></div>
+
+<div id="viewer" aria-label="Sarinah Digital Catalogue">
   <div id="top">
-    <button id="kebabBtn" class="iconbtn kebab" aria-label="Menu">⋮</button>
+    <div class="logo-area">
+      <div class="logo">SARINAH</div>
+      <div class="subtitle">Digital Catalogue</div>
+    </div>
+
+    <div class="center-info">
+      <div class="page-display" id="pageDisplay">01</div>
+      <div class="page-label">Current Page</div>
+    </div>
+
+    <div class="controls">
+      <button id="kebabBtn" class="iconbtn"><span>MENU</span></button>
+    </div>
+
     <div id="pop" class="popover" role="menu" aria-label="Menu">
-      <button class="popitem" id="miFullscreen">⤢ Fullscreen</button>
-      <button class="popitem" id="miMode">📖 Mode Read</button>
+      <button class="popitem" id="miFullscreen"><span>⤢</span> Fullscreen</button>
+      <button class="popitem" id="miMode"><span>📖</span> Read Mode</button>
       <hr class="sep">
-      <button class="popitem" id="miZoomIn">＋ Zoom In</button>
-      <button class="popitem" id="miZoomOut">－ Zoom Out</button>
-      <button class="popitem" id="miZoomReset">⤾ Reset 100%</button>
-      <button class="popitem" id="miFitWidth">⇔ Fit Width</button>
+      <button class="popitem" id="miZoomIn"><span>＋</span> Zoom In</button>
+      <button class="popitem" id="miZoomOut"><span>－</span> Zoom Out</button>
+      <button class="popitem" id="miZoomReset"><span>⤾</span> Reset</button>
+      <button class="popitem" id="miFitWidth"><span>⇔</span> Fit Width</button>
       <hr class="sep">
-      <button class="popitem" id="miPlay">▶️ Play</button>
+      <button class="popitem" id="miPlay"><span>▶</span> Autoplay</button>
     </div>
   </div>
 
   <div id="stage" aria-live="polite">
-    <button class="nav" id="prev" aria-label="Sebelumnya">❮</button>
+    <button class="nav" id="prev" aria-label="Previous">‹</button>
     <div class="deck">
       <div id="L1" class="layer">
         <div class="pageWrap" id="wrap1">
@@ -270,7 +709,7 @@
         </div>
       </div>
     </div>
-    <button class="nav" id="next" aria-label="Berikutnya">❯</button>
+    <button class="nav" id="next" aria-label="Next">›</button>
   </div>
 
   <div id="read" aria-label="Read Mode"><div id="doc"></div></div>
@@ -280,6 +719,8 @@
     <div class="bar" id="progress" aria-label="Progress"><i id="prog"></i></div>
   </div>
 </div>
+
+<div class="zoom-indicator" id="zoomIndicator">100%</div>
 
 <script th:inline="javascript">
   /*<![CDATA[*/
@@ -301,13 +742,13 @@
 
   let pdfDoc=null, pageNum=1, numPages=0;
   let active=1, animating=false, fitMode='page', zoomPct=100, readZoomPct=100;
-  const ZMIN=25, ZMAX=600, ZSTEP=12;
+  const ZMIN=25, ZMAX=600, ZSTEP=15;
 
   const MAX_DPR_SLIDE = isMobile ? 3.0 : 4.0;
   const MAX_DPR_READ  = isMobile ? 3.0 : 4.0;
 
   let viewMode='slide';
-  let auto=false, timer=null, SLIDE_MS=8000;
+  let auto=false, timer=null, SLIDE_MS=5000;
 
   const viewer=document.getElementById('viewer');
   const stage =document.getElementById('stage');
@@ -323,7 +764,9 @@
   const prevBtn=document.getElementById('prev');
   const nextBtn=document.getElementById('next');
   const indicator=document.getElementById('indicator');
+  const pageDisplay=document.getElementById('pageDisplay');
   const progressBar=document.getElementById('progress'), prog=document.getElementById('prog');
+  const zoomIndicator=document.getElementById('zoomIndicator');
 
   const kebab=document.getElementById('kebabBtn');
   const pop=document.getElementById('pop');
@@ -346,16 +789,37 @@
       if(viewMode==='slide') show(pageNum);
   }));
 
-  A('miZoomIn').addEventListener('click', stopThen(()=> setZoom(zoomPct+ZSTEP)));
-  A('miZoomOut').addEventListener('click', stopThen(()=> setZoom(zoomPct-ZSTEP)));
-  A('miZoomReset').addEventListener('click', stopThen(()=> { resetZoomToFit(); }));
+  let zoomTimeout = null;
+  function showZoomIndicator(pct) {
+    zoomIndicator.textContent = Math.round(pct) + '%';
+    zoomIndicator.classList.add('show');
+    clearTimeout(zoomTimeout);
+    zoomTimeout = setTimeout(() => {
+      zoomIndicator.classList.remove('show');
+    }, 1000);
+  }
+
+  A('miZoomIn').addEventListener('click', stopThen(()=> {
+    setZoom(zoomPct+ZSTEP);
+    showZoomIndicator(zoomPct);
+  }));
+  A('miZoomOut').addEventListener('click', stopThen(()=> {
+    setZoom(zoomPct-ZSTEP);
+    showZoomIndicator(zoomPct);
+  }));
+  A('miZoomReset').addEventListener('click', stopThen(()=> {
+    resetZoomToFit();
+    showZoomIndicator(100);
+  }));
 
   function setPlayEnabled(on){ A('miPlay').setAttribute('aria-disabled', on? 'false':'true'); }
   function updateModeLabel(){
-    A('miMode').textContent = (viewMode==='slide') ? '📖 Mode Read' : '🖼️ Mode Slide';
+    A('miMode').innerHTML = (viewMode==='slide') ? '<span>📖</span> Read Mode' : '<span>🖼</span> Slide Mode';
     setPlayEnabled(viewMode==='slide');
   }
-  function updatePlayLabel(){ A('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
+  function updatePlayLabel(){
+    A('miPlay').innerHTML = auto ? '<span>⏸</span> Pause' : '<span>▶</span> Autoplay';
+  }
 
   function startAuto(){
     if(viewMode!=='slide' || auto || !numPages) return;
@@ -386,6 +850,8 @@
   };
 
   function updateIndicator(){
+    const padded = String(pageNum).padStart(2, '0');
+    pageDisplay.textContent = padded;
     indicator.textContent=`Page ${pageNum} / ${numPages}`;
     const pct=Math.round(((pageNum-1)/(numPages-1||1))*100);
     progressBar.style.setProperty('--p', pct+'%');
@@ -394,8 +860,8 @@
 
   async function calcViewportSlide(page){
     const base = page.getViewport({scale:1});
-    const W = Math.max(1, stage.clientWidth - 24);
-    const H = Math.max(1, stage.clientHeight - 24);
+    const W = Math.max(1, stage.clientWidth - 80);
+    const H = Math.max(1, stage.clientHeight - 80);
 
     const fitScale = (fitMode === 'width')
       ? (W / base.width)
@@ -487,19 +953,15 @@
     await buildLinks(page, viewport, linkLayer, dpr);
   }
 
-  // ========== PERBAIKAN PINCH ZOOM ==========
   const gesture = {
     pointers: new Map(),
     mode: 'idle',
-    // Pinch state
     startDist: 0,
     startZoom: 100,
     startTx: 0,
     startTy: 0,
     pinchCenter: {x: 0, y: 0},
-    // Pan state
     panStart: {x: 0, y: 0},
-    // Double tap
     lastTap: {t: 0, x: 0, y: 0}
   };
 
@@ -546,20 +1008,36 @@
   async function show(p){
     if(viewMode!=='slide' || animating || !pdfDoc) return;
     animating=true; prevBtn.disabled=nextBtn.disabled=true;
+
     const nxtL=(active===1)?L2:L1;
+    const currL=(active===1)?L1:L2;
     const nxtC=(active===1)?c2:c1, nxtCtx=(active===1)?ctx2:ctx1;
     const nxtLinks=(active===1)?links2:links1;
+
     nxtL.style.display='none';
     await renderFit(p,nxtC,nxtCtx,nxtLinks);
-    (active===1?L1:L2).style.display='none'; nxtL.style.display='grid';
-    active=(active===1)?2:1; pageNum=p; updateIndicator();
 
-    // Reset transformasi saat ganti halaman
-    gesture.startTx = 0;
-    gesture.startTy = 0;
-    setTransform();
+    currL.style.opacity = '1';
+    nxtL.style.display='grid';
+    nxtL.style.opacity = '0';
 
-    prevBtn.disabled=nextBtn.disabled=false; animating=false;
+    requestAnimationFrame(() => {
+      currL.style.opacity = '0';
+      nxtL.style.opacity = '1';
+
+      setTimeout(() => {
+        currL.style.display='none';
+        currL.style.opacity = '1';
+        active=(active===1)?2:1;
+        pageNum=p;
+        updateIndicator();
+        gesture.startTx = 0;
+        gesture.startTy = 0;
+        setTransform();
+        prevBtn.disabled=nextBtn.disabled=false;
+        animating=false;
+      }, 300);
+    });
   }
 
   prevBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum>1) show(pageNum-1); };
@@ -594,6 +1072,7 @@
 
   function requestLiveRender(pct){
     live.target = clamp(Math.round(pct), ZMIN, ZMAX);
+    showZoomIndicator(live.target);
     if(live.scheduled || live.rendering) return;
     live.scheduled = true;
     setTimeout(async ()=>{
@@ -617,12 +1096,10 @@
     gesture.pointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
 
     if(gesture.pointers.size === 2){
-      // Mulai pinch
       gesture.mode = 'pinch';
       gesture.startDist = getDistance();
       gesture.startZoom = zoomPct;
       gesture.pinchCenter = getMidpoint();
-      // Simpan posisi pan saat ini dari transform
       const currentTransform = wrapOf().style.transform;
       const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
       if(match){
@@ -630,10 +1107,8 @@
         gesture.startTy = parseFloat(match[2]) || 0;
       }
     } else if(gesture.pointers.size === 1 && zoomPct > 100){
-      // Mulai pan
       gesture.mode = 'pan';
       gesture.panStart = {x: e.clientX, y: e.clientY};
-      // Simpan base position
       const currentTransform = wrapOf().style.transform;
       const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
       if(match){
@@ -652,20 +1127,16 @@
       const scale = currentDist / gesture.startDist;
       const newZoom = clamp(gesture.startZoom * scale, ZMIN, ZMAX);
 
-      // Update zoom
       const oldZoom = zoomPct;
       zoomPct = newZoom;
 
-      // Hitung pergeseran untuk zoom di titik tengah pinch
       const currentCenter = getMidpoint();
       const w = wrapOf();
       const rect = w.getBoundingClientRect();
 
-      // Offset dari center wrap ke pinch center (dalam koordinat layar)
       const offsetX = currentCenter.x - (rect.left + rect.width / 2);
       const offsetY = currentCenter.y - (rect.top + rect.height / 2);
 
-      // Adjust posisi agar zoom terfokus di pinch center
       const zoomRatio = newZoom / oldZoom;
       const centerShiftX = offsetX * (1 - zoomRatio);
       const centerShiftY = offsetY * (1 - zoomRatio);
@@ -684,7 +1155,6 @@
       const dx = pointer.x - gesture.panStart.x;
       const dy = pointer.y - gesture.panStart.y;
 
-      // Parse base transform untuk mendapat posisi awal
       const w = wrapOf();
       const currentTransform = w.style.transform;
       const match = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
@@ -692,11 +1162,9 @@
       let baseTx = gesture.startTx;
       let baseTy = gesture.startTy;
 
-      // Update posisi dengan delta
       gesture.startTx = baseTx + dx;
       gesture.startTy = baseTy + dy;
 
-      // Reset panStart untuk frame berikutnya
       gesture.panStart = {x: pointer.x, y: pointer.y};
 
       clampPan();
@@ -729,7 +1197,7 @@
       e.preventDefault();
       stopAutoOnInteraction();
       const delta = e.deltaY;
-      const step = (Math.abs(delta) > 40 ? 8 : 4);
+      const step = (Math.abs(delta) > 40 ? 10 : 5);
       const dir = delta > 0 ? -step : step;
       requestLiveRender(zoomPct + dir);
       return;
@@ -768,7 +1236,6 @@
     swipeX=null;
   });
 
-  // Double-tap zoom
   stage.addEventListener('pointerup', (e)=>{
     if (e.target.closest('.pdf-link')) return;
     if(viewMode!=='slide' || gesture.mode !== 'idle') return;
@@ -780,7 +1247,7 @@
 
     if(gap < 280 && moved < 20){
       stopAutoOnInteraction();
-      const targetZoom = zoomPct <= 100 ? 180 : 100;
+      const targetZoom = zoomPct <= 100 ? 200 : 100;
       requestLiveRender(targetZoom);
     }
 
@@ -793,6 +1260,7 @@
       if(!ent.isIntersecting) continue;
       const cnv=ent.target; if(cnv.dataset.rendered) continue;
       const i=+cnv.dataset.page;
+      cnv.style.animationDelay = (i * 0.05) + 's';
       const page=await pdfDoc.getPage(i);
       const {viewport,dpr}=await calcViewportRead(page);
       const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
@@ -851,25 +1319,24 @@
   }
 
   document.addEventListener('keydown',(e)=>{
-    if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); }
-    if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
-    if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
+    if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); showZoomIndicator(100); }
+    if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); showZoomIndicator(zoomPct); }
+    if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); showZoomIndicator(zoomPct); }
     if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
     if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
     if(e.key==='ArrowLeft'  && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
   });
 
-  // ==== INIT: fetch PDF & load ====
   (async function(){
     const startedAt = performance.now();
 
     const resp = await fetch(PDF_URL);
     if (!resp.ok) {
-      console.error('Gagal fetch PDF', resp.status, resp.statusText);
+      console.error('Failed to fetch PDF', resp.status, resp.statusText);
       return;
     }
     const pdfBytes = await resp.arrayBuffer();
-    console.log('PDF fetched bytes:', pdfBytes.byteLength, 'in', Math.round(performance.now() - startedAt), 'ms');
+    console.log('PDF fetched:', pdfBytes.byteLength, 'bytes in', Math.round(performance.now() - startedAt), 'ms');
 
     const task = pdfjsLib.getDocument({
       data: pdfBytes,
@@ -881,7 +1348,6 @@
       disableStream: true,
       isEvalSupported: true,
       enableXfa: false,
-      wasmUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/wasm/"
     });
 
     pdfDoc = await task.promise;
