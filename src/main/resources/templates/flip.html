@@ -29,32 +29,32 @@
 
         /* Enhanced Loading */
         .loading-overlay {
-            position: fixed;inset: 0;background: rgba(7, 8, 11, 0.98);
-            display: flex;flex-direction: column;align-items: center;justify-content: center;
-            z-index: 9999;transition: opacity 0.3s ease, visibility 0.3s ease;
-            backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+          position: fixed;inset: 0;background: rgba(7, 8, 11, 0.98);
+          display: flex;flex-direction: column;align-items: center;justify-content: center;
+          z-index: 9999;transition: opacity 0.3s ease, visibility 0.3s ease;
+          backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
         }
         .loading-overlay.hide {opacity: 0;visibility: hidden;pointer-events:none}
 
         .spinner-container{position:relative;width:80px;height:80px}
         .spinner {
-            position:absolute;inset:0;
-            border: 3px solid rgba(45, 179, 109, 0.15);
-            border-top-color: #2db36d;border-radius: 50%;
-            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          position:absolute;inset:0;
+          border: 3px solid rgba(45, 179, 109, 0.15);
+          border-top-color: #2db36d;border-radius: 50%;
+          animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .spinner-inner{
-            position:absolute;inset:8px;
-            border: 3px solid rgba(66, 193, 139, 0.15);
-            border-bottom-color: #42c18b;border-radius: 50%;
-            animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+          position:absolute;inset:8px;
+          border: 3px solid rgba(66, 193, 139, 0.15);
+          border-bottom-color: #42c18b;border-radius: 50%;
+          animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
         }
         @keyframes spin {to { transform: rotate(360deg); }}
 
         .loading-text {margin-top: 28px;color: #9aa3b2;font-size: 14px;font-weight:500;letter-spacing:0.3px}
         .loading-progress {
-            margin-top: 12px;color: #2db36d;font-size: 24px;font-weight: 700;
-            font-variant-numeric: tabular-nums;text-shadow:0 0 20px rgba(45,179,109,0.3)
+          margin-top: 12px;color: #2db36d;font-size: 24px;font-weight: 700;
+          font-variant-numeric: tabular-nums;text-shadow:0 0 20px rgba(45,179,109,0.3)
         }
         .loading-details{margin-top:8px;color:#6b7280;font-size:12px;font-variant-numeric:tabular-nums}
 
@@ -100,6 +100,9 @@
         }
         @keyframes popIn{from{opacity:0;transform:translateY(-8px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
         .popover.show{display:block}
+
+        /* ✅ FIX: allow clicks inside popover even though #top is pointer-events:none */
+        #top .popover, #top .popover * { pointer-events:auto; }
 
         .popitem{
           width:100%;text-align:left;background:transparent;border:0;color:#cfd7e6;
@@ -292,26 +295,27 @@
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? @{${pdfUrl}} : @{/file.pdf} ]]*/ '/file.pdf';
+    window.DEFAULT_PDF = /*[[ ${pdfUrl} != null ? ${pdfUrl} : '/api/pdf/stream/sample.pdf' ]]*/ '/api/pdf/stream/sample.pdf';
     /*]]>*/
 </script>
 
 <script type="module">
     import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs";
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.mjs";
-
     if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
     const params = new URLSearchParams(location.search);
     let PDF_URL = params.get('pdf') || window.DEFAULT_PDF;
 
-    // Cache-busting dengan timestamp
-    if (PDF_URL && !PDF_URL.includes('?') && !PDF_URL.startsWith('data:') && !PDF_URL.startsWith('blob:')) {
-      const separator = PDF_URL.includes('#') ? '&' : '?';
-      PDF_URL = PDF_URL.split('#')[0] + separator + '_t=' + Date.now() + (PDF_URL.includes('#') ? PDF_URL.substring(PDF_URL.indexOf('#')) : '');
-    }
+    const pdfId = params.get('id');
+    if (pdfId) PDF_URL = `/api/admin/users/pdf/${pdfId}`;
 
-    // Device detection dengan feature detection yang lebih baik
+    const catalogueId = params.get('catalogue');
+    if (catalogueId) PDF_URL = `/api/pdf/catalogue/${catalogueId}`;
+
+    // ✅ cache bytes for reliable download (works with auth endpoints)
+    let pdfBytesCache = null;
+
     const isMobile = (() => {
       if ('maxTouchPoints' in navigator) return navigator.maxTouchPoints > 0;
       if ('msMaxTouchPoints' in navigator) return navigator.msMaxTouchPoints > 0;
@@ -327,10 +331,9 @@
       return false;
     })();
 
-    // Performance config
     const PERF = {
       MAX_DPR_SLIDE: isMobile ? (isLowEndDevice ? 2 : 2.5) : 3,
-      MAX_DPR_READ: isMobile ? (isLowEndDevice ? 2.5 : 3) : 3.5,
+      MAX_DPR_READ:  isMobile ? (isLowEndDevice ? 2.5 : 3) : 3.5,
       DEBOUNCE_ZOOM: isMobile ? 150 : 80,
       DEBOUNCE_LIVE: isMobile ? 220 : 100,
       OBSERVER_MARGIN: isMobile ? '150px' : '200px',
@@ -344,7 +347,6 @@
     let viewMode='slide';
     let auto=false, timer=null, SLIDE_MS=8000;
 
-    // DOM elements dengan caching
     const $ = id => document.getElementById(id);
     const loadingOverlay = $('loadingOverlay');
     const loadingProgress = $('loadingProgress');
@@ -364,6 +366,9 @@
 
     const kebab=$('kebabBtn'), pop=$('pop');
 
+    // ✅ FIX: clicking inside menu should not close it
+    pop.addEventListener('click', (e) => e.stopPropagation());
+
     const closePop=()=>pop.classList.remove('show');
     const stopThen=(fn)=>(e)=>{e.stopPropagation(); fn(); closePop();};
 
@@ -372,24 +377,56 @@
     const ctxOf = ()=> active===1?ctx1:ctx2;
     const linksOf  = ()=> active===1?links1:links2;
 
-    // Event handlers
     kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
     document.addEventListener('click',closePop);
 
-    $('miDownload').addEventListener('click', stopThen(()=>{
-        const a=document.createElement('a');
-        a.href=PDF_URL.split('?')[0];
-        a.download='file.pdf';
-        a.click();
+    // ✅ FIX: Download using cached bytes (reliable for secured endpoints)
+    $('miDownload').addEventListener('click', stopThen(()=> {
+      if (!pdfBytesCache) return;
+
+      const blob = new Blob([pdfBytesCache], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+
+      const a=document.createElement('a');
+      a.href=url;
+      a.download='document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
     }));
 
-    $('miFullscreen').addEventListener('click', stopThen(()=>{
-        (document.fullscreenElement?document.exitFullscreen():viewer.requestFullscreen?.());
+    $('miFullscreen').addEventListener('click', stopThen(()=> {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+      if (isFs) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      } else {
+        const elem = viewer;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
+      }
     }));
 
-    $('miFitWidth').addEventListener('click', stopThen(()=>{
-        fitMode='width';
-        if(viewMode==='slide') show(pageNum);
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(event => {
+      document.addEventListener(event, () => {
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+        $('miFullscreen').textContent = isFullscreen ? '⤓ Exit Fullscreen' : '⤢ Fullscreen';
+      });
+    });
+
+    $('miFitWidth').addEventListener('click', stopThen(async ()=> {
+      if(viewMode !== 'slide') return;
+      fitMode='width';
+      zoomPct = 100;
+      gesture.scaleTmp = 1;
+      gesture.tx = 0;
+      gesture.ty = 0;
+      setTransform();
+      await renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
     }));
 
     $('miZoomIn').addEventListener('click', stopThen(()=> setZoom(zoomPct+ZSTEP)));
@@ -397,18 +434,23 @@
     $('miZoomReset').addEventListener('click', stopThen(()=> resetZoomToFit()));
 
     function setPlayEnabled(on){ $('miPlay').setAttribute('aria-disabled', on? 'false':'true'); }
+
     function updateModeLabel(){
       $('miMode').textContent = (viewMode==='slide') ? '📖 Mode Read' : '🖼️ Mode Slide';
       setPlayEnabled(viewMode==='slide');
     }
-    function updatePlayLabel(){ $('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play'; }
+
+    function updatePlayLabel(){
+      $('miPlay').textContent = auto ? '⏸️ Pause' : '▶️ Play';
+    }
 
     function startAuto(){
-      if(viewMode!=='slide' || auto || !numPages) return;
-      auto=true; updatePlayLabel();
-      timer=setInterval(()=>{
-        const nxt=(pageNum<numPages)?pageNum+1:1;
-        show(nxt);
+      if(viewMode!=='slide' || auto || !numPages || numPages <= 1) return;
+      auto=true;
+      updatePlayLabel();
+      timer=setInterval(()=> {
+        if(pageNum >= numPages) show(1);
+        else show(pageNum + 1);
       }, SLIDE_MS);
     }
 
@@ -419,12 +461,12 @@
 
     const stopAutoOnInteraction = ()=>{ if(auto) stopAuto(); };
 
-    $('miPlay').addEventListener('click', stopThen(()=>{
+    $('miPlay').addEventListener('click', stopThen(()=> {
       if(viewMode!=='slide') return;
       auto?stopAuto():startAuto();
     }));
 
-    $('miMode').addEventListener('click', stopThen(()=>{
+    $('miMode').addEventListener('click', stopThen(()=> {
       viewMode==='slide' ? enterReadMode() : exitReadMode();
     }));
 
@@ -454,9 +496,8 @@
       const dprBase = Math.min(PERF.MAX_DPR_SLIDE, Math.max(1, devicePixelRatio || 1));
       const effectiveZoom = zoomPct / 100;
       const rasterScale = fitScale * dprBase * effectiveZoom;
-      const cssScale = fitScale;
 
-      return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr: dprBase, fitScale };
+      return { viewport: page.getViewport({scale:rasterScale}), dpr: dprBase, fitScale };
     }
 
     async function calcViewportRead(page){
@@ -465,11 +506,9 @@
       const dpr=Math.min(PERF.MAX_DPR_READ,Math.max(1,devicePixelRatio||1));
       const fitScale=(cw/base.width);
       const rasterScale = fitScale * dpr * (readZoomPct/100);
-      const cssScale = fitScale * (readZoomPct/100);
-      return { viewport: page.getViewport({scale:rasterScale}), cssScale, dpr };
+      return { viewport: page.getViewport({scale:rasterScale}), dpr };
     }
 
-    // Optimized link layer dengan batching
     async function buildLinks(page, viewport, layer, dpr){
       if (!layer) return;
 
@@ -492,7 +531,6 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.style.cssText = `left:${x1*factor}px;top:${y1*factor}px;width:${(x2-x1)*factor}px;height:${(y2-y1)*factor}px`;
-
         fragment.appendChild(a);
       }
 
@@ -506,7 +544,6 @@
       if(!pdfDoc) return;
 
       canvas.classList.add('rendering');
-
       try {
         const page=await pdfDoc.getPage(p);
         if (token !== renderToken) return;
@@ -516,7 +553,6 @@
 
         const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
 
-        // Reuse canvas jika ukuran sama
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width=w; canvas.height=h;
           canvas.style.width=Math.floor(w/dpr/(zoomPct/100))+'px';
@@ -541,7 +577,6 @@
       }
     }
 
-    // Gesture system dengan improved performance
     const gesture = {
       pointers:new Map(), mode:'idle',
       dist0:1, scaleTmp:1, tx:0, ty:0,
@@ -553,7 +588,7 @@
 
     function setTransform(){
       if(gesture.rafId) return;
-      gesture.rafId = requestAnimationFrame(()=>{
+      gesture.rafId = requestAnimationFrame(()=> {
         const w=wrapOf();
         const totalScale = (zoomPct/100) * gesture.scaleTmp;
         w.style.transform = `translate(${gesture.tx}px, ${gesture.ty}px) scale(${totalScale})`;
@@ -572,17 +607,18 @@
     }
 
     async function resetZoomToFit() {
+      if(viewMode !== 'slide') return;
       zoomPct = 100;
       gesture.scaleTmp = 1;
       gesture.tx = 0;
       gesture.ty = 0;
       fitMode = 'page';
-      clampPan(); setTransform();
+      setTransform();
       await renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
     }
 
     async function show(p){
-      if(viewMode!=='slide' || animating || !pdfDoc) return;
+      if(viewMode!=='slide' || animating || !pdfDoc || p === pageNum) return;
       animating=true;
       prevBtn.disabled=nextBtn.disabled=true;
 
@@ -602,6 +638,9 @@
       pageNum=p;
       updateIndicator();
 
+      gesture.tx = 0;
+      gesture.ty = 0;
+      gesture.scaleTmp = 1;
       clampPan();
       setTransform();
 
@@ -612,7 +651,7 @@
     prevBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum>1) show(pageNum-1); };
     nextBtn.onclick=()=>{ stopAutoOnInteraction(); if(pageNum<numPages) show(pageNum+1); };
 
-    progressBar.addEventListener('click',(e)=>{
+    progressBar.addEventListener('click',(e)=> {
       if(zoomPct>100) return;
       const r=progressBar.getBoundingClientRect();
       const pct=clamp((e.clientX-r.left)/r.width,0,1);
@@ -625,6 +664,7 @@
     function setZoom(pct){
       if(viewMode==='read'){
         readZoomPct=clamp(pct,ZMIN,ZMAX);
+        destroyReadPages();
         buildReadPages();
         return;
       }
@@ -634,7 +674,7 @@
       clampPan();
       setTransform();
 
-      zoomTimer=setTimeout(()=>{
+      zoomTimer=setTimeout(()=> {
         renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
       }, PERF.DEBOUNCE_ZOOM);
     }
@@ -646,7 +686,7 @@
       if(live.scheduled || live.rendering) return;
 
       live.scheduled = true;
-      setTimeout(async ()=>{
+      setTimeout(async ()=> {
         live.scheduled = false;
         if(live.rendering) return;
 
@@ -756,14 +796,13 @@
       }
     }
 
-    [wrap1,wrap2].forEach(w=>{
+    [wrap1,wrap2].forEach(w=> {
       w.addEventListener('pointerdown',onPointerDown,{passive:true});
       w.addEventListener('pointermove',onPointerMove,{passive:true});
       w.addEventListener('pointerup',onPointerUp,{passive:true});
       w.addEventListener('pointercancel',onPointerUp,{passive:true});
     });
 
-    // Wheel handling dengan improved responsiveness
     stage.addEventListener('wheel', (e) => {
       if (viewMode !== 'slide' || !pdfDoc) return;
 
@@ -795,14 +834,13 @@
       setTransform();
     }, { passive: false });
 
-    // Swipe handling
     let swipeX=null;
-    stage.addEventListener('pointerdown', (e)=>{
+    stage.addEventListener('pointerdown', (e)=> {
       if (e.target.closest('.pdf-link')) return;
       if(viewMode==='slide' && zoomPct<=100) swipeX=e.clientX;
     });
 
-    stage.addEventListener('pointerup', (e)=>{
+    stage.addEventListener('pointerup', (e)=> {
       if (e.target.closest('.pdf-link')) { swipeX=null; return; }
       if(viewMode!=='slide' || swipeX===null) return;
 
@@ -815,8 +853,7 @@
       swipeX=null;
     });
 
-    // Double tap zoom
-    stage.addEventListener('pointerup', (e)=>{
+    stage.addEventListener('pointerup', (e)=> {
       if (e.target.closest('.pdf-link')) return;
       if(viewMode!=='slide') return;
 
@@ -833,40 +870,48 @@
       gesture._tap={t:now,x:pos.x,y:pos.y};
     });
 
-    // Read mode dengan Intersection Observer
     let io=null;
-    const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=>{
+    const renderedPages = new Set();
+
+    const ensureObserver=()=> io ?? (io=new IntersectionObserver(async (ents)=> {
       for(const ent of ents){
         if(!ent.isIntersecting) continue;
         const cnv=ent.target;
-        if(cnv.dataset.rendered) continue;
+        const pageKey = cnv.dataset.page;
+        if(renderedPages.has(pageKey)) continue;
 
-        const i=+cnv.dataset.page;
-        const page=await pdfDoc.getPage(i);
-        const {viewport,dpr}=await calcViewportRead(page);
+        renderedPages.add(pageKey);
+        const i=+pageKey;
 
-        const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
-        cnv.width=w;
-        cnv.height=h;
-        cnv.style.width=Math.floor(w/dpr)+'px';
-        cnv.style.height=Math.floor(h/dpr)+'px';
+        try {
+          const page=await pdfDoc.getPage(i);
+          const {viewport,dpr}=await calcViewportRead(page);
 
-        const cctx=cnv.getContext('2d',{alpha:false});
-        cctx.fillStyle='#fff';
-        cctx.fillRect(0,0,w,h);
+          const w=Math.floor(viewport.width), h=Math.floor(viewport.height);
+          cnv.width=w;
+          cnv.height=h;
+          cnv.style.width=Math.floor(w/dpr)+'px';
+          cnv.style.height=Math.floor(h/dpr)+'px';
 
-        await page.render({
-          canvasContext:cctx,
-          viewport,
-          intent:renderIntentFor(readZoomPct,devicePixelRatio||1)
-        }).promise;
+          const cctx=cnv.getContext('2d',{alpha:false});
+          cctx.fillStyle='#fff';
+          cctx.fillRect(0,0,w,h);
 
-        cnv.dataset.rendered='1';
+          await page.render({
+            canvasContext:cctx,
+            viewport,
+            intent:renderIntentFor(readZoomPct,devicePixelRatio||1)
+          }).promise;
+        } catch(err) {
+          console.error('Error rendering page', i, err);
+          renderedPages.delete(pageKey);
+        }
       }
     },{root:read,rootMargin:PERF.OBSERVER_MARGIN,threshold:0.01}));
 
     function buildReadPages(){
       const obs=ensureObserver();
+      renderedPages.clear();
       docEl.innerHTML='';
 
       const fragment = document.createDocumentFragment();
@@ -874,17 +919,20 @@
         const cnv=document.createElement('canvas');
         cnv.className='page';
         cnv.dataset.page=i;
-        cnv.height=200;
+        cnv.width=100; cnv.height=100;
         cnv.style.width='100%';
+        cnv.style.background='#f3f4f6';
         fragment.appendChild(cnv);
-        obs.observe(cnv);
       }
       docEl.appendChild(fragment);
+
+      docEl.querySelectorAll('canvas').forEach(cnv => obs.observe(cnv));
       read.scrollTop=0;
     }
 
     function destroyReadPages(){
       if(io){ io.disconnect(); io=null; }
+      renderedPages.clear();
       docEl.innerHTML='';
     }
 
@@ -907,31 +955,42 @@
       read.style.display='none';
       stage.style.display='grid';
       fitMode='page';
-      clampPan();
+      gesture.tx = 0;
+      gesture.ty = 0;
+      gesture.scaleTmp = 1;
       setTransform();
-      show(pageNum);
+      renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
     }
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown',(e)=>{
+    document.addEventListener('keydown',(e)=> {
       if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); }
       if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
       if(e.key==='-'||e.key==='_'){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct-ZSTEP); }
       if(e.key===' '){ e.preventDefault(); auto?stopAuto():startAuto(); }
       if(e.key==='ArrowRight' && pageNum<numPages){ stopAutoOnInteraction(); show(pageNum+1); }
       if(e.key==='ArrowLeft' && pageNum>1){ stopAutoOnInteraction(); show(pageNum-1); }
+      if(e.key==='f' || e.key==='F'){
+        e.preventDefault();
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if(isFs){
+          if(document.exitFullscreen) document.exitFullscreen();
+          else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } else {
+          const elem = viewer;
+          if(elem.requestFullscreen) elem.requestFullscreen();
+          else if(elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        }
+      }
     });
 
-    // Enhanced loading dengan chunked streaming & progress
+    // Enhanced loading with streaming progress
     (async function(){
       const startedAt = performance.now();
-      const perfMarks = { fetch: 0, download: 0, parse: 0, render: 0 };
-
       try {
-        perfMarks.fetch = performance.now();
         const resp = await fetch(PDF_URL, {
-          credentials: 'same-origin',
-          cache: 'force-cache'
+          method: 'GET',
+          headers: { 'Accept': 'application/pdf', 'Cache-Control': 'no-cache' },
+          credentials: 'same-origin'
         });
 
         if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
@@ -940,10 +999,8 @@
         const total = contentLength ? parseInt(contentLength, 10) : 0;
 
         let loaded = 0;
-        const reader = resp.body.getReader();
         const chunks = [];
-
-        perfMarks.download = performance.now();
+        const reader = resp.body.getReader();
 
         while (true) {
           const { done, value } = await reader.read();
@@ -963,7 +1020,6 @@
           }
         }
 
-        // Combine chunks efficiently
         const pdfBytes = new Uint8Array(loaded);
         let position = 0;
         for (const chunk of chunks) {
@@ -971,11 +1027,11 @@
           position += chunk.length;
         }
 
-        console.log('✓ Downloaded:', (loaded/1024/1024).toFixed(2), 'MB in', Math.round(performance.now() - perfMarks.download), 'ms');
+        // ✅ Save to cache for download
+        pdfBytesCache = pdfBytes;
 
         loadingProgress.textContent = 'Parsing...';
         loadingDetails.textContent = 'Processing PDF structure';
-        perfMarks.parse = performance.now();
 
         const task = pdfjsLib.getDocument({
           data: pdfBytes,
@@ -986,17 +1042,15 @@
           disableAutoFetch: false,
           disableStream: false,
           isEvalSupported: true,
-          enableXfa: false
+          enableXfa: false,
+          verbosity: 0
         });
 
         pdfDoc = await task.promise;
         numPages = pdfDoc.numPages;
 
-        console.log('✓ Parsed:', numPages, 'pages in', Math.round(performance.now() - perfMarks.parse), 'ms');
-
         loadingProgress.textContent = 'Rendering...';
         loadingDetails.textContent = `Page 1 of ${numPages}`;
-        perfMarks.render = performance.now();
 
         pageNum = 1;
         updateIndicator();
@@ -1010,27 +1064,30 @@
         clampPan();
         setTransform();
 
-        console.log('✓ Rendered in', Math.round(performance.now() - perfMarks.render), 'ms');
+        setTimeout(() => loadingOverlay.classList.add('hide'), 300);
 
-        const totalTime = Math.round(performance.now() - startedAt);
-        console.log('✓ Total load time:', totalTime, 'ms');
-        console.log('Breakdown:', {
-          fetch: Math.round(perfMarks.download - perfMarks.fetch) + 'ms',
-          download: Math.round(perfMarks.parse - perfMarks.download) + 'ms',
-          parse: Math.round(perfMarks.render - perfMarks.parse) + 'ms',
-          render: Math.round(performance.now() - perfMarks.render) + 'ms'
-        });
-
-        // Smooth hide dengan delay
-        setTimeout(() => {
-          loadingOverlay.classList.add('hide');
-        }, 300);
+        console.log('✓ Loaded in', Math.round(performance.now() - startedAt), 'ms');
 
       } catch (error) {
         console.error('Failed to load PDF:', error);
         loadingProgress.textContent = 'Error';
         loadingProgress.style.color = '#ef4444';
-        loadingDetails.textContent = error.message || 'Failed to load PDF';
+
+        let errorMsg = 'Failed to load PDF';
+        if (error.message.includes('HTTP 404')) errorMsg = 'PDF not found (404)';
+        else if (error.message.includes('HTTP 403')) errorMsg = 'Access denied (403)';
+        else if (error.message.includes('HTTP 500')) errorMsg = 'Server error (500)';
+        else if (error.message) errorMsg = error.message;
+
+        loadingDetails.textContent = errorMsg;
+
+        setTimeout(() => {
+          const retryBtn = document.createElement('button');
+          retryBtn.textContent = '🔄 Retry';
+          retryBtn.style.cssText = 'margin-top:20px;padding:10px 24px;background:#2db36d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600';
+          retryBtn.onclick = () => location.reload();
+          loadingOverlay.appendChild(retryBtn);
+        }, 500);
       }
     })();
 </script>
