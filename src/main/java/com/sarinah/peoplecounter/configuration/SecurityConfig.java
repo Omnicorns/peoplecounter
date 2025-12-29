@@ -60,6 +60,7 @@ public class SecurityConfig {
             "/sw.js",
             "/promis.png",// <- perbaiki dari /static/promis.png
             "/login.png",
+            "/sarinahlogo.png",
             "/file.pdf",
             "icons/promis-512.png",
             "icons/promis-192.png",
