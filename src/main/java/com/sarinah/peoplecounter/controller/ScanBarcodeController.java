@@ -19,6 +19,8 @@ public class ScanBarcodeController {
     private final PostJournalEntriesService postJournalEntriesService;
     private final PostOrderRatingService postOrderRatingService;
 
+    private final PostOrderRefferalService postOrderRefferalService;
+
     @PostMapping(value = "/barcode")
     public ObjectNode postScanResponse(@RequestBody ObjectNode request) {
         return postScanBarcodeService.execute(request);
@@ -43,4 +45,11 @@ public class ScanBarcodeController {
     public ArrayNode postOrderRatingResponse(@RequestBody ObjectNode request) {
         return postOrderRatingService.execute(request);
     }
+
+    @PostMapping(value = "/refferal-inj")
+    public ArrayNode postOrderRefferal(@RequestBody ObjectNode request) {
+        return  postOrderRefferalService.execute(request);
+    }
+
+
 }
