@@ -101,7 +101,7 @@
         @keyframes popIn{from{opacity:0;transform:translateY(-8px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
         .popover.show{display:block}
 
-        /* ✅ FIX: allow clicks inside popover even though #top is pointer-events:none */
+        /* ✅ allow clicks inside popover even though #top is pointer-events:none */
         #top .popover, #top .popover * { pointer-events:auto; }
 
         .popitem{
@@ -145,13 +145,7 @@
         canvas.rendering{opacity:0.7}
 
         /* ✅ CLICKABLE LINKS LAYER */
-        .linkLayer{
-          position:absolute;
-          inset:0;
-          pointer-events:auto;  /* ✅ was none */
-          z-index:10;
-        }
-        /* ✅ make sure clicks go to link layer, not canvas */
+        .linkLayer{position:absolute;inset:0;pointer-events:auto;z-index:10}
         .pageWrap canvas{ pointer-events:none; }
 
         .linkLayer .pdf-link{
@@ -161,6 +155,9 @@
         .linkLayer .pdf-link:hover{
           outline:2px solid rgba(45,179,109,.7);outline-offset:2px;
           cursor:pointer;background:rgba(45,179,109,0.08)
+        }
+        @media (hover:none) and (pointer:coarse){
+          .linkLayer .pdf-link{ outline-offset:3px; }
         }
 
         #read{
@@ -244,6 +241,56 @@
             transition-duration: 0.01ms !important;
           }
         }
+
+        /* ===== Mobile portrait & landscape polish (NO PATH CHANGES) ===== */
+        @supports (height: 100dvh){
+          html, body { height: 100dvh; }
+        }
+
+        @media (max-width: 768px) {
+          #viewer{
+            width: 100vw;
+            height: calc(100dvh - var(--safe-top) - var(--safe-bottom));
+            margin: 0;
+            border-radius: 0;
+            border: 0;
+          }
+          .deck{ inset: 10px; }
+          canvas{ border-radius: 12px; }
+        }
+
+        @media (max-width: 1024px) and (orientation: landscape) {
+          #top{ height: 52px; }
+
+          .iconbtn{
+            height: 36px;
+            width: 36px;
+            border-radius: 10px;
+          }
+
+          .popover{
+            top: calc(46px + var(--safe-top));
+            width: 210px;
+          }
+
+          .deck{ inset: 8px; }
+          canvas{ border-radius: 10px; }
+
+          .nav{ width: 40px; height: 40px; }
+          #prev{ left: 10px; }
+          #next{ right: 10px; }
+
+          #footer{
+            padding: 8px 10px calc(8px + var(--safe-bottom));
+            gap: 10px;
+          }
+          #indicator{
+            font-size: 12px;
+            min-width: 86px;
+          }
+          .bar{ height: 9px; }
+          .bar:hover{ height: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -314,6 +361,8 @@
     if ("disableCreateObjectURL" in pdfjsLib) pdfjsLib.disableCreateObjectURL = true;
 
     const params = new URLSearchParams(location.search);
+
+    /* ✅ KEEP PATH LOGIC EXACTLY LIKE YOUR ORIGINAL (DO NOT CHANGE) */
     let PDF_URL = params.get('pdf') || window.DEFAULT_PDF;
 
     const pdfId = params.get('id');
@@ -321,6 +370,7 @@
 
     const catalogueId = params.get('catalogue');
     if (catalogueId) PDF_URL = `/api/pdf/catalogue/${catalogueId}`;
+    /* ✅ END PATH LOGIC */
 
     // ✅ cache bytes for reliable download (works with auth endpoints)
     let pdfBytesCache = null;
@@ -389,7 +439,7 @@
     kebab.addEventListener('click',(e)=>{e.stopPropagation();pop.classList.toggle('show')});
     document.addEventListener('click',closePop);
 
-    // ✅ FIX: Download using cached bytes (reliable for secured endpoints)
+    // ✅ Download using cached bytes (reliable for secured endpoints)
     $('miDownload').addEventListener('click', stopThen(()=> {
       if (!pdfBytesCache) return;
 
@@ -518,7 +568,7 @@
       return { viewport: page.getViewport({scale:rasterScale}), dpr };
     }
 
-    // ✅ FIXED: Support ann.unsafeUrl + internal dest links
+    /* ✅ FIXED LINK LAYER: supports url / unsafeUrl / internal dest */
     async function buildLinks(page, viewport, layer, dpr){
       if (!layer) return;
 
@@ -531,7 +581,6 @@
       for (const ann of annotations){
         if (ann.subtype !== 'Link') continue;
 
-        // URL can be in url / unsafeUrl depending on PDF.js + PDF structure
         const url = ann.url || ann.unsafeUrl || ann?.a?.URI || ann?.action?.URI || null;
         const hasInternalDest = !!ann.dest;
 
@@ -545,9 +594,7 @@
 
         const a = document.createElement('a');
         a.className = 'pdf-link';
-
-        a.style.cssText =
-          `left:${x1*factor}px;top:${y1*factor}px;width:${(x2-x1)*factor}px;height:${(y2-y1)*factor}px`;
+        a.style.cssText = `left:${x1*factor}px;top:${y1*factor}px;width:${(x2-x1)*factor}px;height:${(y2-y1)*factor}px`;
 
         if (url) {
           a.href = url;
@@ -1006,6 +1053,31 @@
       renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
     }
 
+    /* ✅ Auto fit width on MOBILE landscape, fit page on portrait (NO PATH CHANGES) */
+    function isLandscapeMobile(){
+      return isMobile && window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+    }
+    let lastOri = null;
+    function applyMobileOrientationLayout(){
+      if(viewMode !== 'slide' || !pdfDoc) return;
+
+      const nowOri = isLandscapeMobile() ? 'landscape' : 'portrait';
+      if (nowOri === lastOri) return;
+      lastOri = nowOri;
+
+      fitMode = (nowOri === 'landscape') ? 'width' : 'page';
+
+      zoomPct = 100;
+      gesture.scaleTmp = 1;
+      gesture.tx = 0;
+      gesture.ty = 0;
+      setTransform();
+
+      renderFit(pageNum, canvasOf(), ctxOf(), linksOf());
+    }
+    window.addEventListener('orientationchange', () => setTimeout(applyMobileOrientationLayout, 250));
+    window.addEventListener('resize', () => setTimeout(applyMobileOrientationLayout, 120));
+
     document.addEventListener('keydown',(e)=> {
       if(e.key==='0'){ stopAutoOnInteraction(); e.preventDefault(); resetZoomToFit(); }
       if(e.key==='+'||e.key==='='){ stopAutoOnInteraction(); e.preventDefault(); setZoom(zoomPct+ZSTEP); }
@@ -1098,6 +1170,11 @@
 
         pageNum = 1;
         updateIndicator();
+
+        // ✅ Apply initial layout for mobile portrait/landscape (no path change)
+        lastOri = null;
+        applyMobileOrientationLayout();
+
         await renderFit(pageNum,c1,ctx1,links1);
 
         L1.classList.remove('hide');
