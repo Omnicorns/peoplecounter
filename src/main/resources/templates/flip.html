@@ -144,7 +144,16 @@
         }
         canvas.rendering{opacity:0.7}
 
-        .linkLayer{position:absolute;inset:0;pointer-events:none;z-index:10}
+        /* ✅ CLICKABLE LINKS LAYER */
+        .linkLayer{
+          position:absolute;
+          inset:0;
+          pointer-events:auto;  /* ✅ was none */
+          z-index:10;
+        }
+        /* ✅ make sure clicks go to link layer, not canvas */
+        .pageWrap canvas{ pointer-events:none; }
+
         .linkLayer .pdf-link{
           position:absolute;display:block;pointer-events:auto;
           text-decoration:none;transition:outline 0.15s ease
@@ -509,15 +518,24 @@
       return { viewport: page.getViewport({scale:rasterScale}), dpr };
     }
 
+    // ✅ FIXED: Support ann.unsafeUrl + internal dest links
     async function buildLinks(page, viewport, layer, dpr){
       if (!layer) return;
 
       const fragment = document.createDocumentFragment();
-      const annotations = await page.getAnnotations();
+      const annotations = await page.getAnnotations({ intent: 'display' });
+
+      // convert viewport px -> CSS px
       const factor = 1 / (dpr * (zoomPct / 100));
 
       for (const ann of annotations){
-        if (ann.subtype !== 'Link' || !ann.url) continue;
+        if (ann.subtype !== 'Link') continue;
+
+        // URL can be in url / unsafeUrl depending on PDF.js + PDF structure
+        const url = ann.url || ann.unsafeUrl || ann?.a?.URI || ann?.action?.URI || null;
+        const hasInternalDest = !!ann.dest;
+
+        if (!url && !hasInternalDest) continue;
 
         const rect = viewport.convertToViewportRectangle(ann.rect);
         const x1 = Math.min(rect[0], rect[2]);
@@ -527,10 +545,36 @@
 
         const a = document.createElement('a');
         a.className = 'pdf-link';
-        a.href = ann.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.style.cssText = `left:${x1*factor}px;top:${y1*factor}px;width:${(x2-x1)*factor}px;height:${(y2-y1)*factor}px`;
+
+        a.style.cssText =
+          `left:${x1*factor}px;top:${y1*factor}px;width:${(x2-x1)*factor}px;height:${(y2-y1)*factor}px`;
+
+        if (url) {
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        } else if (hasInternalDest) {
+          a.href = '#';
+          a.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              const dest = await pdfDoc.getDestination(ann.dest);
+              const ref = dest?.[0];
+              if (!ref) return;
+              const targetPage = await pdfDoc.getPageIndex(ref) + 1;
+              if (targetPage) show(targetPage);
+            } catch(err) {
+              console.warn('dest jump failed', err);
+            }
+          });
+        }
+
+        // prevent gesture handlers from hijacking link clicks
+        a.addEventListener('pointerdown', (e)=>e.stopPropagation());
+        a.addEventListener('pointerup', (e)=>e.stopPropagation());
+        a.addEventListener('click', (e)=>e.stopPropagation());
+
         fragment.appendChild(a);
       }
 
