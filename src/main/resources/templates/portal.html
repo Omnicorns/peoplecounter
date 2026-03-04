@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Aplikasi - Sarinah</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a56db;
+            --bg-main: #0f172a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Top Navbar */
+        .top-bar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+        }
+
+        .user-name { font-weight: 600; font-size: 15px; }
+        .user-domain { font-size: 12px; color: var(--text-muted); }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            transform: translateY(-1px);
+        }
+
+        /* Main Content */
+        .portal-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 48px 20px;
+        }
+
+        .portal-header {
+            margin-bottom: 40px;
+        }
+
+        .portal-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .portal-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* App Cards */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .app-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 86, 219, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .app-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(26, 86, 219, 0.3);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .app-card:hover::before { opacity: 1; }
+
+        .app-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .app-icon.headset { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .app-icon.database { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .app-icon.building { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+        .app-icon.mail { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+        .app-icon.globe { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+
+        .app-name {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            position: relative;
+        }
+
+        .app-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .app-arrow {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            color: var(--text-muted);
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .app-card:hover .app-arrow {
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        /* Security Info */
+        .security-info {
+            margin-top: 48px;
+            padding: 20px 24px;
+            background: rgba(34, 197, 94, 0.05);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .security-info i {
+            color: #4ade80;
+            font-size: 18px;
+        }
+
+        /* Footer */
+        .portal-footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .app-grid { grid-template-columns: 1fr; }
+            .portal-content { padding: 24px 16px; }
+            .portal-header h2 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation Bar -->
+<nav class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center" style="max-width: 900px;">
+        <div class="user-info">
+            <div class="user-avatar" th:text="${username != null ? username.substring(0, 1).toUpperCase() : '?'}">S</div>
+            <div>
+                <div class="user-name" th:text="${username}">User</div>
+                <div class="user-domain">sarinah.net</div>
+            </div>
+        </div>
+        <a th:href="@{/logout}" class="btn-logout">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+        </a>
+    </div>
+</nav>
+
+<!-- Portal Content -->
+<div class="portal-content">
+    <div class="portal-header">
+        <h2>Pilih Aplikasi</h2>
+        <p>Akses aplikasi internal Sarinah melalui portal terpadu.</p>
+    </div>
+
+    <!-- App Grid -->
+    <div class="app-grid">
+        <a th:each="app : ${apps}"
+           th:href="@{/portal/launch/{id}(id=${app.id})}"
+           class="app-card"
+           th:title="${app.name}">
+
+            <div th:class="'app-icon ' + ${app.icon}">
+                <i th:class="'bi bi-' + ${app.icon}"></i>
+            </div>
+            <div class="app-name" th:text="${app.name}">App Name</div>
+            <div class="app-desc" th:text="${app.description}">App description</div>
+            <i class="bi bi-arrow-right app-arrow"></i>
+        </a>
+    </div>
+
+    <!-- Security Info -->
+    <div class="security-info">
+        <i class="bi bi-shield-check"></i>
+        <span>Sesi Anda dienkripsi dan diamankan. Otentikasi melalui Active Directory <strong>sarinah.net</strong>. Sesi berakhir otomatis setelah 30 menit tidak aktif.</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="portal-footer">
+        &copy; 2026 PT Sarinah (Persero) &bull; Portal Aplikasi Terpadu &bull; IT Division
+    </div>
+</div>
+
+</body>
+</html>
