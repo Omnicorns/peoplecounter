@@ -291,7 +291,7 @@
         result.innerHTML = '';
 
         try {
-            const res = await fetch(API_BASE + '/sarinah-forwarder/v1/modul/top-spender', {
+            const res = await fetch('/sarinah-forwarder/v1/modul/top-spender', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
                 body: JSON.stringify({
