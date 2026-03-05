@@ -29,9 +29,13 @@ public class SarinahGetModulAdaptor {
 
     @Value("${sarinah-portal.pos.order.rating.url}")
     private String postOrderRatingUrl;
-    
+
     @Value("${sarinah-portal.order_refferal.url}")
     private String orderRefferalUrl;
+
+
+    @Value("${sarinah-portal.total-spender.url}")
+    private String totalSpenderUrl;
 
 
 
@@ -77,6 +81,35 @@ public class SarinahGetModulAdaptor {
         arr.add(root);
         return arr;
     }
+
+
+    public ArrayNode getTopSpender(ObjectNode request) {
+
+        JsonNode root = defaultPointRestClient
+                .post()
+                .uri(commonUtils.dynamicParamBuilder(request,totalSpenderUrl))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(JsonNode.class);;                 // baca sebagai JsonNode
+
+
+        if (root == null) {
+            return JsonNodeFactory.instance.arrayNode();
+        }
+
+
+        if (root.isArray()) {
+            return (ArrayNode) root;
+        }
+
+
+        ArrayNode arr = JsonNodeFactory.instance.arrayNode();
+        arr.add(root);
+        return arr;
+    }
+
+
 
     public ArrayNode getLoyalty(ObjectNode request) {
 

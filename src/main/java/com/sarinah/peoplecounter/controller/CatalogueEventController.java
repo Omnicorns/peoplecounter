@@ -1,6 +1,7 @@
 package com.sarinah.peoplecounter.controller;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,16 +9,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class CatalogueEventController {
-    @GetMapping("/SarinahForSEAGames2025")
+
+
+    @Value("${api.base-url}")
+    private String apiBaseUrl;
+
+    @Value("${api.key:}")
+    private String apiKey;
+
+    @GetMapping("/topspender")
     public String catalogue(
             Model model) {
 
-        String pdfUrl;
-        pdfUrl = "/api/admin/users/pdf/646";
+        model.addAttribute("apiBaseUrl", apiBaseUrl);
+        model.addAttribute("apiKey", apiKey);
 
-
-
-        model.addAttribute("pdfUrl", pdfUrl);
-        return "flip2"; // nama template viewer-mu
+        return "top_spender"; // nama template viewer-mu
     }
+
+
 }

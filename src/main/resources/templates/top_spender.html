@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Spender - Sarinah</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white: #ffffff;
+            --text: #1e293b;
+            --text-soft: #64748b;
+            --text-faint: #94a3b8;
+            --border: #e9edf4;
+            --gold: #e8a500;
+            --gold-bg: #fef9ec;
+            --gold-ring: #fcd34d;
+            --silver: #7c8ba1;
+            --silver-bg: #f1f5f9;
+            --bronze: #c2803a;
+            --bronze-bg: #fdf4ec;
+            --blue: #3466e8;
+            --blue-soft: #eef2ff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            /* Corak merah muda gradient */
+            background: linear-gradient(135deg,
+                #fff5f5 0%,
+                #ffe8e8 25%,
+                #fde2e4 40%,
+                #fcd5ce 55%,
+                #f9e4dc 70%,
+                #fef1ee 85%,
+                #ffffff 100%
+            );
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page-wrap {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 100px 20px 80px;
+        }
+
+        /* ===== Logo Bar ===== */
+        .logo-bar {
+            position: fixed;
+            top: 24px;
+            left: 32px;
+            right: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .logo-bar img {
+            height: 48px;
+            object-fit: contain;
+            pointer-events: auto;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .header p {
+            color: var(--text-soft);
+            font-size: 15px;
+        }
+
+        /* ===== Loading ===== */
+        .state-loading { text-align: center; padding: 80px 20px; display: none; }
+        .state-loading.active { display: block; }
+
+        .dot-pulse { display: inline-flex; gap: 6px; margin-bottom: 14px; }
+        .dot-pulse span {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #e8a500;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .dot-pulse span:nth-child(2) { animation-delay: 0.15s; }
+        .dot-pulse span:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .state-loading p { color: var(--text-faint); font-size: 14px; }
+
+        /* ===== Podium ===== */
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .podium-card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 16px 20px;
+            text-align: center;
+            flex: 1;
+            max-width: 200px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .podium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .podium-card.p1 {
+            order: 2;
+            padding-top: 32px;
+            padding-bottom: 28px;
+            border-color: var(--gold-ring);
+            background: linear-gradient(180deg, var(--gold-bg), rgba(255,255,255,0.9));
+        }
+        .podium-card.p2 { order: 1; }
+        .podium-card.p3 { order: 3; }
+
+        .podium-medal {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px; font-weight: 700;
+        }
+
+        .p1 .podium-medal {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #78350f;
+            width: 52px; height: 52px; font-size: 20px;
+            box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+        }
+        .p2 .podium-medal { background: var(--silver-bg); color: var(--silver); border: 2px solid #cbd5e1; }
+        .p3 .podium-medal { background: var(--bronze-bg); color: var(--bronze); border: 2px solid #e5c9a8; }
+
+        .podium-name {
+            font-size: 14px; font-weight: 700; color: var(--text);
+            margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .podium-id { font-size: 11px; color: var(--text-faint); margin-bottom: 10px; }
+
+        .podium-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px; font-weight: 700;
+            color: var(--blue); background: var(--blue-soft);
+            padding: 6px 10px; border-radius: 8px; display: inline-block;
+        }
+        .p1 .podium-amount { font-size: 15px; color: #92400e; background: var(--gold-bg); }
+
+        /* ===== Rest List ===== */
+        .rest-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+
+        .rest-item {
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px;
+            transition: all 0.25s ease; box-shadow: var(--shadow-sm);
+            animation: slideIn 0.35s ease forwards; opacity: 0;
+        }
+        .rest-item:hover {
+            border-color: #c7d2fe; box-shadow: var(--shadow-md);
+            transform: translateX(3px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .rest-rank {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: #f1f5f9; display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px; font-weight: 700; color: var(--text-soft); flex-shrink: 0;
+        }
+
+        .rest-info { flex: 1; min-width: 0; }
+        .rest-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rest-id { font-size: 11px; color: var(--text-faint); }
+        .rest-amount { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+
+        /* ===== Error ===== */
+        .state-error { text-align: center; padding: 60px 20px; display: none; }
+        .state-error.active { display: block; }
+        .state-error i { font-size: 40px; color: #fca5a5; display: block; margin-bottom: 10px; }
+        .state-error p { color: var(--text-soft); font-size: 14px; }
+
+        .btn-retry {
+            margin-top: 16px; background: var(--white); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 24px; font-size: 13px; font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-retry:hover { border-color: var(--blue); color: var(--blue); }
+
+        @media (max-width: 580px) {
+            .page-wrap { padding: 20px 16px 60px; }
+            .header h1 { font-size: 22px; }
+            .logo-bar img { height: 36px; }
+            .podium { gap: 8px; }
+            .podium-card { padding: 18px 10px 16px; }
+            .podium-name { font-size: 12px; }
+            .podium-amount { font-size: 12px; padding: 4px 8px; }
+            .rest-item { padding: 12px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Logo Bar: Danantara (kiri pinggir) — Sarinah (kanan pinggir) -->
+<div class="logo-bar">
+    <img th:src="@{/Danantara_Indonesia.png}" src="/Danantara_Indonesia.png" alt="Danantara Indonesia" />
+    <img th:src="@{/injourney.png}" src="/injourney.png" alt="Sarinah" />
+</div>
+
+<div class="page-wrap">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Top Spender</h1>
+        <p>Pelanggan dengan total transaksi tertinggi</p>
+    </div>
+
+    <!-- Loading -->
+    <div class="state-loading active" id="loadingState">
+        <div class="dot-pulse"><span></span><span></span><span></span></div>
+        <p>Memuat data...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="state-error" id="errorState">
+        <i class="bi bi-wifi-off"></i>
+        <p id="errorMsg">Gagal memuat data</p>
+        <button class="btn-retry" onclick="fetchData()"><i class="bi bi-arrow-clockwise"></i> Coba Lagi</button>
+    </div>
+
+    <!-- Result -->
+    <div id="resultContainer"></div>
+
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    const API_BASE = /*[[${apiBaseUrl ?: ''}]]*/ '';
+    const API_KEY  = /*[[${apiKey ?: ''}]]*/ '';
+
+    async function fetchData() {
+        const loading = document.getElementById('loadingState');
+        const error   = document.getElementById('errorState');
+        const result  = document.getElementById('resultContainer');
+
+        loading.classList.add('active');
+        error.classList.remove('active');
+        result.innerHTML = '';
+
+        try {
+            const res = await fetch(API_BASE + '/sarinah-forwarder/v1/modul/top-spender', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
+                body: JSON.stringify({
+                    from_date: '2024-01-01',
+                    to_date: new Date().toISOString().split('T')[0],
+                    limit: '10'
+                })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            render(await res.json());
+        } catch (e) {
+            error.classList.add('active');
+            document.getElementById('errorMsg').textContent = 'Gagal memuat: ' + e.message;
+        } finally {
+            loading.classList.remove('active');
+        }
+    }
+
+    function render(data) {
+        const c = document.getElementById('resultContainer');
+        if (!data || !data.length) {
+            c.innerHTML = '<div class="state-error active"><i class="bi bi-inbox"></i><p>Tidak ada data</p></div>';
+            return;
+        }
+
+        let h = '';
+
+        // Podium top 3 (tanpa crown)
+        if (data.length >= 3) {
+            h += '<div class="podium">';
+            [1, 0, 2].forEach(i => {
+                const d = data[i], r = i + 1, cls = 'p' + r;
+                h += `<div class="podium-card ${cls}">
+                    <div class="podium-medal">${r}</div>
+                    <div class="podium-name">${esc(d.partner_name)}</div>
+                    <div class="podium-id">ID ${d.partner_id}</div>
+                    <div class="podium-amount">${rp(d.total_amount)}</div>
+                </div>`;
+            });
+            h += '</div>';
+        }
+
+        // 4th+
+        if (data.length > 3) {
+            h += '<div class="rest-list">';
+            for (let i = 3; i < data.length; i++) {
+                const d = data[i];
+                h += `<div class="rest-item" style="animation-delay:${(i-3)*0.08}s">
+                    <div class="rest-rank">${i+1}</div>
+                    <div class="rest-info">
+                        <div class="rest-name">${esc(d.partner_name)}</div>
+                        <div class="rest-id">ID ${d.partner_id}</div>
+                    </div>
+                    <div class="rest-amount">${rp(d.total_amount)}</div>
+                </div>`;
+            }
+            h += '</div>';
+        }
+
+        c.innerHTML = h;
+    }
+
+    function rp(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    document.addEventListener('DOMContentLoaded', fetchData);
+    setInterval(fetchData, 30000);
+    /*]]>*/
+</script>
+
+</body>
+</html>
