@@ -72,6 +72,8 @@ public class SecurityConfig {
             "/Danantara_Indonesia.png",
             "/injourney.png",
             "/t.png",
+            "topspender",
+
 
             // Swagger (opsional)
             "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"
