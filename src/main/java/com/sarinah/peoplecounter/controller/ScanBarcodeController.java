@@ -18,7 +18,7 @@ public class ScanBarcodeController {
     private final PostPosHistoryService postPosHistoryService;
     private final PostJournalEntriesService postJournalEntriesService;
     private final PostOrderRatingService postOrderRatingService;
-
+    private final PostTopSpenderService postTopSpenderService;
     private final PostOrderRefferalService postOrderRefferalService;
 
     @PostMapping(value = "/barcode")
@@ -51,5 +51,9 @@ public class ScanBarcodeController {
         return  postOrderRefferalService.execute(request);
     }
 
+    @PostMapping(value = "/top-spender")
+    public ArrayNode postTopSpender(@RequestBody ObjectNode request) {
+        return postTopSpenderService.execute(request);
+    }
 
 }
