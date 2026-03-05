@@ -72,7 +72,7 @@ public class SecurityConfig {
             "/Danantara_Indonesia.png",
             "/injourney.png",
             "/t.png",
-            "topspender",
+            "/topspender",
 
 
             // Swagger (opsional)
