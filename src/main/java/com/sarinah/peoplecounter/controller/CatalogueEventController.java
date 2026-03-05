@@ -17,7 +17,7 @@ public class CatalogueEventController {
     @Value("${api.key:}")
     private String apiKey;
 
-    @GetMapping("/topspender")
+    @GetMapping("/topspender89")
     public String catalogue(
             Model model) {
 
@@ -26,6 +26,20 @@ public class CatalogueEventController {
 
         return "top_spender"; // nama template viewer-mu
     }
+
+    @GetMapping("/topspender910")
+    public String catalogue2(
+            Model model) {
+
+        model.addAttribute("apiBaseUrl", apiBaseUrl);
+        model.addAttribute("apiKey", apiKey);
+
+        return "top_spender2"; // nama template viewer-mu
+    }
+
+
+
+
 
 
 }

@@ -3,103 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top Spender - Sarinah</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <title>Top Spender Malam Ini - Sarinah</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --white: #ffffff;
-            --text: #1e293b;
-            --text-soft: #64748b;
-            --text-faint: #94a3b8;
-            --border: #e9edf4;
-            --gold: #e8a500;
-            --gold-bg: #fef9ec;
-            --gold-ring: #fcd34d;
-            --silver: #7c8ba1;
-            --silver-bg: #f1f5f9;
-            --bronze: #c2803a;
-            --bronze-bg: #fdf4ec;
-            --blue: #3466e8;
-            --blue-soft: #eef2ff;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
-            --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
-            --radius: 16px;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            /* Corak merah muda gradient */
-            background: linear-gradient(135deg,
-                #fff5f5 0%,
-                #ffe8e8 25%,
-                #fde2e4 40%,
-                #fcd5ce 55%,
-                #f9e4dc 70%,
-                #fef1ee 85%,
-                #ffffff 100%
-            );
-            background-attachment: fixed;
-            color: var(--text);
-            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
 
-        .page-wrap {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 100px 20px 80px;
+        /* Fullscreen background */
+        .bg {
+            position: fixed;
+            inset: 0;
+            background: url('/t.png') center center / cover no-repeat;
+            z-index: 0;
         }
 
-        /* ===== Logo Bar ===== */
-        .logo-bar {
-            position: fixed;
-            top: 24px;
-            left: 32px;
-            right: 32px;
+        /* Layout */
+        .layout {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Left — background shows */
+        .left-side {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Right — data panel */
+        .right-panel {
+            width: 520px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 28px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+
+        /* Panel header */
+        .panel-header {
+            margin-bottom: 16px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 10;
-            pointer-events: none;
         }
 
-        .logo-bar img {
-            height: 48px;
-            object-fit: contain;
-            pointer-events: auto;
-        }
-
-        /* ===== Header ===== */
-        .header {
-            text-align: center;
-            margin-bottom: 36px;
-        }
-
-        .header h1 {
-            font-size: 28px;
+        .panel-title {
+            font-size: 20px;
             font-weight: 800;
-            letter-spacing: -0.5px;
-            margin-bottom: 6px;
-            color: var(--text);
+            color: #ffffff;
+            letter-spacing: -0.3px;
         }
 
-        .header p {
-            color: var(--text-soft);
-            font-size: 15px;
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
         }
 
-        /* ===== Loading ===== */
-        .state-loading { text-align: center; padding: 80px 20px; display: none; }
-        .state-loading.active { display: block; }
+        .live-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
 
-        .dot-pulse { display: inline-flex; gap: 6px; margin-bottom: 14px; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, #f59e0b, rgba(245,158,11,0.05));
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ===== Podium (Top 3) ===== */
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .podium-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 18px 12px 16px;
+            text-align: center;
+            flex: 1;
+            max-width: 160px;
+            transition: all 0.3s ease;
+        }
+
+        .podium-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.14);
+        }
+
+        .podium-card.p1 {
+            order: 2;
+            padding: 22px 12px 20px;
+            border-color: rgba(245,158,11,0.3);
+            background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.06));
+        }
+        .podium-card.p2 { order: 1; }
+        .podium-card.p3 { order: 3; }
+
+        .podium-medal {
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px; font-weight: 700;
+        }
+
+        .p1 .podium-medal {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #78350f;
+            width: 44px; height: 44px; font-size: 17px;
+            box-shadow: 0 3px 12px rgba(245,158,11,0.35);
+        }
+        .p2 .podium-medal {
+            background: rgba(148,163,184,0.2);
+            color: #cbd5e1;
+            border: 2px solid rgba(148,163,184,0.3);
+        }
+        .p3 .podium-medal {
+            background: rgba(217,119,6,0.15);
+            color: #fbbf24;
+            border: 2px solid rgba(217,119,6,0.25);
+        }
+
+        .podium-name {
+            font-size: 13px; font-weight: 700; color: #fff;
+            margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .p1 .podium-name { color: #fde68a; font-size: 14px; }
+
+        .podium-id {
+            font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 8px;
+        }
+
+        .podium-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; font-weight: 700;
+            color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.08);
+            padding: 4px 8px; border-radius: 6px;
+            display: inline-block;
+        }
+        .p1 .podium-amount {
+            color: #fbbf24;
+            background: rgba(245,158,11,0.12);
+            font-size: 13px;
+        }
+
+        /* ===== Rest List (4th+) ===== */
+        .rest-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+
+        .rest-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            transition: all 0.25s ease;
+            animation: slideIn 0.35s ease forwards;
+            opacity: 0;
+        }
+
+        .rest-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.12);
+            transform: translateX(3px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .rest-rank {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; font-weight: 700;
+            color: rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+
+        .rest-info { flex: 1; min-width: 0; }
+
+        .rest-name {
+            font-size: 13px; font-weight: 600; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rest-id { font-size: 10px; color: rgba(255,255,255,0.3); }
+
+        .rest-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            flex-shrink: 0;
+        }
+
+        /* Loading */
+        .state-loading {
+            flex: 1; display: none;
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px;
+        }
+        .state-loading.active { display: flex; }
+
+        .dot-pulse { display: inline-flex; gap: 6px; }
         .dot-pulse span {
-            width: 10px; height: 10px; border-radius: 50%;
-            background: #e8a500;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #f59e0b;
             animation: bounce 1.2s infinite ease-in-out;
         }
         .dot-pulse span:nth-child(2) { animation-delay: 0.15s; }
@@ -110,194 +260,107 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        .state-loading p { color: var(--text-faint); font-size: 14px; }
+        .state-loading p { color: rgba(255,255,255,0.4); font-size: 13px; }
 
-        /* ===== Podium ===== */
-        .podium {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 20px;
+        /* Error */
+        .state-error {
+            flex: 1; display: none;
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 8px;
         }
-
-        .podium-card {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px 16px 20px;
-            text-align: center;
-            flex: 1;
-            max-width: 200px;
-            position: relative;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .podium-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .podium-card.p1 {
-            order: 2;
-            padding-top: 32px;
-            padding-bottom: 28px;
-            border-color: var(--gold-ring);
-            background: linear-gradient(180deg, var(--gold-bg), rgba(255,255,255,0.9));
-        }
-        .podium-card.p2 { order: 1; }
-        .podium-card.p3 { order: 3; }
-
-        .podium-medal {
-            width: 44px; height: 44px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 18px; font-weight: 700;
-        }
-
-        .p1 .podium-medal {
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: #78350f;
-            width: 52px; height: 52px; font-size: 20px;
-            box-shadow: 0 4px 16px rgba(245,158,11,0.3);
-        }
-        .p2 .podium-medal { background: var(--silver-bg); color: var(--silver); border: 2px solid #cbd5e1; }
-        .p3 .podium-medal { background: var(--bronze-bg); color: var(--bronze); border: 2px solid #e5c9a8; }
-
-        .podium-name {
-            font-size: 14px; font-weight: 700; color: var(--text);
-            margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .podium-id { font-size: 11px; color: var(--text-faint); margin-bottom: 10px; }
-
-        .podium-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px; font-weight: 700;
-            color: var(--blue); background: var(--blue-soft);
-            padding: 6px 10px; border-radius: 8px; display: inline-block;
-        }
-        .p1 .podium-amount { font-size: 15px; color: #92400e; background: var(--gold-bg); }
-
-        /* ===== Rest List ===== */
-        .rest-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-
-        .rest-item {
-            display: flex; align-items: center; gap: 14px;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border);
-            border-radius: 12px; padding: 16px 20px;
-            transition: all 0.25s ease; box-shadow: var(--shadow-sm);
-            animation: slideIn 0.35s ease forwards; opacity: 0;
-        }
-        .rest-item:hover {
-            border-color: #c7d2fe; box-shadow: var(--shadow-md);
-            transform: translateX(3px);
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-8px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .rest-rank {
-            width: 36px; height: 36px; border-radius: 10px;
-            background: #f1f5f9; display: flex; align-items: center; justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px; font-weight: 700; color: var(--text-soft); flex-shrink: 0;
-        }
-
-        .rest-info { flex: 1; min-width: 0; }
-        .rest-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rest-id { font-size: 11px; color: var(--text-faint); }
-        .rest-amount { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; flex-shrink: 0; }
-
-        /* ===== Error ===== */
-        .state-error { text-align: center; padding: 60px 20px; display: none; }
-        .state-error.active { display: block; }
-        .state-error i { font-size: 40px; color: #fca5a5; display: block; margin-bottom: 10px; }
-        .state-error p { color: var(--text-soft); font-size: 14px; }
+        .state-error.active { display: flex; }
+        .state-error p { color: rgba(255,255,255,0.4); font-size: 13px; }
 
         .btn-retry {
-            margin-top: 16px; background: var(--white); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 24px; font-size: 13px; font-weight: 600;
-            font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); cursor: pointer;
+            margin-top: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; padding: 8px 20px;
+            font-size: 12px; font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: rgba(255,255,255,0.7); cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-retry:hover { border-color: var(--blue); color: var(--blue); }
+        .btn-retry:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-        @media (max-width: 580px) {
-            .page-wrap { padding: 20px 16px 60px; }
-            .header h1 { font-size: 22px; }
-            .logo-bar img { height: 36px; }
-            .podium { gap: 8px; }
-            .podium-card { padding: 18px 10px 16px; }
-            .podium-name { font-size: 12px; }
-            .podium-amount { font-size: 12px; padding: 4px 8px; }
-            .rest-item { padding: 12px 14px; }
+        @media (max-width: 900px) {
+            .right-panel { width: 420px; }
+        }
+
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; }
+            .left-side { height: 25vh; flex: none; }
+            .right-panel {
+                width: 100%; height: 75vh;
+                border-left: none;
+                border-top: 1px solid rgba(255,255,255,0.08);
+            }
         }
     </style>
 </head>
 <body>
 
-<!-- Logo Bar: Danantara (kiri pinggir) — Sarinah (kanan pinggir) -->
-<div class="logo-bar">
-    <img th:src="@{/Danantara_Indonesia.png}" src="/Danantara_Indonesia.png" alt="Danantara Indonesia" />
-    <img th:src="@{/injourney.png}" src="/injourney.png" alt="Sarinah" />
-</div>
+<div class="bg"></div>
 
-<div class="page-wrap">
+<div class="layout">
+    <div class="left-side"></div>
 
-    <!-- Header -->
-    <div class="header">
-        <h1>Top Spender</h1>
-        <p>Pelanggan dengan total transaksi tertinggi</p>
+    <div class="right-panel">
+        <div class="panel-header">
+            <div class="panel-title">Top Spender Malam Ini</div>
+            <div class="live-badge">
+                <span class="live-dot"></span> Live
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Loading -->
+        <div class="state-loading active" id="loadingState">
+            <div class="dot-pulse"><span></span><span></span><span></span></div>
+            <p>Memuat data...</p>
+        </div>
+
+        <!-- Error -->
+        <div class="state-error" id="errorState">
+            <p id="errorMsg">Gagal memuat data</p>
+            <button class="btn-retry" onclick="fetchData()">Coba Lagi</button>
+        </div>
+
+        <!-- Podium -->
+        <div id="podiumContainer"></div>
+
+        <!-- Rest List -->
+        <div class="rest-list" id="restList"></div>
     </div>
-
-    <!-- Loading -->
-    <div class="state-loading active" id="loadingState">
-        <div class="dot-pulse"><span></span><span></span><span></span></div>
-        <p>Memuat data...</p>
-    </div>
-
-    <!-- Error -->
-    <div class="state-error" id="errorState">
-        <i class="bi bi-wifi-off"></i>
-        <p id="errorMsg">Gagal memuat data</p>
-        <button class="btn-retry" onclick="fetchData()"><i class="bi bi-arrow-clockwise"></i> Coba Lagi</button>
-    </div>
-
-    <!-- Result -->
-    <div id="resultContainer"></div>
-
 </div>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
 
-    const API_BASE = /*[[${apiBaseUrl ?: ''}]]*/ '';
-    const API_KEY  = /*[[${apiKey ?: ''}]]*/ '';
+    const API_KEY = /*[[${apiKey ?: ''}]]*/ '';
 
     async function fetchData() {
         const loading = document.getElementById('loadingState');
         const error   = document.getElementById('errorState');
-        const result  = document.getElementById('resultContainer');
+        const podium  = document.getElementById('podiumContainer');
+        const rest    = document.getElementById('restList');
 
         loading.classList.add('active');
         error.classList.remove('active');
-        result.innerHTML = '';
+        podium.innerHTML = '';
+        rest.innerHTML = '';
 
         try {
             const res = await fetch('/sarinah-forwarder/v1/modul/top-spender', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
                 body: JSON.stringify({
-                    from_date: '2024-01-01',
+                    from_date:'2026-03-05',
                     to_date: new Date().toISOString().split('T')[0],
-                    limit: '10'
+                    limit: '10',
+                    hour_start: '20',
+                    hour_end: '21'
                 })
             });
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -311,35 +374,36 @@
     }
 
     function render(data) {
-        const c = document.getElementById('resultContainer');
+        const podiumEl = document.getElementById('podiumContainer');
+        const restEl   = document.getElementById('restList');
+
         if (!data || !data.length) {
-            c.innerHTML = '<div class="state-error active"><i class="bi bi-inbox"></i><p>Tidak ada data</p></div>';
+            restEl.innerHTML = '<div class="state-error active"><p>Belum ada data malam ini</p></div>';
             return;
         }
 
-        let h = '';
-
-        // Podium top 3 (tanpa crown)
+        // === Podium Top 3 ===
         if (data.length >= 3) {
-            h += '<div class="podium">';
+            let ph = '<div class="podium">';
             [1, 0, 2].forEach(i => {
                 const d = data[i], r = i + 1, cls = 'p' + r;
-                h += `<div class="podium-card ${cls}">
+                ph += `<div class="podium-card ${cls}">
                     <div class="podium-medal">${r}</div>
                     <div class="podium-name">${esc(d.partner_name)}</div>
                     <div class="podium-id">ID ${d.partner_id}</div>
                     <div class="podium-amount">${rp(d.total_amount)}</div>
                 </div>`;
             });
-            h += '</div>';
+            ph += '</div>';
+            podiumEl.innerHTML = ph;
         }
 
-        // 4th+
+        // === Rest 4th+ ===
         if (data.length > 3) {
-            h += '<div class="rest-list">';
+            let rh = '';
             for (let i = 3; i < data.length; i++) {
                 const d = data[i];
-                h += `<div class="rest-item" style="animation-delay:${(i-3)*0.08}s">
+                rh += `<div class="rest-item" style="animation-delay:${(i-3)*0.06}s">
                     <div class="rest-rank">${i+1}</div>
                     <div class="rest-info">
                         <div class="rest-name">${esc(d.partner_name)}</div>
@@ -348,10 +412,8 @@
                     <div class="rest-amount">${rp(d.total_amount)}</div>
                 </div>`;
             }
-            h += '</div>';
+            restEl.innerHTML = rh;
         }
-
-        c.innerHTML = h;
     }
 
     function rp(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }

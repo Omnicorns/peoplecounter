@@ -66,10 +66,12 @@ public class SecurityConfig {
             "icons/promis-192.png",
             "icons/promis-maskable-512.png",
             "/favicon.ico",
-            "/topspender",
+            "/topspender89",
+            "/topspender910",
             "/logo.jpeg",
             "/Danantara_Indonesia.png",
             "/injourney.png",
+            "/t.png",
 
             // Swagger (opsional)
             "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"
