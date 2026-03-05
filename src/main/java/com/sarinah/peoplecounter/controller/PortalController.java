@@ -1,33 +1,42 @@
 package com.sarinah.peoplecounter.controller;
 
-
 import com.sarinah.peoplecounter.configuration.PortalProperties;
 import com.sarinah.peoplecounter.model.PortalApp;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import javax.net.ssl.*;
+import java.security.cert.X509Certificate;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class PortalController {
+    @Autowired
+    private PortalProperties portalProperties;
 
-    private final PortalProperties portalProperties;
-
-    /**
-     * Login page
-     */
     @GetMapping("/portal/login")
     public String loginPage(
             @RequestParam(value = "error", required = false) String error,
@@ -47,66 +56,83 @@ public class PortalController {
 
         return "login";
     }
-
-    /**
-     * Portal - Application selection page
-     * Shows apps based on user's AD group/roles
-     */
     @GetMapping("/portal")
-    public String portalPage(Authentication auth, Model model) {
+    public String dashboard(Model model) {
+
+        // Ambil dari Spring Security, bukan session
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
-        Set<String> userRoles = auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
 
-        log.info("User '{}' accessed portal. Roles: {}", username, userRoles);
-
-        // Filter apps based on user roles
-        List<PortalApp> accessibleApps = portalProperties.getApps().stream()
-                .filter(app -> {
-                    if (app.getRoles() == null || app.getRoles().isEmpty()) {
-                        return true; // No role restriction
-                    }
-                    // User has ROLE_ADMIN or matching role
-                    return userRoles.contains("ROLE_ADMIN")
-                            || app.getRoles().stream().anyMatch(userRoles::contains);
-                })
-                .collect(Collectors.toList());
-
-        model.addAttribute("username", extractDisplayName(username));
-        model.addAttribute("apps", accessibleApps);
-        model.addAttribute("allRoles", userRoles);
-
+        model.addAttribute("username", username);
+        model.addAttribute("apps", portalProperties.getApps());
         return "portal";
     }
 
-    /**
-     * Redirect to target application
-     * Logs access for audit trail
-     */
-    @GetMapping("/portal/launch/{appId}")
-    public RedirectView launchApp(@PathVariable String appId, Authentication auth) {
+    @GetMapping("/portal/launch/{id}")
+    public String launch(@PathVariable String id, HttpSession session, Model model) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
+        String password = (String) session.getAttribute("relayPassword");
 
-        PortalApp targetApp = portalProperties.getApps().stream()
-                .filter(app -> app.getId().equals(appId))
-                .findFirst()
-                .orElse(null);
+        PortalApp app = portalProperties.getApps().stream()
+                .filter(a -> a.getId().equals(id))
+                .findFirst().orElseThrow();
 
-        if (targetApp == null) {
-            log.warn("User '{}' tried to access unknown app: {}", username, appId);
-            return new RedirectView("/portal?error=app-not-found");
+        Map<String, String> resolvedFields = new LinkedHashMap<>();
+        app.getFormFields().forEach((field, valueKey) -> {
+            if ("username".equals(valueKey))       resolvedFields.put(field, username);
+            else if ("password".equals(valueKey))  resolvedFields.put(field, password);
+            else if ("FETCH_CSRF".equals(valueKey)) {} // skip, dihandle JS
+            else                                    resolvedFields.put(field, valueKey);
+        });
+
+        model.addAttribute("targetUrl", app.getLoginUrl());
+        model.addAttribute("fields", resolvedFields);
+        model.addAttribute("appName", app.getName());
+        return "auto-login";
+    }
+    private String fetchCsrfToken(String loginUrl) {
+        try {
+            // Trust all certs (khusus internal server)
+            TrustManager[] trustAll = new TrustManager[]{
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                        public void checkClientTrusted(X509Certificate[] c, String a) {}
+                        public void checkServerTrusted(X509Certificate[] c, String a) {}
+                    }
+            };
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAll, new java.security.SecureRandom());
+
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+
+            SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext,
+                    NoopHostnameVerifier.INSTANCE);
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .build();
+
+            HttpComponentsClientHttpRequestFactory factory =
+                    new HttpComponentsClientHttpRequestFactory(httpClient);
+
+            RestTemplate restTemplate = new RestTemplate(factory);
+            String html = restTemplate.getForObject(loginUrl, String.class);
+
+            Pattern pattern = Pattern.compile(
+                    "name=\"csrf_token\"\\s+content=\"([a-f0-9]+)\"");
+            Matcher matcher = pattern.matcher(html);
+            if (matcher.find()) {
+                log.info("CSRF token fetched OK");
+                return matcher.group(1);
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch CSRF token from {}", loginUrl, e);
         }
-
-        log.info("AUDIT: User '{}' launching app '{}' -> {}", username, targetApp.getName(), targetApp.getUrl());
-
-        return new RedirectView(targetApp.getUrl());
+        return "";
     }
 
-    /**
-     * Extract display name from AD username
-     * e.g., "sarinah\john.doe" -> "John Doe"
-     */
     private String extractDisplayName(String username) {
         if (username.contains("\\")) {
             username = username.substring(username.indexOf("\\") + 1);

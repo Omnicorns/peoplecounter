@@ -37,25 +37,15 @@ public class LdapContextConfig {
     @Value("${ldap.base-dn}")
     private String baseDn;
 
-    @Value("${ldap.manager-dn}")
-    private String managerDn;
-
-    @Value("${ldap.manager-password}")
-    private String managerPassword;
-
     @Bean
     public LdapContextSource ldapContextSource() {
         LdapContextSource ctx = new LdapContextSource();
         ctx.setUrl(ldapUrl);
         ctx.setBase(baseDn);
-        ctx.setUserDn(managerDn);
-        ctx.setPassword(managerPassword);
-
-        // Connection pooling
+        // Hapus manager DN & password — gak dipakai
         ctx.setPooled(true);
-
-        // Referral handling
         ctx.setReferral("follow");
+        ctx.setAnonymousReadOnly(true); // read-only tanpa bind
 
         log.info("LDAP Context configured: url={}, base={}", ldapUrl, baseDn);
         return ctx;

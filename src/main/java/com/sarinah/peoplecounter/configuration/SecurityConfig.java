@@ -58,8 +58,6 @@ public class SecurityConfig {
     @Value("${ldap.base-dn}")
     private String ldapBaseDn;
 
-    @Value("${ldap.user-search-filter}")
-    private String userSearchFilter;
 
     // =============================================
     // Public endpoints — tidak perlu auth sama sekali
@@ -128,7 +126,7 @@ public class SecurityConfig {
         ActiveDirectoryLdapAuthenticationProvider provider =
                 new ActiveDirectoryLdapAuthenticationProvider(ldapDomain, ldapUrl, ldapBaseDn);
 
-        provider.setSearchFilter(userSearchFilter);
+     //   provider.setSearchFilter(userSearchFilter);
         provider.setConvertSubErrorCodesToExceptions(true);
         provider.setUseAuthenticationRequestCredentials(true);
 
@@ -235,13 +233,17 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/portal/login")
                         .loginProcessingUrl("/portal/login")
-                        .defaultSuccessUrl("/portal", true)
+                        .successHandler((request, response, authentication) -> {
+                            String password = request.getParameter("password");
+                            log.info("Success handler: saving password for user={}", authentication.getName());
+                            request.getSession().setAttribute("relayPassword", password);
+                            response.sendRedirect("/portal");
+                        })
                         .failureUrl("/portal/login?error=true")
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .permitAll()
                 )
-
                 // === LOGOUT ===
                 .logout(logout -> logout
                         .logoutUrl("/portal/logout")
