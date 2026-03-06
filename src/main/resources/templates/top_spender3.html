@@ -357,6 +357,14 @@
     /*<![CDATA[*/
     const API_KEY = /*[[${apiKey ?: ''}]]*/ '';
 
+    /* Mask 2 digit terakhir partner_id jadi **
+       Contoh: 12345 → 123** | 99 → ** | 5 → * */
+    function maskId(id) {
+        const s = String(id);
+        if (s.length <= 2) return '*'.repeat(s.length);
+        return s.slice(0, -2) + '**';
+    }
+
     async function fetchData() {
         const loading = document.getElementById('loadingState');
         const error   = document.getElementById('errorState');
@@ -373,7 +381,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
                 body: JSON.stringify({
-                    from_date: '2026-01-06',
+                    from_date: '2026-01-01',
                     to_date: new Date().toISOString().split('T')[0],
                     limit: '10'
                 })
@@ -404,7 +412,7 @@
                 ph += `<div class="podium-card ${cls}">
                     <div class="podium-medal">${r}</div>
                     <div class="podium-name">${esc(d.partner_name)}</div>
-                    <div class="podium-id">ID ${d.partner_id}</div>
+                    <div class="podium-id">ID ${maskId(d.partner_id)}</div>
                     <div class="podium-amount">${rp(d.total_amount)}</div>
                 </div>`;
             });
@@ -420,7 +428,7 @@
                     <div class="rest-rank">${i+1}</div>
                     <div class="rest-info">
                         <div class="rest-name">${esc(d.partner_name)}</div>
-                        <div class="rest-id">ID ${d.partner_id}</div>
+                        <div class="rest-id">ID ${maskId(d.partner_id)}</div>
                     </div>
                     <div class="rest-amount">${rp(d.total_amount)}</div>
                 </div>`;
