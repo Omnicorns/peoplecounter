@@ -68,6 +68,7 @@ public class SecurityConfig {
             "/favicon.ico",
             "/topspender89",
             "/topspender910",
+            "/topspender810",
             "/logo.jpeg",
             "/Danantara_Indonesia.png",
             "/injourney.png",

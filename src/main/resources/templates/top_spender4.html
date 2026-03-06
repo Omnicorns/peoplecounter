@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Spender Malam Ini - Sarinah</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== Portrait mobile → rotate notice ===== */
+        .rotate-notice {
+            display: none;
+            position: fixed; inset: 0; z-index: 9999;
+            background: #0a0e17; color: #fff;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px; text-align: center; padding: 40px;
+        }
+        .rotate-icon {
+            width: 64px; height: 64px;
+            border: 3px solid rgba(255,255,255,0.3); border-radius: 12px;
+            position: relative; animation: rotatePhone 2s ease-in-out infinite;
+        }
+        .rotate-icon::after {
+            content: ''; position: absolute; bottom: 6px; left: 50%;
+            transform: translateX(-50%); width: 16px; height: 3px;
+            border-radius: 2px; background: rgba(255,255,255,0.4);
+        }
+        @keyframes rotatePhone {
+            0%, 100% { transform: rotate(0deg); }
+            25%, 75% { transform: rotate(90deg); }
+        }
+        .rotate-notice h2 { font-size: 18px; font-weight: 700; }
+        .rotate-notice p { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .rotate-notice { display: flex; }
+            .bg, .layout { display: none; }
+        }
+
+        /* ===== Background ===== */
+        .bg {
+            position: fixed; inset: 0;
+            background: url('/t.png') center center / cover no-repeat;
+            z-index: 0;
+        }
+
+        /* ===== Layout ===== */
+        .layout {
+            position: relative; z-index: 1;
+            width: 100vw; height: 100vh;
+            display: flex;
+        }
+
+        .left-side { flex: 1; min-width: 0; }
+
+        /* ===== Right panel — DEFAULT DESKTOP ===== */
+        .right-panel {
+            width: 42vw;
+            max-width: 620px;
+            min-width: 480px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 28px 20px;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .panel-header {
+            margin-bottom: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .panel-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+        .live-badge {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 500;
+        }
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #22c55e; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .divider {
+            height: 1px; flex-shrink: 0; margin-bottom: 12px;
+            background: linear-gradient(90deg, #f59e0b, rgba(245,158,11,0.05));
+        }
+
+        /* ===== Podium ===== */
+        .podium {
+            display: flex; align-items: flex-end; justify-content: center;
+            gap: 10px; margin-bottom: 10px; flex-shrink: 0;
+        }
+
+        .podium-card {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 18px 14px 16px;
+            text-align: center; flex: 1; max-width: 180px;
+            transition: all 0.3s ease;
+        }
+        .podium-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.12); }
+
+        .podium-card.p1 {
+            order: 2; padding: 22px 14px 20px;
+            border-color: rgba(245,158,11,0.3);
+            background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.05));
+        }
+        .podium-card.p2 { order: 1; }
+        .podium-card.p3 { order: 3; }
+
+        .podium-medal {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px;
+            font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700;
+        }
+        .p1 .podium-medal {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f;
+            width: 46px; height: 46px; font-size: 18px;
+            box-shadow: 0 3px 14px rgba(245,158,11,0.35);
+        }
+        .p2 .podium-medal { background: rgba(148,163,184,0.2); color: #cbd5e1; border: 2px solid rgba(148,163,184,0.3); }
+        .p3 .podium-medal { background: rgba(217,119,6,0.15); color: #fbbf24; border: 2px solid rgba(217,119,6,0.25); }
+
+        .podium-name {
+            font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .p1 .podium-name { color: #fde68a; font-size: 15px; }
+        .podium-id { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 8px; }
+
+        .podium-amount {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+            color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08);
+            padding: 5px 10px; border-radius: 7px; display: inline-block;
+        }
+        .p1 .podium-amount { color: #fbbf24; background: rgba(245,158,11,0.12); font-size: 14px; }
+
+        /* ===== Rest List ===== */
+        .rest-list {
+            flex: 1; display: flex; flex-direction: column;
+            gap: 5px; overflow: hidden;
+        }
+
+        .rest-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px; transition: all 0.25s ease;
+            animation: slideIn 0.35s ease forwards; opacity: 0;
+        }
+        .rest-item:hover {
+            background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.12);
+            transform: translateX(3px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .rest-rank {
+            width: 30px; height: 30px; border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.4); flex-shrink: 0;
+        }
+        .rest-info { flex: 1; min-width: 0; }
+        .rest-name {
+            font-size: 14px; font-weight: 600; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rest-id { font-size: 10px; color: rgba(255,255,255,0.3); }
+        .rest-amount {
+            font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
+            color: rgba(255,255,255,0.8); flex-shrink: 0;
+        }
+
+        /* ===== States ===== */
+        .state-loading {
+            flex: 1; display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px;
+        }
+        .state-loading.active { display: flex; }
+        .dot-pulse { display: inline-flex; gap: 6px; }
+        .dot-pulse span {
+            width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .dot-pulse span:nth-child(2) { animation-delay: 0.15s; }
+        .dot-pulse span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        .state-loading p { color: rgba(255,255,255,0.4); font-size: 13px; }
+
+        .state-error {
+            flex: 1; display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 8px;
+        }
+        .state-error.active { display: flex; }
+        .state-error p { color: rgba(255,255,255,0.4); font-size: 13px; }
+        .btn-retry {
+            margin-top: 8px; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+            padding: 8px 20px; font-size: 12px; font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: rgba(255,255,255,0.7); cursor: pointer;
+        }
+        .btn-retry:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+        /* ===== RESPONSIVE: Large desktop ===== */
+        @media (min-width: 1600px) {
+            .right-panel { max-width: 680px; padding: 28px 36px 24px; }
+            .panel-title { font-size: 24px; }
+            .podium-card { padding: 20px 16px 18px; }
+            .p1 { padding: 24px 16px 22px; }
+            .podium-name { font-size: 15px; }
+            .p1 .podium-name { font-size: 16px; }
+            .rest-item { padding: 12px 16px; }
+            .rest-name { font-size: 15px; }
+            .rest-amount { font-size: 15px; }
+        }
+
+        /* ===== RESPONSIVE: Mobile landscape (tablet-ish) ===== */
+        @media (max-width: 1024px) and (orientation: landscape) {
+            .right-panel {
+                width: 50vw; min-width: 0; padding: 16px 20px 12px;
+            }
+            .panel-title { font-size: 17px; }
+            .panel-header { margin-bottom: 8px; }
+            .divider { margin-bottom: 8px; }
+
+            .podium { gap: 8px; margin-bottom: 8px; }
+            .podium-card { padding: 12px 10px 10px; border-radius: 10px; }
+            .podium-card.p1 { padding: 14px 10px 12px; }
+            .podium-medal { width: 32px; height: 32px; font-size: 13px; margin-bottom: 6px; }
+            .p1 .podium-medal { width: 36px; height: 36px; font-size: 14px; }
+            .podium-name { font-size: 12px; }
+            .p1 .podium-name { font-size: 13px; }
+            .podium-id { font-size: 9px; margin-bottom: 5px; }
+            .podium-amount { font-size: 11px; padding: 3px 7px; }
+            .p1 .podium-amount { font-size: 12px; }
+
+            .rest-list { gap: 3px; }
+            .rest-item { padding: 7px 10px; gap: 10px; border-radius: 8px; }
+            .rest-rank { width: 26px; height: 26px; font-size: 11px; border-radius: 6px; }
+            .rest-name { font-size: 12px; }
+            .rest-id { font-size: 8px; }
+            .rest-amount { font-size: 12px; }
+        }
+
+        /* ===== RESPONSIVE: Small mobile landscape ===== */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .right-panel {
+                width: 55vw; min-width: 0; padding: 10px 14px 8px;
+            }
+            .panel-title { font-size: 14px; }
+            .live-badge { font-size: 9px; }
+            .panel-header { margin-bottom: 5px; }
+            .divider { margin-bottom: 5px; }
+
+            .podium { gap: 5px; margin-bottom: 5px; }
+            .podium-card { padding: 8px 6px 7px; border-radius: 8px; }
+            .podium-card.p1 { padding: 10px 6px 9px; }
+            .podium-medal { width: 26px; height: 26px; font-size: 11px; margin-bottom: 4px; }
+            .p1 .podium-medal { width: 30px; height: 30px; font-size: 12px; }
+            .podium-name { font-size: 10px; }
+            .p1 .podium-name { font-size: 11px; }
+            .podium-id { font-size: 7px; margin-bottom: 3px; }
+            .podium-amount { font-size: 9px; padding: 2px 5px; }
+            .p1 .podium-amount { font-size: 10px; }
+
+            .rest-list { gap: 2px; }
+            .rest-item { padding: 5px 8px; gap: 6px; border-radius: 6px; }
+            .rest-rank { width: 22px; height: 22px; font-size: 10px; border-radius: 5px; }
+            .rest-name { font-size: 10px; }
+            .rest-id { font-size: 7px; }
+            .rest-amount { font-size: 10px; }
+        }
+
+        /* ===== RESPONSIVE: Very short screens ===== */
+        @media (max-height: 380px) {
+            .right-panel { padding: 6px 10px 4px; }
+            .panel-header { margin-bottom: 3px; }
+            .panel-title { font-size: 12px; }
+            .divider { margin-bottom: 3px; }
+
+            .podium { gap: 4px; margin-bottom: 3px; }
+            .podium-card { padding: 5px 4px; border-radius: 6px; }
+            .podium-card.p1 { padding: 6px 4px; }
+            .podium-medal { width: 20px; height: 20px; font-size: 9px; margin-bottom: 2px; }
+            .p1 .podium-medal { width: 24px; height: 24px; font-size: 10px; }
+            .podium-name { font-size: 8px; }
+            .podium-id { font-size: 6px; margin-bottom: 2px; }
+            .podium-amount { font-size: 7px; padding: 1px 4px; }
+
+            .rest-list { gap: 1px; }
+            .rest-item { padding: 3px 6px; gap: 4px; }
+            .rest-rank { width: 18px; height: 18px; font-size: 8px; }
+            .rest-name { font-size: 8px; }
+            .rest-id { font-size: 6px; }
+            .rest-amount { font-size: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="rotate-notice">
+    <div class="rotate-icon"></div>
+    <h2>Putar HP Anda</h2>
+    <p>Halaman ini tampil lebih baik dalam mode landscape</p>
+</div>
+
+<div class="bg"></div>
+
+<div class="layout">
+    <div class="left-side"></div>
+
+    <div class="right-panel">
+        <div class="panel-header">
+            <div class="panel-title">Top Spender Malam Ini</div>
+            <div class="live-badge"><span class="live-dot"></span> Live</div>
+        </div>
+        <div class="divider"></div>
+
+        <div class="state-loading active" id="loadingState">
+            <div class="dot-pulse"><span></span><span></span><span></span></div>
+            <p>Memuat data...</p>
+        </div>
+
+        <div class="state-error" id="errorState">
+            <p id="errorMsg">Gagal memuat data</p>
+            <button class="btn-retry" onclick="fetchData()">Coba Lagi</button>
+        </div>
+
+        <div id="podiumContainer"></div>
+        <div class="rest-list" id="restList"></div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const API_KEY = /*[[${apiKey ?: ''}]]*/ '';
+
+    async function fetchData() {
+        const loading = document.getElementById('loadingState');
+        const error   = document.getElementById('errorState');
+        const podium  = document.getElementById('podiumContainer');
+        const rest    = document.getElementById('restList');
+
+        loading.classList.add('active');
+        error.classList.remove('active');
+        podium.innerHTML = '';
+        rest.innerHTML = '';
+
+        try {
+            const res = await fetch('/sarinah-forwarder/v1/modul/top-spender', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
+                body: JSON.stringify({
+                    from_date: '2026-03-06',
+                    to_date: new Date().toISOString().split('T')[0],
+                    limit: '10',
+                    hour_start: '20',
+                    hour_end: '22'
+                })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            render(await res.json());
+        } catch (e) {
+            error.classList.add('active');
+            document.getElementById('errorMsg').textContent = 'Gagal memuat: ' + e.message;
+        } finally {
+            loading.classList.remove('active');
+        }
+    }
+
+    function render(data) {
+        const podiumEl = document.getElementById('podiumContainer');
+        const restEl   = document.getElementById('restList');
+
+        if (!data || !data.length) {
+            restEl.innerHTML = '<div class="state-error active"><p>Belum ada data malam ini</p></div>';
+            return;
+        }
+
+        if (data.length >= 3) {
+            let ph = '<div class="podium">';
+            [1, 0, 2].forEach(i => {
+                const d = data[i], r = i + 1, cls = 'p' + r;
+                ph += `<div class="podium-card ${cls}">
+                    <div class="podium-medal">${r}</div>
+                    <div class="podium-name">${esc(d.partner_name)}</div>
+                    <div class="podium-id">ID ${d.partner_id}</div>
+                    <div class="podium-amount">${rp(d.total_amount)}</div>
+                </div>`;
+            });
+            ph += '</div>';
+            podiumEl.innerHTML = ph;
+        }
+
+        if (data.length > 3) {
+            let rh = '';
+            for (let i = 3; i < data.length; i++) {
+                const d = data[i];
+                rh += `<div class="rest-item" style="animation-delay:${(i-3)*0.06}s">
+                    <div class="rest-rank">${i+1}</div>
+                    <div class="rest-info">
+                        <div class="rest-name">${esc(d.partner_name)}</div>
+                        <div class="rest-id">ID ${d.partner_id}</div>
+                    </div>
+                    <div class="rest-amount">${rp(d.total_amount)}</div>
+                </div>`;
+            }
+            restEl.innerHTML = rh;
+        }
+    }
+
+    function rp(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    document.addEventListener('DOMContentLoaded', fetchData);
+    setInterval(fetchData, 30000);
+    /*]]>*/
+</script>
+
+</body>
+</html>
