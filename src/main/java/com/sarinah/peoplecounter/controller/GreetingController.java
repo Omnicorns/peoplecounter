@@ -150,6 +150,12 @@ public class GreetingController {
         return "redirect:/middleware/login";
     }
 
+    @PostMapping("/catalog/logout")
+    public String catalogLogout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/middleware/catalog/login";
+    }
+
     @GetMapping("/announcements")
     public String pengumuman(HttpSession session,Model model){
         if (!isLoggedIn(session)) {

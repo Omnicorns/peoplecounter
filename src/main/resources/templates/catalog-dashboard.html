@@ -504,6 +504,77 @@
             font-size:14px;
         }
 
+        .bulk-upload-box{
+            border:1px dashed var(--border-strong);
+            border-radius:16px;
+            padding:16px;
+            background:var(--bg-soft);
+        }
+
+        .bulk-summary{
+            margin-top:14px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .bulk-count{
+            font-size:14px;
+            font-weight:800;
+            color:var(--text);
+        }
+
+        .bulk-hint{
+            margin-top:4px;
+            font-size:12px;
+            color:var(--text-muted);
+        }
+
+        .bulk-file-list{
+            margin-top:14px;
+            display:grid;
+            gap:8px;
+            max-height:220px;
+            overflow:auto;
+            padding-right:4px;
+        }
+
+        .bulk-file-item{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 12px;
+            border:1px solid var(--border);
+            background:#fff;
+            border-radius:12px;
+        }
+
+        .bulk-file-name{
+            font-size:13px;
+            font-weight:700;
+            color:var(--text);
+            word-break:break-word;
+        }
+
+        .bulk-file-size{
+            font-size:12px;
+            color:var(--text-muted);
+            white-space:nowrap;
+        }
+
+        .bulk-empty{
+            padding:12px;
+            border:1px solid var(--border);
+            background:#fff;
+            border-radius:12px;
+            font-size:13px;
+            color:var(--text-muted);
+            text-align:center;
+        }
+
         .modal-backdrop{
             position:fixed;
             inset:0;
@@ -624,6 +695,7 @@
             .toolbar-left{max-width:100%}
             .url-actions{flex-direction:column}
             .url-actions .btn{width:100%}
+            .bulk-file-item{align-items:flex-start;flex-direction:column}
         }
     </style>
 </head>
@@ -641,7 +713,7 @@
 
         <div class="topbar-actions">
             <div class="top-chip">/api/admin/users</div>
-            <form action="/middleware/logout" method="post">
+            <form action="/middleware/catalog/logout" method="post">
                 <input type="hidden"
                        th:if="${_csrf != null}"
                        th:name="${_csrf.parameterName}"
@@ -659,7 +731,7 @@
                 <h2>Manajemen Catalog PDF</h2>
                 <p>
                     Halaman ini sudah dioptimalkan supaya lebih ringan saat data banyak:
-                    ada search, pagination, copy URL, dan QR dengan logo di tengah.
+                    ada search, pagination, copy URL, QR dengan logo di tengah, dan bulk upload yang benar-benar tampil multiple file.
                 </p>
             </div>
             <div class="hero-actions">
@@ -721,8 +793,24 @@
                 <form id="bulkForm">
                     <div class="field">
                         <label for="bulkPdfFiles">File PDF (Multiple)</label>
-                        <input id="bulkPdfFiles" name="files" type="file" accept="application/pdf" multiple required>
+
+                        <div class="bulk-upload-box">
+                            <input id="bulkPdfFiles" name="files" type="file" accept="application/pdf" multiple required>
+
+                            <div class="bulk-summary">
+                                <div>
+                                    <div id="bulkFileCount" class="bulk-count">Belum ada file dipilih</div>
+                                    <div id="bulkFileHint" class="bulk-hint">Pilih banyak file dengan Ctrl / Shift</div>
+                                </div>
+                                <button type="button" class="btn secondary" id="clearBulkBtn">Clear</button>
+                            </div>
+
+                            <div id="bulkFileList" class="bulk-file-list">
+                                <div class="bulk-empty">Belum ada file yang dipilih.</div>
+                            </div>
+                        </div>
                     </div>
+
                     <button class="btn warning" type="submit">Upload Bulk</button>
                     <div class="help">Jumlah maksimum file mengikuti validasi backend.</div>
                 </form>
@@ -905,6 +993,12 @@
     const openQrUrlBtn = document.getElementById('openQrUrlBtn');
     const downloadQrBtn = document.getElementById('downloadQrBtn');
 
+    const bulkPdfFilesInput = document.getElementById('bulkPdfFiles');
+    const bulkFileCount = document.getElementById('bulkFileCount');
+    const bulkFileHint = document.getElementById('bulkFileHint');
+    const bulkFileList = document.getElementById('bulkFileList');
+    const clearBulkBtn = document.getElementById('clearBulkBtn');
+
     let currentEditItem = null;
     let filenameManuallyChanged = false;
     let currentQrItem = null;
@@ -1079,9 +1173,7 @@
         currentTotalElements = filtered.length;
         currentTotalPages = Math.max(1, Math.ceil(filtered.length / currentSize));
 
-        if (currentPage >= currentTotalPages) {
-            currentPage = currentTotalPages - 1;
-        }
+        if (currentPage >= currentTotalPages) currentPage = currentTotalPages - 1;
         if (currentPage < 0) currentPage = 0;
 
         const start = currentPage * currentSize;
@@ -1271,6 +1363,41 @@
         });
     }
 
+    function formatFileSize(bytes) {
+        if (!bytes && bytes !== 0) return '-';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    function renderBulkFiles() {
+        const files = Array.from(bulkPdfFilesInput.files || []);
+
+        if (!files.length) {
+            bulkFileCount.textContent = 'Belum ada file dipilih';
+            bulkFileHint.textContent = 'Pilih banyak file dengan Ctrl / Shift';
+            bulkFileList.innerHTML = '<div class="bulk-empty">Belum ada file yang dipilih.</div>';
+            return;
+        }
+
+        bulkFileCount.textContent = `${files.length} file dipilih`;
+        bulkFileHint.textContent = 'Semua file di bawah akan dikirim saat klik Upload Bulk';
+
+        bulkFileList.innerHTML = files.map(file => `
+            <div class="bulk-file-item">
+                <div class="bulk-file-name">${escapeHtml(file.name)}</div>
+                <div class="bulk-file-size">${formatFileSize(file.size)}</div>
+            </div>
+        `).join('');
+    }
+
     async function loadCatalogs(page = currentPage) {
         try {
             currentPage = page;
@@ -1378,6 +1505,13 @@
         }
     });
 
+    bulkPdfFilesInput.addEventListener('change', renderBulkFiles);
+
+    clearBulkBtn.addEventListener('click', function () {
+        bulkPdfFilesInput.value = '';
+        renderBulkFiles();
+    });
+
     document.addEventListener('click', function (event) {
         const qrBtn = event.target.closest('.js-qr-btn');
         if (qrBtn) {
@@ -1439,7 +1573,7 @@
     document.getElementById('bulkForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         try {
-            const files = document.getElementById('bulkPdfFiles').files;
+            const files = bulkPdfFilesInput.files;
             if (!files || !files.length) throw new Error('Belum ada file PDF yang dipilih');
 
             const fd = new FormData();
@@ -1455,6 +1589,7 @@
             const data = await handleJsonResponse(res);
             showResult(data);
             this.reset();
+            renderBulkFiles();
             await loadCatalogs(0);
         } catch (err) {
             showError(err);
@@ -1501,6 +1636,7 @@
         }
     });
 
+    renderBulkFiles();
     loadCatalogs(0);
 </script>
 

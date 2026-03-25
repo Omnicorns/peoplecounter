@@ -42,6 +42,7 @@ public class SecurityConfig {
             "/middleware/sop",
             "/middleware/catalog/login",
             "/middleware/catalog/dashboard",
+            "/middleware/catalog/logout",
 
             "/web/login",
             "/web/product",
