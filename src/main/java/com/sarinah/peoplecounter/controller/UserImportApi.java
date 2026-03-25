@@ -165,6 +165,26 @@ public class UserImportApi {
         );
     }
 
+    @GetMapping("/catalogs")
+    public List<Map<String, Object>> getAllCatalogs() {
+        return pdfDocRepository.findAll()
+                .stream()
+                .sorted((a, b) -> Long.compare(
+                        b.getId() != null ? b.getId() : 0L,
+                        a.getId() != null ? a.getId() : 0L
+                ))
+                .map(doc -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", doc.getId());
+                    item.put("filename", doc.getFilename());
+                    item.put("contentType", doc.getContentType());
+                    item.put("url", "/api/admin/users/pdf/" + doc.getId());
+                    item.put("open_in_viewer", "/catalogue?id=" + doc.getId());
+                    return item;
+                })
+                .toList();
+    }
+
     /**
      * Deteksi cepat PDF:
      * - Content-Type 'application/pdf' ATAU
@@ -216,6 +236,8 @@ public class UserImportApi {
                 "status", "UPDATED"
         );
     }
+
+
 
 
 

@@ -61,6 +61,8 @@ public class GreetingController {
         return "redirect:" + fallback;
     }
 
+
+
     @GetMapping("/login")
     public String loginPage(HttpSession session,Model model) {
         if (isLoggedIn(session)) {
@@ -70,6 +72,21 @@ public class GreetingController {
         }
         if (!model.containsAttribute("error")) model.addAttribute("error", null);
         return "middleware-login";
+    }
+
+
+
+    @GetMapping("/catalog/login")
+    public String catalogLoginPage(HttpSession session, Model model) {
+        if (isLoggedIn(session)) {
+            return "redirect:/middleware/catalog/dashboard";
+        }
+
+        if (!model.containsAttribute("error")) {
+            model.addAttribute("error", null);
+        }
+
+        return "catalog-login";
     }
 
     @PostMapping("/login")
@@ -93,12 +110,54 @@ public class GreetingController {
         return redirectAfterLogin(session, fallback);
     }
 
+    @PostMapping("/catalog/login")
+    public String catalog(@RequestParam String usernameOrEmail,
+                          @RequestParam String password,
+                          Model model,
+                          HttpSession session) {
+
+        MiddlewareUser user = authService.authenticate(usernameOrEmail, password);
+        if (user == null) {
+            model.addAttribute("error", "Username atau password salah, atau user non-aktif.");
+            return "catalog-login";
+        }
+
+        session.setAttribute("AUTH_USER_ID", user.getId());
+        session.setAttribute("AUTH_USERNAME", user.getUsername());
+        session.setAttribute("IS_ADMIN", user.isAdmin());
+
+        String fallback = "/middleware/catalog/dashboard";
+        return redirectAfterLogin(session, fallback);
+    }
+
+    @GetMapping("/catalog/dashboard")
+    public String catalogDashboard(HttpSession session, Model model) {
+        Object authUserId = session.getAttribute("AUTH_USER_ID");
+
+        if (authUserId == null) {
+            return "redirect:/middleware/catalog/login";
+        }
+
+        model.addAttribute("username", session.getAttribute("AUTH_USERNAME"));
+        model.addAttribute("isAdmin", Boolean.TRUE.equals(session.getAttribute("IS_ADMIN")));
+
+        return "catalog-dashboard";
+    }
+
     @PostMapping("/logout")
     public String doLogout(HttpSession session) {
         session.invalidate();
         return "redirect:/middleware/login";
     }
 
+    @GetMapping("/announcements")
+    public String pengumuman(HttpSession session,Model model){
+        if (!isLoggedIn(session)) {
+            return sendToLogin(session, "/middleware/announcements");
+        }
+        model.addAttribute("apiKey", apiKey);
+        return "middleware-announcements";
+    }
 
     @GetMapping("/sop")
     public String manajemenSop(HttpSession session,Model model){
@@ -108,6 +167,8 @@ public class GreetingController {
         model.addAttribute("apiKey", apiKey);
         return "middleware-sop";
     }
+
+
 
     @GetMapping("/sop-bo")
     public String manajemenSopB0(HttpSession session,Model model){

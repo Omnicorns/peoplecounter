@@ -40,6 +40,8 @@ public class SecurityConfig {
             "/middleware/users/forgot",
             "/middleware/users/inactive",
             "/middleware/sop",
+            "/middleware/catalog/login",
+            "/middleware/catalog/dashboard",
 
             "/web/login",
             "/web/product",
@@ -54,6 +56,8 @@ public class SecurityConfig {
             "/api/admin/users/import-csv",
             "/api/admin/users/pdf",
             "/api/admin/users/pdf/**",
+            "/api/admin/users/catalogs",
+            "/api/admin/users/**",
 
             // PWA files (root)
             "/manifest.webmanifest",
@@ -72,8 +76,10 @@ public class SecurityConfig {
             "/logo.jpeg",
             "/Danantara_Indonesia.png",
             "/injourney.png",
+            "/logo2.png",
             "/t.png",
             "/topspender",
+            "/portal/login",
 
 
             // Swagger (opsional)
