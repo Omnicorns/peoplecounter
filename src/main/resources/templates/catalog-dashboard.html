@@ -48,7 +48,7 @@
         }
 
         .topbar-inner{
-            max-width:1380px;
+            max-width:1440px;
             margin:0 auto;
             padding:16px 24px;
             display:flex;
@@ -65,13 +65,13 @@
         }
 
         .brand-badge{
-            width:44px;
-            height:44px;
-            border-radius:14px;
+            width:50px;
+            height:50px;
+            border-radius:16px;
             display:grid;
             place-items:center;
             font-weight:800;
-            font-size:14px;
+            font-size:16px;
             color:#fff;
             background:linear-gradient(135deg,var(--primary),var(--primary-dark));
             box-shadow:0 10px 24px rgba(37,99,235,.18);
@@ -107,9 +107,9 @@
         }
 
         .page{
-            max-width:1380px;
+            max-width:1440px;
             margin:0 auto;
-            padding:26px 24px 42px;
+            padding:24px;
             display:grid;
             gap:24px;
         }
@@ -118,7 +118,7 @@
             background:linear-gradient(135deg,#eff6ff 0%,#eef2ff 55%,#f5f3ff 100%);
             border:1px solid #dbeafe;
             border-radius:var(--radius-lg);
-            padding:30px;
+            padding:28px;
         }
 
         .hero-content{
@@ -137,7 +137,7 @@
         }
 
         .hero p{
-            max-width:820px;
+            max-width:900px;
             font-size:14px;
             line-height:1.8;
             color:var(--text-soft);
@@ -159,7 +159,7 @@
             background:var(--card);
             border:1px solid var(--border);
             border-radius:var(--radius);
-            padding:20px;
+            padding:18px 20px;
             box-shadow:var(--shadow-soft);
         }
 
@@ -173,7 +173,7 @@
 
         .stat .value{
             margin-top:10px;
-            font-size:30px;
+            font-size:28px;
             font-weight:800;
         }
 
@@ -192,7 +192,7 @@
         }
 
         .card-head{
-            padding:22px 24px;
+            padding:20px 22px;
             border-bottom:1px solid var(--border);
             display:flex;
             justify-content:space-between;
@@ -215,7 +215,9 @@
             color:var(--text-muted);
         }
 
-        .card-body{padding:24px}
+        .card-body{
+            padding:22px;
+        }
 
         .grid-2{
             display:grid;
@@ -240,11 +242,12 @@
         }
 
         input[type="text"],
-        input[type="number"]{
+        input[type="number"],
+        select{
             width:100%;
             border:1px solid var(--border-strong);
             border-radius:14px;
-            padding:13px 14px;
+            padding:12px 14px;
             font-size:14px;
             color:var(--text);
             background:#fff;
@@ -253,7 +256,8 @@
         }
 
         input[type="text"]:focus,
-        input[type="number"]:focus{
+        input[type="number"]:focus,
+        select:focus{
             border-color:var(--primary);
             box-shadow:0 0 0 4px rgba(37,99,235,.10);
         }
@@ -328,6 +332,12 @@
             border:1px solid var(--border);
         }
 
+        .btn[disabled]{
+            opacity:.55;
+            cursor:not-allowed;
+            transform:none;
+        }
+
         .help{
             margin-top:10px;
             font-size:12px;
@@ -369,13 +379,8 @@
             overflow:hidden;
         }
 
-        .table-wrap{
-            overflow:auto;
-            border-top:1px solid var(--border);
-        }
-
         .table-toolbar{
-            padding:16px 24px;
+            padding:16px 22px;
             display:flex;
             gap:12px;
             flex-wrap:wrap;
@@ -386,24 +391,28 @@
             border-bottom:1px solid var(--border);
         }
 
-        .search-wrap{
+        .toolbar-left{
             display:flex;
             gap:10px;
             flex-wrap:wrap;
             align-items:center;
             width:100%;
-            max-width:520px;
+            max-width:760px;
         }
 
-        .search-wrap input{
+        .search-input{
             flex:1;
-            min-width:220px;
+            min-width:240px;
         }
 
         .search-info{
             font-size:13px;
             color:var(--text-muted);
             font-weight:600;
+        }
+
+        .table-wrap{
+            overflow:auto;
         }
 
         table{
@@ -415,7 +424,7 @@
 
         thead th{
             text-align:left;
-            padding:15px 18px;
+            padding:14px 18px;
             font-size:12px;
             font-weight:800;
             color:var(--text-muted);
@@ -426,7 +435,7 @@
         }
 
         tbody td{
-            padding:16px 18px;
+            padding:14px 18px;
             border-bottom:1px solid #eef2f7;
             font-size:14px;
             color:var(--text);
@@ -458,6 +467,34 @@
             white-space:nowrap;
             position:relative;
             z-index:2;
+        }
+
+        .table-footer{
+            padding:16px 22px;
+            border-top:1px solid var(--border);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+            background:#fff;
+        }
+
+        .pagination{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex-wrap:wrap;
+        }
+
+        .page-chip{
+            padding:8px 12px;
+            border-radius:10px;
+            border:1px solid var(--border);
+            background:#fff;
+            color:var(--text-soft);
+            font-size:12px;
+            font-weight:700;
         }
 
         .empty{
@@ -581,10 +618,10 @@
             .hero h2{font-size:24px}
             .stats{grid-template-columns:1fr}
             .grid-2{grid-template-columns:1fr}
-            .card-head,.card-body,.table-toolbar,.modal-head,.modal-body{padding:18px}
+            .card-head,.card-body,.table-toolbar,.table-footer,.modal-head,.modal-body{padding:18px}
             .actions{flex-direction:column;align-items:stretch}
             .actions .btn{width:100%}
-            .search-wrap{max-width:100%}
+            .toolbar-left{max-width:100%}
             .url-actions{flex-direction:column}
             .url-actions .btn{width:100%}
         }
@@ -621,8 +658,8 @@
             <div>
                 <h2>Manajemen Catalog PDF</h2>
                 <p>
-                    Lihat semua catalog yang sudah ada, buat catalog baru, upload banyak file sekaligus,
-                    edit file catalog, cari catalog, copy URL, dan generate QR langsung dari URL catalog.
+                    Halaman ini sudah dioptimalkan supaya lebih ringan saat data banyak:
+                    ada search, pagination, copy URL, dan QR dengan logo di tengah.
                 </p>
             </div>
             <div class="hero-actions">
@@ -638,16 +675,16 @@
             <div class="value" id="totalCatalog">0</div>
         </div>
         <div class="stat">
-            <div class="label">Create New</div>
-            <div class="value">1</div>
+            <div class="label">Per Page</div>
+            <div class="value" id="perPageValue">20</div>
         </div>
         <div class="stat">
-            <div class="label">Bulk Upload</div>
-            <div class="value">1</div>
+            <div class="label">Current Page</div>
+            <div class="value" id="currentPageValue">1</div>
         </div>
         <div class="stat">
-            <div class="label">QR Generator</div>
-            <div class="value">1</div>
+            <div class="label">Total Pages</div>
+            <div class="value" id="totalPagesValue">1</div>
         </div>
     </section>
 
@@ -667,7 +704,7 @@
                         <input id="createPdfFile" name="file" type="file" accept="application/pdf" required>
                     </div>
                     <button class="btn success" type="submit">Create Catalog</button>
-                    <div class="help">Setelah upload sukses, list catalog akan otomatis refresh.</div>
+                    <div class="help">Setelah upload sukses, tabel akan refresh ke page pertama.</div>
                 </form>
             </div>
         </section>
@@ -696,7 +733,7 @@
             <div class="card-head">
                 <div>
                     <h3>Edit Catalog</h3>
-                    <p>Pilih data dari list, lalu ubah file PDF atau filename.</p>
+                    <p>Pilih data dari tabel, lalu ubah file PDF atau filename.</p>
                 </div>
                 <span class="badge">PUT /{id}</span>
             </div>
@@ -729,14 +766,20 @@
         <div class="card-head">
             <div>
                 <h3>List Catalog</h3>
-                <p>Cari berdasarkan ID, filename, atau content type. QR dan copy URL ada di tiap baris.</p>
+                <p>Search, pagination, copy URL, dan QR ada di sini.</p>
             </div>
             <button id="refreshListBtn" class="btn primary" type="button">Refresh List</button>
         </div>
 
         <div class="table-toolbar">
-            <div class="search-wrap">
-                <input id="catalogSearchInput" type="text" placeholder="Cari catalog...">
+            <div class="toolbar-left">
+                <input id="catalogSearchInput" class="search-input" type="text" placeholder="Cari catalog...">
+                <select id="pageSizeSelect">
+                    <option value="10">10 / page</option>
+                    <option value="20" selected>20 / page</option>
+                    <option value="50">50 / page</option>
+                    <option value="100">100 / page</option>
+                </select>
                 <button id="clearSearchBtn" class="btn secondary" type="button">Clear</button>
             </div>
             <div id="catalogSearchInfo" class="search-info">Menampilkan semua catalog</div>
@@ -758,6 +801,17 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="table-footer">
+            <div id="paginationInfo" class="search-info">Page 1 of 1</div>
+            <div class="pagination">
+                <button id="firstPageBtn" class="btn secondary" type="button">First</button>
+                <button id="prevPageBtn" class="btn secondary" type="button">Prev</button>
+                <span id="pageChip" class="page-chip">1 / 1</span>
+                <button id="nextPageBtn" class="btn secondary" type="button">Next</button>
+                <button id="lastPageBtn" class="btn secondary" type="button">Last</button>
+            </div>
         </div>
     </section>
 
@@ -818,22 +872,34 @@
     const totalCatalog = document.getElementById('totalCatalog');
     const tableBody = document.getElementById('catalogTableBody');
 
+    const perPageValue = document.getElementById('perPageValue');
+    const currentPageValue = document.getElementById('currentPageValue');
+    const totalPagesValue = document.getElementById('totalPagesValue');
+
     const editIdInput = document.getElementById('editId');
     const editFilenameInput = document.getElementById('editFilename');
     const editPdfFileInput = document.getElementById('editPdfFile');
 
     const catalogSearchInput = document.getElementById('catalogSearchInput');
     const catalogSearchInfo = document.getElementById('catalogSearchInfo');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+
+    const refreshHeroBtn = document.getElementById('refreshHeroBtn');
+    const refreshListBtn = document.getElementById('refreshListBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+    const paginationInfo = document.getElementById('paginationInfo');
+    const pageChip = document.getElementById('pageChip');
+    const firstPageBtn = document.getElementById('firstPageBtn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const lastPageBtn = document.getElementById('lastPageBtn');
 
     const qrModalBackdrop = document.getElementById('qrModalBackdrop');
     const qrModalSubtitle = document.getElementById('qrModalSubtitle');
     const qrUrlInput = document.getElementById('qrUrlInput');
     const qrCanvas = document.getElementById('qrCanvas');
     const qrLogo = document.getElementById('qrLogo');
-
-    const refreshHeroBtn = document.getElementById('refreshHeroBtn');
-    const refreshListBtn = document.getElementById('refreshListBtn');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
     const closeQrModalBtn = document.getElementById('closeQrModalBtn');
     const copyQrUrlBtn = document.getElementById('copyQrUrlBtn');
     const openQrUrlBtn = document.getElementById('openQrUrlBtn');
@@ -841,8 +907,16 @@
 
     let currentEditItem = null;
     let filenameManuallyChanged = false;
-    let allCatalogItems = [];
     let currentQrItem = null;
+
+    let currentPage = 0;
+    let currentSize = 20;
+    let currentKeyword = '';
+    let currentTotalPages = 1;
+    let currentTotalElements = 0;
+
+    let fallbackAllItems = [];
+    let searchDebounceTimer = null;
 
     function showResult(data) {
         resultBox.textContent = typeof data === 'string'
@@ -862,9 +936,11 @@
         } catch {
             data = { raw: text };
         }
+
         if (!res.ok) {
             throw new Error((data && (data.message || data.error)) || text || ('HTTP ' + res.status));
         }
+
         return data;
     }
 
@@ -904,6 +980,123 @@
 
     function buildViewerUrl(item) {
         return toAbsoluteUrl(item.open_in_viewer || ('/catalogue?id=' + item.id));
+    }
+
+    function setSummaryStats(totalElements, page, totalPages, size) {
+        totalCatalog.textContent = totalElements ?? 0;
+        perPageValue.textContent = size ?? 20;
+        currentPageValue.textContent = (page ?? 0) + 1;
+        totalPagesValue.textContent = totalPages || 1;
+    }
+
+    function updatePaginationUI(page, totalPages, totalElements) {
+        const safeTotalPages = totalPages > 0 ? totalPages : 1;
+        const currentHumanPage = (page ?? 0) + 1;
+
+        paginationInfo.textContent = `Page ${currentHumanPage} of ${safeTotalPages} • Total ${totalElements ?? 0} data`;
+        pageChip.textContent = `${currentHumanPage} / ${safeTotalPages}`;
+
+        const isFirst = page <= 0;
+        const isLast = page >= safeTotalPages - 1;
+
+        firstPageBtn.disabled = isFirst;
+        prevPageBtn.disabled = isFirst;
+        nextPageBtn.disabled = isLast;
+        lastPageBtn.disabled = isLast;
+    }
+
+    function renderCatalogs(items) {
+        if (!items || !items.length) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Data catalog tidak ditemukan.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = items.map(item => {
+            const pdfUrl = withCacheBuster(item.url || (API_BASE + '/pdf/' + item.id));
+            const viewerUrl = withCacheBuster(item.open_in_viewer || ('/catalogue?id=' + item.id));
+
+            const rawPdfUrl = item.url || (API_BASE + '/pdf/' + item.id);
+            const rawViewerUrl = item.open_in_viewer || ('/catalogue?id=' + item.id);
+
+            return `
+                <tr>
+                    <td class="id-cell">${item.id ?? '-'}</td>
+                    <td class="filename-cell">${escapeHtml(item.filename ?? '-')}</td>
+                    <td class="contenttype-cell">${escapeHtml(item.contentType ?? 'application/pdf')}</td>
+                    <td>
+                        <div class="actions">
+                            <a class="btn success" href="${pdfUrl}" target="_blank">PDF</a>
+                            <a class="btn warning" href="${viewerUrl}" target="_blank">Viewer</a>
+
+                            <button
+                                class="btn secondary js-edit-btn"
+                                type="button"
+                                data-id="${escapeHtml(item.id ?? '')}"
+                                data-filename="${escapeHtml(item.filename ?? '')}">
+                                Edit
+                            </button>
+
+                            <button
+                                class="btn primary js-copy-url-btn"
+                                type="button"
+                                data-id="${escapeHtml(item.id ?? '')}"
+                                data-filename="${escapeHtml(item.filename ?? '')}"
+                                data-url="${escapeHtml(rawViewerUrl)}">
+                                Copy URL
+                            </button>
+
+                            <button
+                                class="btn info js-qr-btn"
+                                type="button"
+                                data-id="${escapeHtml(item.id ?? '')}"
+                                data-filename="${escapeHtml(item.filename ?? '')}"
+                                data-content-type="${escapeHtml(item.contentType ?? 'application/pdf')}"
+                                data-url="${escapeHtml(rawPdfUrl)}"
+                                data-viewer="${escapeHtml(rawViewerUrl)}">
+                                QR
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    function applyClientSideFallback(arrayData) {
+        fallbackAllItems = Array.isArray(arrayData) ? arrayData : [];
+
+        let filtered = fallbackAllItems;
+        const keyword = currentKeyword.trim().toLowerCase();
+
+        if (keyword) {
+            filtered = filtered.filter(item => {
+                const idText = String(item.id ?? '').toLowerCase();
+                const filenameText = String(item.filename ?? '').toLowerCase();
+                const contentTypeText = String(item.contentType ?? '').toLowerCase();
+                return idText.includes(keyword) || filenameText.includes(keyword) || contentTypeText.includes(keyword);
+            });
+        }
+
+        currentTotalElements = filtered.length;
+        currentTotalPages = Math.max(1, Math.ceil(filtered.length / currentSize));
+
+        if (currentPage >= currentTotalPages) {
+            currentPage = currentTotalPages - 1;
+        }
+        if (currentPage < 0) currentPage = 0;
+
+        const start = currentPage * currentSize;
+        const end = start + currentSize;
+        const pageItems = filtered.slice(start, end);
+
+        renderCatalogs(pageItems);
+        setSummaryStats(currentTotalElements, currentPage, currentTotalPages, currentSize);
+        updatePaginationUI(currentPage, currentTotalPages, currentTotalElements);
+
+        if (keyword) {
+            catalogSearchInfo.textContent = `Fallback client-side • keyword "${keyword}" • ${currentTotalElements} data`;
+        } else {
+            catalogSearchInfo.textContent = `Fallback client-side • ${currentTotalElements} data`;
+        }
     }
 
     function loadImage(srcOrImg) {
@@ -961,7 +1154,6 @@
 
         const logoX = Math.floor((size - logoSize) / 2);
         const logoY = Math.floor((size - logoSize) / 2);
-
         ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         ctx.restore();
     }
@@ -1002,161 +1194,6 @@
         }
     }
 
-    function renderCatalogs(items) {
-        totalCatalog.textContent = Array.isArray(allCatalogItems) ? allCatalogItems.length : 0;
-
-        if (!items || !items.length) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Data catalog tidak ditemukan.</td></tr>';
-            return;
-        }
-
-        tableBody.innerHTML = items.map(item => {
-            const pdfUrl = withCacheBuster(item.url || (API_BASE + '/pdf/' + item.id));
-            const viewerUrl = withCacheBuster(item.open_in_viewer || ('/catalogue?id=' + item.id));
-
-            const rawPdfUrl = item.url || (API_BASE + '/pdf/' + item.id);
-            const rawViewerUrl = item.open_in_viewer || ('/catalogue?id=' + item.id);
-
-            return `
-                <tr>
-                    <td class="id-cell">${item.id ?? '-'}</td>
-                    <td class="filename-cell">${escapeHtml(item.filename ?? '-')}</td>
-                    <td class="contenttype-cell">${escapeHtml(item.contentType ?? 'application/pdf')}</td>
-                    <td>
-                        <div class="actions">
-                            <a class="btn success" href="${pdfUrl}" target="_blank">PDF</a>
-                            <a class="btn warning" href="${viewerUrl}" target="_blank">Viewer</a>
-
-                            <button
-                                class="btn secondary js-edit-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}">
-                                Edit
-                            </button>
-
-                            <button
-                                class="btn primary js-copy-url-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}"
-                                data-url="${escapeHtml(rawViewerUrl)}">
-                                Copy URL
-                            </button>
-
-                            <button
-                                class="btn info js-qr-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}"
-                                data-content-type="${escapeHtml(item.contentType ?? 'application/pdf')}"
-                                data-url="${escapeHtml(rawPdfUrl)}"
-                                data-viewer="${escapeHtml(rawViewerUrl)}">
-                                QR
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-        }).join('');
-    }
-
-    function applyCatalogFilter() {
-        const keyword = (catalogSearchInput?.value || '').trim().toLowerCase();
-
-        if (!keyword) {
-            renderCatalogs(allCatalogItems);
-            catalogSearchInfo.textContent = `Menampilkan semua catalog (${allCatalogItems.length})`;
-            return;
-        }
-
-        const filtered = allCatalogItems.filter(item => {
-            const idText = String(item.id ?? '').toLowerCase();
-            const filenameText = String(item.filename ?? '').toLowerCase();
-            const contentTypeText = String(item.contentType ?? '').toLowerCase();
-            return idText.includes(keyword) || filenameText.includes(keyword) || contentTypeText.includes(keyword);
-        });
-
-        renderCatalogs(filtered);
-        catalogSearchInfo.textContent = `Hasil pencarian "${keyword}" : ${filtered.length} data`;
-    }
-
-    function clearCatalogSearch() {
-        catalogSearchInput.value = '';
-        applyCatalogFilter();
-    }
-
-    async function loadCatalogs() {
-        try {
-            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Memuat data catalog…</td></tr>';
-
-            const res = await fetch(withCacheBuster(LIST_ENDPOINT), {
-                method: 'GET',
-                cache: 'no-store'
-            });
-
-            if (res.status === 404) {
-                tableBody.innerHTML = '<tr><td colspan="4" class="empty">Endpoint /catalogs belum ada. Tambahkan GET /api/admin/users/catalogs di controller.</td></tr>';
-                totalCatalog.textContent = '0';
-                catalogSearchInfo.textContent = 'Endpoint catalog belum tersedia';
-                return;
-            }
-
-            const data = await handleJsonResponse(res);
-            allCatalogItems = Array.isArray(data) ? data : [];
-            applyCatalogFilter();
-        } catch (err) {
-            tableBody.innerHTML = `<tr><td colspan="4" class="empty">Gagal memuat: ${escapeHtml(err.message || String(err))}</td></tr>`;
-            totalCatalog.textContent = '0';
-            catalogSearchInfo.textContent = 'Gagal memuat data catalog';
-        }
-    }
-
-    function startEdit(item) {
-        currentEditItem = item;
-        filenameManuallyChanged = false;
-        editIdInput.value = item.id || '';
-        editFilenameInput.value = item.filename || '';
-        editPdfFileInput.value = '';
-
-        window.scrollTo({
-            top: document.getElementById('editForm').getBoundingClientRect().top + window.scrollY - 120,
-            behavior: 'smooth'
-        });
-    }
-
-    async function copyCatalogUrl(item) {
-        const url = buildViewerUrl(item);
-        try {
-            await navigator.clipboard.writeText(url);
-            showResult({ status: 'COPIED', url });
-        } catch (err) {
-            const temp = document.createElement('input');
-            temp.value = url;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-            showResult({ status: 'COPIED', url });
-        }
-    }
-
-    editFilenameInput.addEventListener('input', function () {
-        filenameManuallyChanged = true;
-    });
-
-    editPdfFileInput.addEventListener('change', function () {
-        const file = this.files?.[0];
-        if (!file) return;
-        if (!filenameManuallyChanged || !editFilenameInput.value.trim() || (currentEditItem && editFilenameInput.value.trim() === currentEditItem.filename)) {
-            editFilenameInput.value = file.name;
-        }
-    });
-
-    refreshHeroBtn.addEventListener('click', loadCatalogs);
-    refreshListBtn.addEventListener('click', loadCatalogs);
-    clearSearchBtn.addEventListener('click', clearCatalogSearch);
-    catalogSearchInput.addEventListener('input', applyCatalogFilter);
-
     async function openQrModal(item) {
         currentQrItem = item;
         const absoluteViewerUrl = buildViewerUrl(item);
@@ -1178,27 +1215,30 @@
         qrModalBackdrop.classList.remove('show');
     }
 
-    qrModalBackdrop.addEventListener('click', function (event) {
-        if (event.target === qrModalBackdrop) {
-            closeQrModal();
+    async function copyText(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            const temp = document.createElement('input');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
         }
-    });
+    }
 
-    closeQrModalBtn.addEventListener('click', closeQrModal);
+    async function copyCatalogUrl(item) {
+        const url = buildViewerUrl(item);
+        await copyText(url);
+        showResult({ status: 'COPIED', url });
+    }
 
     async function copyQrUrl() {
         const value = qrUrlInput.value || '';
         if (!value) return;
-
-        try {
-            await navigator.clipboard.writeText(value);
-            showResult({ status: 'COPIED', url: value });
-        } catch (err) {
-            qrUrlInput.focus();
-            qrUrlInput.select();
-            document.execCommand('copy');
-            showResult({ status: 'COPIED', url: value });
-        }
+        await copyText(value);
+        showResult({ status: 'COPIED', url: value });
     }
 
     function openQrUrl() {
@@ -1218,13 +1258,123 @@
         link.click();
     }
 
+    function startEdit(item) {
+        currentEditItem = item;
+        filenameManuallyChanged = false;
+        editIdInput.value = item.id || '';
+        editFilenameInput.value = item.filename || '';
+        editPdfFileInput.value = '';
+
+        window.scrollTo({
+            top: document.getElementById('editForm').getBoundingClientRect().top + window.scrollY - 120,
+            behavior: 'smooth'
+        });
+    }
+
+    async function loadCatalogs(page = currentPage) {
+        try {
+            currentPage = page;
+            currentSize = parseInt(pageSizeSelect.value, 10) || 20;
+            currentKeyword = catalogSearchInput.value.trim();
+
+            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Memuat data catalog…</td></tr>';
+
+            const params = new URLSearchParams();
+            params.set('page', currentPage);
+            params.set('size', currentSize);
+            if (currentKeyword) params.set('q', currentKeyword);
+
+            const res = await fetch(`${LIST_ENDPOINT}?${params.toString()}`, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            if (res.status === 404) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="empty">Endpoint /catalogs belum ada.</td></tr>';
+                setSummaryStats(0, 0, 1, currentSize);
+                updatePaginationUI(0, 1, 0);
+                catalogSearchInfo.textContent = 'Endpoint catalog belum tersedia';
+                return;
+            }
+
+            const data = await handleJsonResponse(res);
+
+            if (Array.isArray(data)) {
+                applyClientSideFallback(data);
+                return;
+            }
+
+            const items = Array.isArray(data.content) ? data.content : [];
+            currentTotalElements = Number(data.totalElements ?? items.length ?? 0);
+            currentTotalPages = Math.max(1, Number(data.totalPages ?? 1));
+            currentPage = Number(data.page ?? 0);
+
+            renderCatalogs(items);
+            setSummaryStats(currentTotalElements, currentPage, currentTotalPages, currentSize);
+            updatePaginationUI(currentPage, currentTotalPages, currentTotalElements);
+
+            if (currentKeyword) {
+                catalogSearchInfo.textContent = `Server-side search • keyword "${currentKeyword}" • ${currentTotalElements} data`;
+            } else {
+                catalogSearchInfo.textContent = `Server-side pagination • ${currentTotalElements} data`;
+            }
+        } catch (err) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="empty">Gagal memuat: ${escapeHtml(err.message || String(err))}</td></tr>`;
+            setSummaryStats(0, 0, 1, currentSize);
+            updatePaginationUI(0, 1, 0);
+            catalogSearchInfo.textContent = 'Gagal memuat data catalog';
+        }
+    }
+
+    refreshHeroBtn.addEventListener('click', () => loadCatalogs(currentPage));
+    refreshListBtn.addEventListener('click', () => loadCatalogs(currentPage));
+
+    clearSearchBtn.addEventListener('click', () => {
+        catalogSearchInput.value = '';
+        currentPage = 0;
+        loadCatalogs(0);
+    });
+
+    pageSizeSelect.addEventListener('change', () => {
+        currentPage = 0;
+        loadCatalogs(0);
+    });
+
+    catalogSearchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            currentPage = 0;
+            loadCatalogs(0);
+        }, 350);
+    });
+
+    firstPageBtn.addEventListener('click', () => loadCatalogs(0));
+    prevPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentPage - 1)));
+    nextPageBtn.addEventListener('click', () => loadCatalogs(Math.min(currentTotalPages - 1, currentPage + 1)));
+    lastPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentTotalPages - 1)));
+
+    qrModalBackdrop.addEventListener('click', function (event) {
+        if (event.target === qrModalBackdrop) closeQrModal();
+    });
+
+    closeQrModalBtn.addEventListener('click', closeQrModal);
     copyQrUrlBtn.addEventListener('click', copyQrUrl);
     openQrUrlBtn.addEventListener('click', openQrUrl);
     downloadQrBtn.addEventListener('click', downloadQrPng);
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-            closeQrModal();
+        if (event.key === 'Escape') closeQrModal();
+    });
+
+    editFilenameInput.addEventListener('input', function () {
+        filenameManuallyChanged = true;
+    });
+
+    editPdfFileInput.addEventListener('change', function () {
+        const file = this.files?.[0];
+        if (!file) return;
+        if (!filenameManuallyChanged || !editFilenameInput.value.trim() || (currentEditItem && editFilenameInput.value.trim() === currentEditItem.filename)) {
+            editFilenameInput.value = file.name;
         }
     });
 
@@ -1280,7 +1430,7 @@
             const data = await handleJsonResponse(res);
             showResult(data);
             this.reset();
-            await loadCatalogs();
+            await loadCatalogs(0);
         } catch (err) {
             showError(err);
         }
@@ -1305,7 +1455,7 @@
             const data = await handleJsonResponse(res);
             showResult(data);
             this.reset();
-            await loadCatalogs();
+            await loadCatalogs(0);
         } catch (err) {
             showError(err);
         }
@@ -1345,13 +1495,13 @@
                 viewer_preview_url: withCacheBuster('/catalogue?id=' + id)
             });
 
-            await loadCatalogs();
+            await loadCatalogs(currentPage);
         } catch (err) {
             showError(err);
         }
     });
 
-    loadCatalogs();
+    loadCatalogs(0);
 </script>
 
 </body>

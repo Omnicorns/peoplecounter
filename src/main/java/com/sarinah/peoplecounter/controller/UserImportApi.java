@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -166,13 +170,21 @@ public class UserImportApi {
     }
 
     @GetMapping("/catalogs")
-    public List<Map<String, Object>> getAllCatalogs() {
-        return pdfDocRepository.findAll()
-                .stream()
-                .sorted((a, b) -> Long.compare(
-                        b.getId() != null ? b.getId() : 0L,
-                        a.getId() != null ? a.getId() : 0L
-                ))
+    public Map<String, Object> getCatalogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String q
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        Page<PdfDocs> result;
+        if (q != null && !q.isBlank()) {
+            result = pdfDocRepository.findByFilenameContainingIgnoreCase(q.trim(), pageable);
+        } else {
+            result = pdfDocRepository.findAll(pageable);
+        }
+
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(doc -> {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("id", doc.getId());
@@ -183,8 +195,18 @@ public class UserImportApi {
                     return item;
                 })
                 .toList();
-    }
 
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("content", items);
+        response.put("page", result.getNumber());
+        response.put("size", result.getSize());
+        response.put("totalElements", result.getTotalElements());
+        response.put("totalPages", result.getTotalPages());
+        response.put("first", result.isFirst());
+        response.put("last", result.isLast());
+
+        return response;
+    }
     /**
      * Deteksi cepat PDF:
      * - Content-Type 'application/pdf' ATAU
