@@ -9,697 +9,175 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{
-            --bg:#ffffff;
-            --bg-soft:#f8fafc;
-            --card:#ffffff;
-            --border:#e2e8f0;
-            --border-strong:#cbd5e1;
-            --text:#0f172a;
-            --text-soft:#475569;
-            --text-muted:#64748b;
-            --primary:#2563eb;
-            --primary-dark:#1d4ed8;
-            --success:#16a34a;
-            --warning:#d97706;
-            --danger:#dc2626;
-            --info:#0f766e;
-            --shadow:0 12px 30px rgba(15,23,42,.08);
-            --shadow-soft:0 8px 20px rgba(15,23,42,.05);
-            --radius:18px;
-            --radius-lg:24px;
+            --bg:#ffffff;--bg-soft:#f8fafc;--card:#ffffff;--border:#e2e8f0;--border-strong:#cbd5e1;
+            --text:#0f172a;--text-soft:#475569;--text-muted:#64748b;
+            --primary:#2563eb;--primary-dark:#1d4ed8;--success:#16a34a;--warning:#d97706;
+            --danger:#dc2626;--info:#0f766e;
+            --shadow:0 12px 30px rgba(15,23,42,.08);--shadow-soft:0 8px 20px rgba(15,23,42,.05);
+            --radius:14px;--radius-lg:20px;
         }
-
         *{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
-        body{
-            font-family:'Inter',sans-serif;
-            background:var(--bg);
-            color:var(--text);
-            min-height:100vh;
-        }
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-        .topbar{
-            position:sticky;
-            top:0;
-            z-index:100;
-            background:#fff;
-            border-bottom:1px solid var(--border);
-            box-shadow:0 4px 14px rgba(15,23,42,.04);
-        }
+        .topbar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(15,23,42,.04)}
+        .topbar-inner{max-width:1600px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .brand{display:flex;align-items:center;gap:12px}
+        .brand-badge{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-dark))}
+        .brand h1{font-size:16px;font-weight:800;letter-spacing:-.02em}
+        .brand p{font-size:11px;color:var(--text-muted)}
+        .topbar-actions{display:flex;align-items:center;gap:8px}
+        .top-stat{padding:4px 10px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)}
+        .top-stat strong{color:var(--text);font-size:13px}
 
-        .topbar-inner{
-            max-width:1440px;
-            margin:0 auto;
-            padding:16px 24px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:16px;
-            flex-wrap:wrap;
-        }
+        .layout{max-width:1600px;margin:0 auto;display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 60px)}
 
-        .brand{
-            display:flex;
-            align-items:center;
-            gap:14px;
-        }
+        .sidebar{border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 60px);background:var(--bg-soft)}
+        .sidebar-tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:5}
+        .sidebar-tab{flex:1;padding:10px 8px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;border:none;background:transparent;color:var(--text-muted);border-bottom:2px solid transparent;transition:.15s}
+        .sidebar-tab:hover{color:var(--text-soft);background:var(--bg-soft)}
+        .sidebar-tab.active{color:var(--primary);border-bottom-color:var(--primary);background:#fff}
+        .sidebar-panel{display:none;padding:16px}
+        .sidebar-panel.active{display:block}
 
-        .brand-badge{
-            width:50px;
-            height:50px;
-            border-radius:16px;
-            display:grid;
-            place-items:center;
-            font-weight:800;
-            font-size:16px;
-            color:#fff;
-            background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-            box-shadow:0 10px 24px rgba(37,99,235,.18);
-        }
+        .field{display:grid;gap:6px;margin-bottom:12px}
+        .field:last-child{margin-bottom:0}
+        label{font-size:12px;font-weight:700;color:#334155}
+        input[type="text"],input[type="number"],select{width:100%;border:1px solid var(--border-strong);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);background:#fff;outline:none;transition:.15s}
+        input[type="text"]:focus,input[type="number"]:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+        input[readonly]{background:var(--bg-soft);color:var(--text-soft)}
+        input::placeholder{color:#94a3b8}
+        input[type="file"]{width:100%;border:1px dashed var(--border-strong);border-radius:10px;padding:10px;font-size:12px;color:var(--text-soft);background:#fff;cursor:pointer}
+        input[type="file"]::file-selector-button{border:none;background:var(--text);color:#fff;border-radius:8px;padding:7px 12px;margin-right:10px;font-size:11px;font-weight:700;cursor:pointer}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .help{margin-top:8px;font-size:11px;line-height:1.6;color:var(--text-muted)}
 
-        .brand h1{
-            font-size:20px;
-            font-weight:800;
-            letter-spacing:-.02em;
-        }
-
-        .brand p{
-            margin-top:4px;
-            font-size:12px;
-            color:var(--text-muted);
-        }
-
-        .topbar-actions{
-            display:flex;
-            align-items:center;
-            gap:10px;
-            flex-wrap:wrap;
-        }
-
-        .top-chip{
-            padding:8px 12px;
-            border-radius:999px;
-            background:var(--bg-soft);
-            color:var(--text-muted);
-            font-size:12px;
-            font-weight:700;
-            border:1px solid var(--border);
-        }
-
-        .page{
-            max-width:1440px;
-            margin:0 auto;
-            padding:24px;
-            display:grid;
-            gap:24px;
-        }
-
-        .hero{
-            background:linear-gradient(135deg,#eff6ff 0%,#eef2ff 55%,#f5f3ff 100%);
-            border:1px solid #dbeafe;
-            border-radius:var(--radius-lg);
-            padding:28px;
-        }
-
-        .hero-content{
-            display:flex;
-            justify-content:space-between;
-            align-items:flex-end;
-            gap:18px;
-            flex-wrap:wrap;
-        }
-
-        .hero h2{
-            font-size:30px;
-            font-weight:800;
-            letter-spacing:-.03em;
-            margin-bottom:10px;
-        }
-
-        .hero p{
-            max-width:900px;
-            font-size:14px;
-            line-height:1.8;
-            color:var(--text-soft);
-        }
-
-        .hero-actions{
-            display:flex;
-            gap:10px;
-            flex-wrap:wrap;
-        }
-
-        .stats{
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:16px;
-        }
-
-        .stat{
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:var(--radius);
-            padding:18px 20px;
-            box-shadow:var(--shadow-soft);
-        }
-
-        .stat .label{
-            font-size:11px;
-            font-weight:800;
-            color:var(--text-muted);
-            text-transform:uppercase;
-            letter-spacing:.08em;
-        }
-
-        .stat .value{
-            margin-top:10px;
-            font-size:28px;
-            font-weight:800;
-        }
-
-        .form-grid{
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:20px;
-        }
-
-        .card{
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:var(--radius-lg);
-            box-shadow:var(--shadow);
-            overflow:hidden;
-        }
-
-        .card-head{
-            padding:20px 22px;
-            border-bottom:1px solid var(--border);
-            display:flex;
-            justify-content:space-between;
-            align-items:flex-start;
-            gap:14px;
-            flex-wrap:wrap;
-            background:#fcfdff;
-        }
-
-        .card-head h3{
-            font-size:18px;
-            font-weight:800;
-            letter-spacing:-.02em;
-            margin-bottom:6px;
-        }
-
-        .card-head p{
-            font-size:13px;
-            line-height:1.65;
-            color:var(--text-muted);
-        }
-
-        .card-body{
-            padding:22px;
-        }
-
-        .grid-2{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:16px;
-        }
-
-        .field{
-            display:grid;
-            gap:8px;
-            margin-bottom:16px;
-        }
-
-        .field:last-child{
-            margin-bottom:0;
-        }
-
-        label{
-            font-size:13px;
-            font-weight:700;
-            color:#334155;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select{
-            width:100%;
-            border:1px solid var(--border-strong);
-            border-radius:14px;
-            padding:12px 14px;
-            font-size:14px;
-            color:var(--text);
-            background:#fff;
-            outline:none;
-            transition:border-color .15s ease, box-shadow .15s ease;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus{
-            border-color:var(--primary);
-            box-shadow:0 0 0 4px rgba(37,99,235,.10);
-        }
-
-        input[readonly]{
-            background:var(--bg-soft);
-            color:var(--text-soft);
-        }
-
-        input::placeholder{
-            color:#94a3b8;
-        }
-
-        input[type="file"]{
-            width:100%;
-            border:1px dashed var(--border-strong);
-            border-radius:14px;
-            padding:14px;
-            font-size:13px;
-            color:var(--text-soft);
-            background:var(--bg-soft);
-            cursor:pointer;
-        }
-
-        input[type="file"]::file-selector-button{
-            border:none;
-            background:var(--text);
-            color:#fff;
-            border-radius:10px;
-            padding:9px 14px;
-            margin-right:12px;
-            font-size:12px;
-            font-weight:700;
-            cursor:pointer;
-        }
-
-        .btn{
-            appearance:none;
-            border:none;
-            cursor:pointer;
-            border-radius:12px;
-            padding:11px 16px;
-            font-size:13px;
-            font-weight:800;
-            color:#fff;
-            text-decoration:none;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            transition:.15s ease;
-        }
-
-        .btn:hover{
-            transform:translateY(-1px);
-            filter:brightness(1.02);
-        }
-
-        .btn:active{
-            transform:translateY(0);
-        }
-
+        .btn{appearance:none;border:none;cursor:pointer;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:800;color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+        .btn:hover{transform:translateY(-1px);filter:brightness(1.02)}
+        .btn:active{transform:translateY(0)}
         .btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark))}
         .btn.secondary{background:#475569}
         .btn.success{background:var(--success)}
         .btn.warning{background:var(--warning)}
         .btn.danger{background:var(--danger)}
         .btn.info{background:var(--info)}
-        .btn.ghost{
-            background:#fff;
-            color:var(--text);
-            border:1px solid var(--border);
-        }
+        .btn.ghost{background:#fff;color:var(--text);border:1px solid var(--border)}
+        .btn[disabled]{opacity:.55;cursor:not-allowed;transform:none}
+        .btn.sm{padding:6px 10px;font-size:11px;border-radius:8px}
 
-        .btn[disabled]{
-            opacity:.55;
-            cursor:not-allowed;
-            transform:none;
-        }
+        .bulk-upload-box{border:1px dashed var(--border-strong);border-radius:12px;padding:12px;background:#fff}
+        .bulk-naming-mode{margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px}
+        .bulk-naming-mode label{font-size:11px;font-weight:700;color:var(--text-soft);white-space:nowrap}
+        .bulk-naming-mode select{padding:6px 8px;font-size:12px;border-radius:8px;min-width:130px}
+        .bulk-naming-mode input[type="text"]{flex:1;min-width:100px;padding:6px 8px;font-size:12px;border-radius:8px}
+        .bulk-summary{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .bulk-count{font-size:13px;font-weight:800;color:var(--text)}
+        .bulk-hint{font-size:11px;color:var(--text-muted)}
+        .bulk-file-list{margin-top:10px;display:grid;gap:6px;max-height:200px;overflow:auto}
+        .bulk-file-item{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);background:var(--bg-soft);border-radius:10px}
+        .bulk-file-index{font-size:10px;font-weight:800;color:var(--text-muted);background:#fff;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:grid;place-items:center}
+        .bulk-file-info{min-width:0;overflow:hidden}
+        .bulk-file-original{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+        .bulk-file-resolved{font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .bulk-file-rename{width:100%;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:600;color:var(--text);background:#fff;outline:none;transition:.15s}
+        .bulk-file-rename:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+        .bulk-file-rename::placeholder{color:#94a3b8;font-weight:400}
+        .bulk-file-size{font-size:10px;color:var(--text-muted);white-space:nowrap;text-align:right}
+        .bulk-empty{padding:10px;border:1px solid var(--border);background:#fff;border-radius:10px;font-size:12px;color:var(--text-muted);text-align:center}
 
-        .help{
-            margin-top:10px;
-            font-size:12px;
-            line-height:1.7;
-            color:var(--text-muted);
-        }
+        .main-content{overflow-y:auto;max-height:calc(100vh - 60px);display:flex;flex-direction:column}
+        .toolbar-row{padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;border-bottom:1px solid var(--border)}
+        .toolbar-row.bulk-dl-row{background:linear-gradient(135deg,#eff6ff,#eef2ff);border-bottom:1px solid #bfdbfe}
+        .toolbar-row .search-input{flex:1;min-width:180px}
+        .search-info{font-size:12px;color:var(--text-muted);font-weight:600;white-space:nowrap}
+        .toolbar-spacer{flex:1}
 
-        .badge{
-            display:inline-flex;
-            align-items:center;
-            padding:7px 12px;
-            border-radius:999px;
-            font-size:11px;
-            font-weight:800;
-            color:var(--primary);
-            background:#eff6ff;
-            border:1px solid #bfdbfe;
-            white-space:nowrap;
-        }
+        .bulk-dl-bar{display:none;padding:8px 16px;background:linear-gradient(135deg,#eff6ff,#eef2ff);border-bottom:1px solid #bfdbfe;align-items:center;gap:8px;flex-wrap:wrap}
+        .bulk-dl-bar.show{display:flex}
+        .bulk-dl-bar .bulk-dl-info{font-size:12px;font-weight:700;color:var(--primary-dark)}
 
-        .result{
-            border:1px solid var(--border);
-            background:var(--bg-soft);
-            border-radius:14px;
-            padding:16px;
-            min-height:120px;
-            white-space:pre-wrap;
-            overflow:auto;
-            font-size:12px;
-            line-height:1.7;
-            color:var(--text-soft);
-        }
-
-        .full-section{
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:var(--radius-lg);
-            box-shadow:var(--shadow);
-            overflow:hidden;
-        }
-
-        .table-toolbar{
-            padding:16px 22px;
-            display:flex;
-            gap:12px;
-            flex-wrap:wrap;
-            align-items:center;
-            justify-content:space-between;
-            background:#fff;
-            border-top:1px solid var(--border);
-            border-bottom:1px solid var(--border);
-        }
-
-        .toolbar-left{
-            display:flex;
-            gap:10px;
-            flex-wrap:wrap;
-            align-items:center;
-            width:100%;
-            max-width:760px;
-        }
-
-        .search-input{
-            flex:1;
-            min-width:240px;
-        }
-
-        .search-info{
-            font-size:13px;
-            color:var(--text-muted);
-            font-weight:600;
-        }
-
-        .table-wrap{
-            overflow:auto;
-        }
-
-        table{
-            width:100%;
-            border-collapse:collapse;
-            min-width:1180px;
-            background:#fff;
-        }
-
-        thead th{
-            text-align:left;
-            padding:14px 18px;
-            font-size:12px;
-            font-weight:800;
-            color:var(--text-muted);
-            text-transform:uppercase;
-            letter-spacing:.05em;
-            background:var(--bg-soft);
-            border-bottom:1px solid var(--border);
-        }
-
-        tbody td{
-            padding:14px 18px;
-            border-bottom:1px solid #eef2f7;
-            font-size:14px;
-            color:var(--text);
-            vertical-align:middle;
-        }
-
-        tbody tr:hover{
-            background:#f8fbff;
-        }
-
-        tbody tr:last-child td{
-            border-bottom:none;
-        }
-
+        .table-wrap{flex:1;overflow:auto}
+        table{width:100%;border-collapse:collapse;min-width:900px;background:#fff}
+        thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;background:var(--bg-soft);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+        thead th.th-check{width:40px;text-align:center}
+        tbody td{padding:10px 14px;border-bottom:1px solid #eef2f7;font-size:13px;color:var(--text);vertical-align:middle}
+        tbody td.td-check{text-align:center}
+        tbody tr:hover{background:#f8fbff}
+        tbody tr:last-child td{border-bottom:none}
+        tbody tr.selected{background:#eff6ff}
         .filename-cell{font-weight:700}
-        .contenttype-cell{color:var(--text-muted);font-size:13px}
+        .contenttype-cell{color:var(--text-muted);font-size:12px}
         .id-cell{color:var(--text-soft);font-weight:700}
+        .actions{display:flex;gap:6px;flex-wrap:wrap}
+        .actions .btn{padding:6px 10px;font-size:11px;border-radius:8px;white-space:nowrap}
+        .empty{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px}
+        input[type="checkbox"]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
 
-        .actions{
-            display:flex;
-            gap:8px;
-            flex-wrap:wrap;
+        .table-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:#fff}
+        .pagination{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .page-chip{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text-soft);font-size:11px;font-weight:700}
+
+        .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+        .modal-backdrop.show{display:flex}
+        .modal{width:100%;max-width:520px;background:#fff;border-radius:20px;box-shadow:0 30px 60px rgba(15,23,42,.20);overflow:hidden;border:1px solid var(--border)}
+        .modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+        .modal-head h3{font-size:18px;font-weight:800;margin-bottom:4px}
+        .modal-head p{font-size:12px;color:var(--text-muted);line-height:1.5}
+        .icon-close{background:#fff;border:1px solid var(--border);color:var(--text-soft);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700}
+        .modal-body{padding:20px;display:grid;gap:14px}
+        .qr-preview{background:var(--bg-soft);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;justify-content:center;align-items:center;min-height:360px;position:relative}
+        .qr-preview .qr-loading{position:absolute;font-size:12px;color:var(--text-muted);font-weight:600}
+        #qrCanvas{width:min(360px,100%);height:auto;background:#fff;border-radius:14px}
+        .url-box{display:grid;gap:6px}
+        .url-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .muted-note{font-size:11px;color:var(--text-muted);line-height:1.6}
+
+        /* ─── Improved download progress ─── */
+        .download-progress{position:fixed;bottom:20px;right:20px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px 20px;box-shadow:0 16px 40px rgba(15,23,42,.18);z-index:2000;display:none;min-width:300px;max-width:380px}
+        .download-progress.show{display:block;animation:slideUp .3s ease}
+        @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .download-progress-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+        .download-progress-title{font-size:13px;font-weight:800;color:var(--text)}
+        .download-progress-pct{font-size:13px;font-weight:800;color:var(--primary)}
+        .download-progress-bar-wrap{height:6px;background:var(--bg-soft);border-radius:999px;overflow:hidden;margin-bottom:8px}
+        .download-progress-bar{height:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:999px;transition:width .25s ease;width:0%}
+        .download-progress-bar.done{background:linear-gradient(135deg,var(--success),#15803d)}
+        .download-progress-bar.error{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+        .download-progress-text{font-size:11px;color:var(--text-muted);line-height:1.5}
+        .download-progress-detail{font-size:11px;color:var(--text-soft);margin-top:4px;max-height:60px;overflow:auto}
+
+        /* ─── Toast notifications ─── */
+        .toast-container{position:fixed;top:70px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+        .toast{pointer-events:auto;padding:12px 16px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.15);animation:toastIn .3s ease;max-width:340px;display:flex;align-items:center;gap:8px}
+        .toast.success{background:var(--success)}
+        .toast.error{background:var(--danger)}
+        .toast.info{background:var(--primary)}
+        .toast.warning{background:var(--warning)}
+        .toast.hiding{animation:toastOut .25s ease forwards}
+        @keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+
+        @media(max-width:1100px){
+            .layout{grid-template-columns:1fr;min-height:auto}
+            .sidebar{max-height:none;border-right:none;border-bottom:1px solid var(--border)}
+            .main-content{max-height:none}
         }
-
-        .actions .btn{
-            padding:8px 12px;
-            font-size:12px;
-            border-radius:10px;
-            white-space:nowrap;
-            position:relative;
-            z-index:2;
-        }
-
-        .table-footer{
-            padding:16px 22px;
-            border-top:1px solid var(--border);
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:12px;
-            flex-wrap:wrap;
-            background:#fff;
-        }
-
-        .pagination{
-            display:flex;
-            align-items:center;
-            gap:8px;
-            flex-wrap:wrap;
-        }
-
-        .page-chip{
-            padding:8px 12px;
-            border-radius:10px;
-            border:1px solid var(--border);
-            background:#fff;
-            color:var(--text-soft);
-            font-size:12px;
-            font-weight:700;
-        }
-
-        .empty{
-            padding:34px 18px;
-            text-align:center;
-            color:var(--text-muted);
-            font-size:14px;
-        }
-
-        .bulk-upload-box{
-            border:1px dashed var(--border-strong);
-            border-radius:16px;
-            padding:16px;
-            background:var(--bg-soft);
-        }
-
-        .bulk-summary{
-            margin-top:14px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:12px;
-            flex-wrap:wrap;
-        }
-
-        .bulk-count{
-            font-size:14px;
-            font-weight:800;
-            color:var(--text);
-        }
-
-        .bulk-hint{
-            margin-top:4px;
-            font-size:12px;
-            color:var(--text-muted);
-        }
-
-        .bulk-file-list{
-            margin-top:14px;
-            display:grid;
-            gap:8px;
-            max-height:220px;
-            overflow:auto;
-            padding-right:4px;
-        }
-
-        .bulk-file-item{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:12px;
-            padding:10px 12px;
-            border:1px solid var(--border);
-            background:#fff;
-            border-radius:12px;
-        }
-
-        .bulk-file-name{
-            font-size:13px;
-            font-weight:700;
-            color:var(--text);
-            word-break:break-word;
-        }
-
-        .bulk-file-size{
-            font-size:12px;
-            color:var(--text-muted);
-            white-space:nowrap;
-        }
-
-        .bulk-empty{
-            padding:12px;
-            border:1px solid var(--border);
-            background:#fff;
-            border-radius:12px;
-            font-size:13px;
-            color:var(--text-muted);
-            text-align:center;
-        }
-
-        .modal-backdrop{
-            position:fixed;
-            inset:0;
-            background:rgba(15,23,42,.45);
-            display:none;
-            align-items:center;
-            justify-content:center;
-            z-index:1000;
-            padding:20px;
-        }
-
-        .modal-backdrop.show{
-            display:flex;
-        }
-
-        .modal{
-            width:100%;
-            max-width:560px;
-            background:#fff;
-            border-radius:24px;
-            box-shadow:0 30px 60px rgba(15,23,42,.20);
-            overflow:hidden;
-            border:1px solid var(--border);
-        }
-
-        .modal-head{
-            padding:20px 22px;
-            border-bottom:1px solid var(--border);
-            display:flex;
-            align-items:flex-start;
-            justify-content:space-between;
-            gap:12px;
-        }
-
-        .modal-head h3{
-            font-size:20px;
-            font-weight:800;
-            margin-bottom:6px;
-        }
-
-        .modal-head p{
-            font-size:13px;
-            color:var(--text-muted);
-            line-height:1.6;
-        }
-
-        .icon-close{
-            background:#fff;
-            border:1px solid var(--border);
-            color:var(--text-soft);
-            width:36px;
-            height:36px;
-            border-radius:10px;
-            cursor:pointer;
-            font-size:18px;
-            font-weight:700;
-        }
-
-        .modal-body{
-            padding:22px;
-            display:grid;
-            gap:18px;
-        }
-
-        .qr-preview{
-            background:var(--bg-soft);
-            border:1px solid var(--border);
-            border-radius:20px;
-            padding:18px;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            min-height:320px;
-        }
-
-        #qrCanvas{
-            max-width:100%;
-            height:auto;
-            background:#fff;
-            border-radius:14px;
-        }
-
-        .url-box{
-            display:grid;
-            gap:8px;
-        }
-
-        .url-actions{
-            display:flex;
-            gap:10px;
-            flex-wrap:wrap;
-        }
-
-        .muted-note{
-            font-size:12px;
-            color:var(--text-muted);
-            line-height:1.7;
-        }
-
-        @media (max-width:1200px){
-            .form-grid{grid-template-columns:1fr}
-        }
-
-        @media (max-width:900px){
-            .stats{grid-template-columns:repeat(2,1fr)}
-        }
-
-        @media (max-width:720px){
-            .topbar-inner{align-items:flex-start;flex-direction:column}
-            .page{padding:18px 16px 34px}
-            .hero{padding:22px}
-            .hero h2{font-size:24px}
-            .stats{grid-template-columns:1fr}
+        @media(max-width:720px){
+            .topbar-inner{flex-direction:column;align-items:flex-start}
             .grid-2{grid-template-columns:1fr}
-            .card-head,.card-body,.table-toolbar,.table-footer,.modal-head,.modal-body{padding:18px}
             .actions{flex-direction:column;align-items:stretch}
             .actions .btn{width:100%}
-            .toolbar-left{max-width:100%}
             .url-actions{flex-direction:column}
             .url-actions .btn{width:100%}
-            .bulk-file-item{align-items:flex-start;flex-direction:column}
+            .bulk-file-item{grid-template-columns:24px 1fr;gap:6px}
+            .bulk-file-size{grid-column:2;text-align:left}
+            .download-progress{left:20px;right:20px;min-width:0}
         }
     </style>
 </head>
 <body>
+
+<div class="toast-container" id="toastContainer"></div>
 
 <header class="topbar">
     <div class="topbar-inner">
@@ -707,938 +185,1109 @@
             <div class="brand-badge">CT</div>
             <div>
                 <h1>Dashboard Catalog</h1>
-                <p>Manage catalog PDFs — create, upload, edit, QR</p>
+                <p>Manage catalog PDFs</p>
             </div>
         </div>
-
         <div class="topbar-actions">
-            <div class="top-chip">/api/admin/users</div>
-            <form action="/middleware/catalog/logout" method="post">
-                <input type="hidden"
-                       th:if="${_csrf != null}"
-                       th:name="${_csrf.parameterName}"
-                       th:value="${_csrf.token}" />
-                <button type="submit" class="btn danger">Logout</button>
+            <span class="top-stat">Total: <strong id="totalCatalog">0</strong></span>
+            <span class="top-stat">Page: <strong id="currentPageValue">1</strong>/<strong id="totalPagesValue">1</strong></span>
+            <form action="/middleware/catalog/logout" method="post" style="display:inline">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="btn danger sm">Logout</button>
             </form>
         </div>
     </div>
 </header>
 
-<main class="page">
-    <section class="hero">
-        <div class="hero-content">
-            <div>
-                <h2>Manajemen Catalog PDF</h2>
-                <p>
-                    Halaman ini sudah dioptimalkan supaya lebih ringan saat data banyak:
-                    ada search, pagination, copy URL, QR dengan logo di tengah, dan bulk upload yang benar-benar tampil multiple file.
-                </p>
-            </div>
-            <div class="hero-actions">
-                <button id="refreshHeroBtn" class="btn ghost" type="button">Refresh</button>
-                <a class="btn ghost" href="#editForm">Ke Form Edit</a>
-            </div>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-tabs">
+            <button class="sidebar-tab active" data-panel="panelCreate">Create</button>
+            <button class="sidebar-tab" data-panel="panelBulk">Bulk Upload</button>
+            <button class="sidebar-tab" data-panel="panelEdit">Edit</button>
         </div>
-    </section>
 
-    <section class="stats">
-        <div class="stat">
-            <div class="label">Total Catalog</div>
-            <div class="value" id="totalCatalog">0</div>
-        </div>
-        <div class="stat">
-            <div class="label">Per Page</div>
-            <div class="value" id="perPageValue">10</div>
-        </div>
-        <div class="stat">
-            <div class="label">Current Page</div>
-            <div class="value" id="currentPageValue">1</div>
-        </div>
-        <div class="stat">
-            <div class="label">Total Pages</div>
-            <div class="value" id="totalPagesValue">1</div>
-        </div>
-    </section>
-
-    <section class="form-grid">
-        <section class="card">
-            <div class="card-head">
-                <div>
-                    <h3>Create New Catalog</h3>
-                    <p>Unggah satu file PDF baru sebagai catalog.</p>
+        <div class="sidebar-panel active" id="panelCreate">
+            <form id="createForm">
+                <div class="field">
+                    <label for="createPdfFile">File PDF</label>
+                    <input id="createPdfFile" name="file" type="file" accept="application/pdf" required>
                 </div>
-                <span class="badge">POST /pdf</span>
-            </div>
-            <div class="card-body">
-                <form id="createForm">
-                    <div class="field">
-                        <label for="createPdfFile">File PDF</label>
-                        <input id="createPdfFile" name="file" type="file" accept="application/pdf" required>
-                    </div>
-                    <button class="btn success" type="submit">Create Catalog</button>
-                    <div class="help">Setelah upload sukses, tabel akan refresh ke page pertama.</div>
-                </form>
-            </div>
-        </section>
+                <button class="btn success" type="submit" style="width:100%">Create Catalog</button>
+                <div class="help">Upload satu file PDF baru. Tabel akan refresh otomatis.</div>
+            </form>
+        </div>
 
-        <section class="card">
-            <div class="card-head">
-                <div>
-                    <h3>Bulk Upload</h3>
-                    <p>Unggah banyak file PDF sekaligus ke sistem.</p>
-                </div>
-                <span class="badge">POST /pdf/bulk</span>
-            </div>
-            <div class="card-body">
-                <form id="bulkForm">
-                    <div class="field">
-                        <label for="bulkPdfFiles">File PDF (Multiple)</label>
+        <div class="sidebar-panel" id="panelBulk">
+            <form id="bulkForm">
+                <div class="field">
+                    <label for="bulkPdfFiles">File PDF (Multiple)</label>
+                    <div class="bulk-upload-box">
+                        <input id="bulkPdfFiles" name="files" type="file" accept="application/pdf" multiple required>
 
-                        <div class="bulk-upload-box">
-                            <input id="bulkPdfFiles" name="files" type="file" accept="application/pdf" multiple required>
+                        <div class="bulk-naming-mode" id="bulkNamingMode" style="display:none">
+                            <label>Naming:</label>
+                            <select id="bulkNamingSelect">
+                                <option value="original">Nama Asli</option>
+                                <option value="custom">Custom Per File</option>
+                                <option value="prefix">Prefix + Nomor</option>
+                            </select>
+                            <input type="text" id="bulkPrefixInput" placeholder="Contoh: Katalog-2026" style="display:none">
+                        </div>
 
-                            <div class="bulk-summary">
-                                <div>
-                                    <div id="bulkFileCount" class="bulk-count">Belum ada file dipilih</div>
-                                    <div id="bulkFileHint" class="bulk-hint">Pilih banyak file dengan Ctrl / Shift</div>
-                                </div>
-                                <button type="button" class="btn secondary" id="clearBulkBtn">Clear</button>
+                        <div class="bulk-summary">
+                            <div>
+                                <div id="bulkFileCount" class="bulk-count">Belum ada file dipilih</div>
+                                <div id="bulkFileHint" class="bulk-hint">Ctrl / Shift untuk pilih banyak</div>
                             </div>
+                            <button type="button" class="btn ghost sm" id="clearBulkBtn">Clear</button>
+                        </div>
 
-                            <div id="bulkFileList" class="bulk-file-list">
-                                <div class="bulk-empty">Belum ada file yang dipilih.</div>
-                            </div>
+                        <div id="bulkFileList" class="bulk-file-list">
+                            <div class="bulk-empty">Belum ada file.</div>
                         </div>
                     </div>
-
-                    <button class="btn warning" type="submit">Upload Bulk</button>
-                    <div class="help">Jumlah maksimum file mengikuti validasi backend.</div>
-                </form>
-            </div>
-        </section>
-
-        <section class="card">
-            <div class="card-head">
-                <div>
-                    <h3>Edit Catalog</h3>
-                    <p>Pilih data dari tabel, lalu ubah file PDF atau filename.</p>
                 </div>
-                <span class="badge">PUT /{id}</span>
-            </div>
-            <div class="card-body">
-                <form id="editForm">
-                    <div class="grid-2">
-                        <div class="field">
-                            <label for="editId">ID Catalog</label>
-                            <input id="editId" name="id" type="number" min="1" placeholder="Pilih dari tabel" required readonly>
-                        </div>
-                        <div class="field">
-                            <label for="editFilename">Filename Baru (Opsional)</label>
-                            <input id="editFilename" name="filename" type="text" placeholder="katalog-baru.pdf">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="editPdfFile">File PDF Baru</label>
-                        <input id="editPdfFile" name="file" type="file" accept="application/pdf" required>
-                    </div>
-
-                    <button class="btn secondary" type="submit">Update Catalog</button>
-                    <div class="help">Klik tombol <strong>Edit</strong> di tabel untuk mengisi ID otomatis.</div>
-                </form>
-            </div>
-        </section>
-    </section>
-
-    <section class="full-section">
-        <div class="card-head">
-            <div>
-                <h3>List Catalog</h3>
-                <p>Search, pagination, copy URL, dan QR ada di sini.</p>
-            </div>
-            <button id="refreshListBtn" class="btn primary" type="button">Refresh List</button>
+                <button class="btn warning" type="submit" style="width:100%">Upload Bulk</button>
+                <div class="help">Rename tiap file sebelum upload. Mode: nama asli, custom, atau prefix+nomor.</div>
+            </form>
         </div>
 
-        <div class="table-toolbar">
-            <div class="toolbar-left">
-                <input id="catalogSearchInput" class="search-input" type="text" placeholder="Cari catalog...">
-                <select id="pageSizeSelect">
-                    <option value="10" selected>10 / page</option>
-                    <option value="20">20 / page</option>
-                    <option value="50">50 / page</option>
-                    <option value="100">100 / page</option>
-                </select>
-                <button id="clearSearchBtn" class="btn secondary" type="button">Clear</button>
-            </div>
-            <div id="catalogSearchInfo" class="search-info">Menampilkan semua catalog</div>
+        <div class="sidebar-panel" id="panelEdit">
+            <form id="editForm">
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="editId">ID Catalog</label>
+                        <input id="editId" name="id" type="number" min="1" placeholder="Dari tabel" required readonly>
+                    </div>
+                    <div class="field">
+                        <label for="editFilename">Filename Baru</label>
+                        <input id="editFilename" name="filename" type="text" placeholder="nama-baru.pdf">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="editPdfFile">File PDF Baru</label>
+                    <input id="editPdfFile" name="file" type="file" accept="application/pdf" required>
+                </div>
+                <button class="btn secondary" type="submit" style="width:100%">Update Catalog</button>
+                <div class="help">Klik <strong>Edit</strong> di tabel untuk mengisi ID otomatis.</div>
+            </form>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <div class="toolbar-row">
+            <input id="catalogSearchInput" class="search-input" type="text" placeholder="Cari catalog...">
+            <select id="pageSizeSelect" style="padding:9px 10px;border-radius:10px;border:1px solid var(--border-strong);font-size:12px">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            <button id="clearSearchBtn" class="btn ghost sm" type="button">Clear</button>
+            <button id="refreshListBtn" class="btn primary sm" type="button">Refresh</button>
+            <span class="toolbar-spacer"></span>
+            <span id="catalogSearchInfo" class="search-info">Memuat...</span>
+        </div>
+
+        <div class="toolbar-row bulk-dl-row">
+            <span style="font-size:11px;font-weight:700;color:var(--primary-dark);white-space:nowrap">Bulk Download:</span>
+            <input id="bulkDlSearchInput" class="search-input" type="text" placeholder="Search filename → auto select...">
+            <button id="bulkDlSearchBtn" class="btn info sm" type="button">Search & Select</button>
+            <button id="bulkDlSearchClearBtn" class="btn ghost sm" type="button">Reset</button>
+            <span class="toolbar-spacer"></span>
+            <span id="bulkDlSearchInfo" class="search-info"></span>
+        </div>
+
+        <div class="bulk-dl-bar" id="bulkDownloadBar">
+            <span class="bulk-dl-info" id="bulkDlInfo">0 dipilih</span>
+            <button id="selectAllBtn" class="btn ghost sm" type="button">Select All Page</button>
+            <button id="deselectAllBtn" class="btn ghost sm" type="button">Deselect All</button>
+            <button id="bulkDownloadBtn" class="btn primary sm" type="button" disabled>Download QR (.zip)</button>
         </div>
 
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
-                    <th style="width:90px;">ID</th>
+                    <th class="th-check"><input type="checkbox" id="checkAllHead" title="Select all"></th>
+                    <th style="width:70px">ID</th>
                     <th>Filename</th>
-                    <th style="width:200px;">Content Type</th>
-                    <th style="width:520px;">Aksi</th>
+                    <th style="width:140px">Content Type</th>
+                    <th style="width:360px">Aksi</th>
                 </tr>
                 </thead>
                 <tbody id="catalogTableBody">
-                <tr>
-                    <td colspan="4" class="empty">Memuat data catalog…</td>
-                </tr>
+                <tr><td colspan="5" class="empty">Memuat data catalog…</td></tr>
                 </tbody>
             </table>
         </div>
 
         <div class="table-footer">
-            <div id="paginationInfo" class="search-info">Page 1 of 1</div>
+            <span id="paginationInfo" class="search-info">Page 1 of 1</span>
             <div class="pagination">
-                <button id="firstPageBtn" class="btn secondary" type="button">First</button>
-                <button id="prevPageBtn" class="btn secondary" type="button">Prev</button>
-                <span id="pageChip" class="page-chip">1 / 1</span>
-                <button id="nextPageBtn" class="btn secondary" type="button">Next</button>
-                <button id="lastPageBtn" class="btn secondary" type="button">Last</button>
+                <button id="firstPageBtn" class="btn ghost sm" type="button">First</button>
+                <button id="prevPageBtn" class="btn ghost sm" type="button">Prev</button>
+                <span id="pageChip" class="page-chip">1/1</span>
+                <button id="nextPageBtn" class="btn ghost sm" type="button">Next</button>
+                <button id="lastPageBtn" class="btn ghost sm" type="button">Last</button>
             </div>
         </div>
-    </section>
+    </div>
+</div>
 
-    <section class="card">
-        <div class="card-head">
-            <div>
-                <h3>Response</h3>
-                <p>Hasil request terakhir tampil di sini.</p>
-            </div>
-        </div>
-        <div class="card-body">
-            <div id="result" class="result">Belum ada request.</div>
-        </div>
-    </section>
-</main>
+<div class="download-progress" id="downloadProgress">
+    <div class="download-progress-header">
+        <div class="download-progress-title" id="downloadProgressTitle">Downloading...</div>
+        <div class="download-progress-pct" id="downloadProgressPct">0%</div>
+    </div>
+    <div class="download-progress-bar-wrap"><div class="download-progress-bar" id="downloadProgressBar"></div></div>
+    <div class="download-progress-text" id="downloadProgressText">Mempersiapkan...</div>
+    <div class="download-progress-detail" id="downloadProgressDetail"></div>
+</div>
 
 <div id="qrModalBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-head">
             <div>
                 <h3>Generate QR Catalog</h3>
-                <p id="qrModalSubtitle">QR dibuat dari URL viewer catalog.</p>
+                <p id="qrModalSubtitle">QR dari URL viewer catalog.</p>
             </div>
             <button id="closeQrModalBtn" type="button" class="icon-close">×</button>
         </div>
-
         <div class="modal-body">
             <div class="qr-preview">
-                <canvas id="qrCanvas" width="320" height="320"></canvas>
+                <span class="qr-loading" id="qrLoading">Generating QR...</span>
+                <canvas id="qrCanvas" width="360" height="360"></canvas>
             </div>
-
             <div class="url-box">
                 <label for="qrUrlInput">URL Catalog</label>
                 <input id="qrUrlInput" type="text" readonly>
             </div>
-
             <div class="url-actions">
                 <button id="copyQrUrlBtn" type="button" class="btn primary">Copy URL</button>
                 <button id="openQrUrlBtn" type="button" class="btn success">Open URL</button>
-                <button id="downloadQrBtn" type="button" class="btn warning">Download QR PNG</button>
+                <button id="downloadQrBtn" type="button" class="btn warning">Download QR</button>
             </div>
-
-            <div class="muted-note">
-                QR dibuat dari URL viewer catalog, lalu logo ditempel di tengah QR.
-            </div>
+            <div class="muted-note">QR + logo di tengah. Download sebagai PNG high resolution (1400×1400).</div>
         </div>
     </div>
 </div>
 
-<img id="qrLogo" th:src="@{/logo2.png}" src="/logo2.png" alt="logo" style="display:none;">
+<img id="qrLogo" th:src="@{/logo2.png}" src="/logo2.png" alt="logo" style="display:none">
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
-    const API_BASE = '/api/admin/users';
-    const LIST_ENDPOINT = API_BASE + '/catalogs';
+    (function(){
+        'use strict';
 
-    const resultBox = document.getElementById('result');
-    const totalCatalog = document.getElementById('totalCatalog');
-    const tableBody = document.getElementById('catalogTableBody');
+        /* ═══════════════════════════════════════════
+           CONSTANTS & DOM REFS
+        ═══════════════════════════════════════════ */
+        const API_BASE = '/api/admin/users';
+        const LIST_ENDPOINT = API_BASE + '/catalogs';
+        const QR_PREVIEW_SIZE = 360;
+        const QR_EXPORT_SIZE = 1400;
 
-    const perPageValue = document.getElementById('perPageValue');
-    const currentPageValue = document.getElementById('currentPageValue');
-    const totalPagesValue = document.getElementById('totalPagesValue');
+        const $ = id => document.getElementById(id);
+        const totalCatalog = $('totalCatalog');
+        const currentPageValue = $('currentPageValue');
+        const totalPagesValue = $('totalPagesValue');
+        const tableBody = $('catalogTableBody');
+        const editIdInput = $('editId');
+        const editFilenameInput = $('editFilename');
+        const editPdfFileInput = $('editPdfFile');
+        const catalogSearchInput = $('catalogSearchInput');
+        const catalogSearchInfo = $('catalogSearchInfo');
+        const pageSizeSelect = $('pageSizeSelect');
+        const refreshListBtn = $('refreshListBtn');
+        const clearSearchBtn = $('clearSearchBtn');
+        const paginationInfo = $('paginationInfo');
+        const pageChip = $('pageChip');
+        const firstPageBtn = $('firstPageBtn');
+        const prevPageBtn = $('prevPageBtn');
+        const nextPageBtn = $('nextPageBtn');
+        const lastPageBtn = $('lastPageBtn');
+        const qrModalBackdrop = $('qrModalBackdrop');
+        const qrModalSubtitle = $('qrModalSubtitle');
+        const qrUrlInput = $('qrUrlInput');
+        const qrCanvas = $('qrCanvas');
+        const qrLogo = $('qrLogo');
+        const qrLoading = $('qrLoading');
+        const closeQrModalBtn = $('closeQrModalBtn');
+        const copyQrUrlBtn = $('copyQrUrlBtn');
+        const openQrUrlBtn = $('openQrUrlBtn');
+        const downloadQrBtn = $('downloadQrBtn');
+        const bulkPdfFilesInput = $('bulkPdfFiles');
+        const bulkFileCount = $('bulkFileCount');
+        const bulkFileHint = $('bulkFileHint');
+        const bulkFileList = $('bulkFileList');
+        const clearBulkBtn = $('clearBulkBtn');
+        const bulkNamingMode = $('bulkNamingMode');
+        const bulkNamingSelect = $('bulkNamingSelect');
+        const bulkPrefixInput = $('bulkPrefixInput');
+        const bulkDownloadBar = $('bulkDownloadBar');
+        const bulkDlInfo = $('bulkDlInfo');
+        const selectAllBtn = $('selectAllBtn');
+        const deselectAllBtn = $('deselectAllBtn');
+        const bulkDownloadBtn = $('bulkDownloadBtn');
+        const checkAllHead = $('checkAllHead');
+        const downloadProgress = $('downloadProgress');
+        const downloadProgressTitle = $('downloadProgressTitle');
+        const downloadProgressBar = $('downloadProgressBar');
+        const downloadProgressText = $('downloadProgressText');
+        const downloadProgressPct = $('downloadProgressPct');
+        const downloadProgressDetail = $('downloadProgressDetail');
+        const bulkDlSearchInput = $('bulkDlSearchInput');
+        const bulkDlSearchBtn = $('bulkDlSearchBtn');
+        const bulkDlSearchClearBtn = $('bulkDlSearchClearBtn');
+        const bulkDlSearchInfo = $('bulkDlSearchInfo');
+        const toastContainer = $('toastContainer');
 
-    const editIdInput = document.getElementById('editId');
-    const editFilenameInput = document.getElementById('editFilename');
-    const editPdfFileInput = document.getElementById('editPdfFile');
+        /* ═══════════════════════════════════════════
+           STATE
+        ═══════════════════════════════════════════ */
+        let currentEditItem = null, filenameManuallyChanged = false, currentQrItem = null;
+        let currentPage = 0, currentSize = 10, currentKeyword = '', currentTotalPages = 1, currentTotalElements = 0;
+        let fallbackAllItems = [], searchDebounceTimer = null;
+        let selectedIds = new Set();
+        let bulkCustomNames = {};
+        let qrHighResDataUrl = '';
+        let _qrLibReady = false;
+        let _qrLibLoading = false;
+        let _logoLoaded = false;
+        let _logoImg = null;
+        let _jsZipReady = false;
+        let _jsZipLoading = false;
 
-    const catalogSearchInput = document.getElementById('catalogSearchInput');
-    const catalogSearchInfo = document.getElementById('catalogSearchInfo');
-    const pageSizeSelect = document.getElementById('pageSizeSelect');
-
-    const refreshHeroBtn = document.getElementById('refreshHeroBtn');
-    const refreshListBtn = document.getElementById('refreshListBtn');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
-
-    const paginationInfo = document.getElementById('paginationInfo');
-    const pageChip = document.getElementById('pageChip');
-    const firstPageBtn = document.getElementById('firstPageBtn');
-    const prevPageBtn = document.getElementById('prevPageBtn');
-    const nextPageBtn = document.getElementById('nextPageBtn');
-    const lastPageBtn = document.getElementById('lastPageBtn');
-
-    const qrModalBackdrop = document.getElementById('qrModalBackdrop');
-    const qrModalSubtitle = document.getElementById('qrModalSubtitle');
-    const qrUrlInput = document.getElementById('qrUrlInput');
-    const qrCanvas = document.getElementById('qrCanvas');
-    const qrLogo = document.getElementById('qrLogo');
-    const closeQrModalBtn = document.getElementById('closeQrModalBtn');
-    const copyQrUrlBtn = document.getElementById('copyQrUrlBtn');
-    const openQrUrlBtn = document.getElementById('openQrUrlBtn');
-    const downloadQrBtn = document.getElementById('downloadQrBtn');
-
-    const bulkPdfFilesInput = document.getElementById('bulkPdfFiles');
-    const bulkFileCount = document.getElementById('bulkFileCount');
-    const bulkFileHint = document.getElementById('bulkFileHint');
-    const bulkFileList = document.getElementById('bulkFileList');
-    const clearBulkBtn = document.getElementById('clearBulkBtn');
-
-    let currentEditItem = null;
-    let filenameManuallyChanged = false;
-    let currentQrItem = null;
-
-    let currentPage = 0;
-    let currentSize = 20;
-    let currentKeyword = '';
-    let currentTotalPages = 1;
-    let currentTotalElements = 0;
-
-    let fallbackAllItems = [];
-    let searchDebounceTimer = null;
-
-    function showResult(data) {
-        resultBox.textContent = typeof data === 'string'
-            ? data
-            : JSON.stringify(data, null, 2);
-    }
-
-    function showError(err) {
-        resultBox.textContent = 'ERROR:\n' + (err?.message || err);
-    }
-
-    async function handleJsonResponse(res) {
-        const text = await res.text();
-        let data;
-        try {
-            data = text ? JSON.parse(text) : { status: res.status, message: 'No content' };
-        } catch {
-            data = { raw: text };
+        /* ═══════════════════════════════════════════
+           TOAST NOTIFICATIONS
+        ═══════════════════════════════════════════ */
+        function showToast(msg, type = 'info', duration = 3500) {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = msg;
+            toastContainer.appendChild(el);
+            setTimeout(() => {
+                el.classList.add('hiding');
+                setTimeout(() => el.remove(), 300);
+            }, duration);
         }
 
-        if (!res.ok) {
-            throw new Error((data && (data.message || data.error)) || text || ('HTTP ' + res.status));
+        /* ═══════════════════════════════════════════
+           UTILS
+        ═══════════════════════════════════════════ */
+        function showError(e) { console.error(e); showToast('Error: ' + (e?.message || e), 'error', 5000); }
+
+        async function handleJsonResponse(res) {
+            const text = await res.text();
+            let data;
+            try { data = text ? JSON.parse(text) : { status: res.status, message: 'No content' }; }
+            catch { data = { raw: text }; }
+            if (!res.ok) throw new Error((data && (data.message || data.error)) || text || ('HTTP ' + res.status));
+            return data;
         }
 
-        return data;
-    }
+        function escapeHtml(v) { return String(v).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+        function htmlDecode(v) { const t = document.createElement('textarea'); t.innerHTML = v; return t.value; }
+        function withCacheBuster(url) { try { const u = new URL(url, location.origin); u.searchParams.set('_ts', Date.now()); return u.pathname + u.search; } catch { return url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now(); } }
+        function toAbsoluteUrl(url) { try { return new URL(url, location.origin).href; } catch { return url; } }
+        function buildViewerUrl(item) { return toAbsoluteUrl(item.open_in_viewer || ('/catalogue?id=' + item.id)); }
+        function formatFileSize(b) { if (!b && b !== 0) return '-'; const u = ['B', 'KB', 'MB', 'GB']; let s = b, i = 0; while (s >= 1024 && i < u.length - 1) { s /= 1024; i++; } return `${s.toFixed(s >= 10 || i === 0 ? 0 : 1)} ${u[i]}`; }
 
-    function escapeHtml(value) {
-        return String(value)
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
-    }
-
-    function htmlDecode(value) {
-        const txt = document.createElement('textarea');
-        txt.innerHTML = value;
-        return txt.value;
-    }
-
-    function withCacheBuster(url) {
-        try {
-            const u = new URL(url, window.location.origin);
-            u.searchParams.set('_ts', Date.now());
-            return u.pathname + u.search;
-        } catch {
-            const separator = url.includes('?') ? '&' : '?';
-            return url + separator + '_ts=' + Date.now();
-        }
-    }
-
-    function toAbsoluteUrl(url) {
-        try {
-            return new URL(url, window.location.origin).href;
-        } catch {
-            return url;
-        }
-    }
-
-    function buildViewerUrl(item) {
-        return toAbsoluteUrl(item.open_in_viewer || ('/catalogue?id=' + item.id));
-    }
-
-    function setSummaryStats(totalElements, page, totalPages, size) {
-        totalCatalog.textContent = totalElements ?? 0;
-        perPageValue.textContent = size ?? 20;
-        currentPageValue.textContent = (page ?? 0) + 1;
-        totalPagesValue.textContent = totalPages || 1;
-    }
-
-    function updatePaginationUI(page, totalPages, totalElements) {
-        const safeTotalPages = totalPages > 0 ? totalPages : 1;
-        const currentHumanPage = (page ?? 0) + 1;
-
-        paginationInfo.textContent = `Page ${currentHumanPage} of ${safeTotalPages} • Total ${totalElements ?? 0} data`;
-        pageChip.textContent = `${currentHumanPage} / ${safeTotalPages}`;
-
-        const isFirst = page <= 0;
-        const isLast = page >= safeTotalPages - 1;
-
-        firstPageBtn.disabled = isFirst;
-        prevPageBtn.disabled = isFirst;
-        nextPageBtn.disabled = isLast;
-        lastPageBtn.disabled = isLast;
-    }
-
-    function renderCatalogs(items) {
-        if (!items || !items.length) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Data catalog tidak ditemukan.</td></tr>';
-            return;
+        function setSummaryStats(total, page, totalPages) {
+            totalCatalog.textContent = total ?? 0;
+            currentPageValue.textContent = (page ?? 0) + 1;
+            totalPagesValue.textContent = totalPages || 1;
         }
 
-        tableBody.innerHTML = items.map(item => {
-            const pdfUrl = withCacheBuster(item.url || (API_BASE + '/pdf/' + item.id));
-            const viewerUrl = withCacheBuster(item.open_in_viewer || ('/catalogue?id=' + item.id));
+        function updatePaginationUI(page, totalPages, totalElements) {
+            const safe = totalPages > 0 ? totalPages : 1;
+            const cur = (page ?? 0) + 1;
+            paginationInfo.textContent = `Page ${cur}/${safe} • ${totalElements ?? 0} total`;
+            pageChip.textContent = `${cur}/${safe}`;
+            firstPageBtn.disabled = page <= 0; prevPageBtn.disabled = page <= 0;
+            nextPageBtn.disabled = page >= safe - 1; lastPageBtn.disabled = page >= safe - 1;
+        }
 
-            const rawPdfUrl = item.url || (API_BASE + '/pdf/' + item.id);
-            const rawViewerUrl = item.open_in_viewer || ('/catalogue?id=' + item.id);
+        async function copyText(t) {
+            try { await navigator.clipboard.writeText(t); }
+            catch { const i = document.createElement('input'); i.value = t; document.body.appendChild(i); i.select(); document.execCommand('copy'); document.body.removeChild(i); }
+            showToast('URL disalin!', 'success', 2000);
+        }
 
-            return `
-                <tr>
+        /* ═══════════════════════════════════════════
+           SIDEBAR TABS
+        ═══════════════════════════════════════════ */
+        document.querySelectorAll('.sidebar-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.panel).classList.add('active');
+            });
+        });
+
+        /* ═══════════════════════════════════════════
+           LIBRARY LOADERS (robust, with retry)
+        ═══════════════════════════════════════════ */
+        function loadScriptOnce(src) {
+            return new Promise((resolve, reject) => {
+                const existing = document.querySelector(`script[src="${src}"]`);
+                if (existing) {
+                    // Already loaded or loading
+                    if (existing.dataset.loaded === '1') { resolve(true); return; }
+                    if (existing.dataset.failed === '1') { resolve(false); return; }
+                    existing.addEventListener('load', () => resolve(true), { once: true });
+                    existing.addEventListener('error', () => resolve(false), { once: true });
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.onload = () => { script.dataset.loaded = '1'; resolve(true); };
+                script.onerror = () => { script.dataset.failed = '1'; resolve(false); };
+                document.head.appendChild(script);
+            });
+        }
+
+        async function ensureQrLib() {
+            if (_qrLibReady && window.QRCode && typeof QRCode.toCanvas === 'function') return true;
+            if (_qrLibLoading) {
+                // Wait for the ongoing load
+                for (let i = 0; i < 50; i++) {
+                    await new Promise(r => setTimeout(r, 100));
+                    if (_qrLibReady) return true;
+                }
+                return false;
+            }
+            _qrLibLoading = true;
+
+            const sources = [
+                'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js',
+                'https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js'
+            ];
+
+            for (const src of sources) {
+                try {
+                    const ok = await loadScriptOnce(src);
+                    if (ok && window.QRCode && typeof QRCode.toCanvas === 'function') {
+                        _qrLibReady = true;
+                        _qrLibLoading = false;
+                        console.log('[QR] Library loaded from:', src);
+                        return true;
+                    }
+                } catch { /* try next */ }
+            }
+
+            _qrLibLoading = false;
+            console.warn('[QR] All CDN sources failed');
+            return false;
+        }
+
+        async function ensureJSZip() {
+            if (_jsZipReady && typeof JSZip !== 'undefined') return true;
+            if (_jsZipLoading) {
+                for (let i = 0; i < 50; i++) {
+                    await new Promise(r => setTimeout(r, 100));
+                    if (_jsZipReady) return true;
+                }
+                return false;
+            }
+            _jsZipLoading = true;
+
+            const sources = [
+                'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+            ];
+
+            for (const src of sources) {
+                try {
+                    const ok = await loadScriptOnce(src);
+                    if (ok && typeof JSZip !== 'undefined') {
+                        _jsZipReady = true;
+                        _jsZipLoading = false;
+                        console.log('[ZIP] Library loaded from:', src);
+                        return true;
+                    }
+                } catch { /* try next */ }
+            }
+
+            _jsZipLoading = false;
+            return false;
+        }
+
+        /* ═══════════════════════════════════════════
+           LOGO PRELOAD (with retry)
+        ═══════════════════════════════════════════ */
+        function loadImageAsync(srcOrImg) {
+            return new Promise((resolve, reject) => {
+                if (srcOrImg instanceof HTMLImageElement) {
+                    if (srcOrImg.complete && srcOrImg.naturalWidth > 0) { resolve(srcOrImg); return; }
+                    const clone = new Image();
+                    clone.crossOrigin = 'anonymous';
+                    clone.onload = () => resolve(clone);
+                    clone.onerror = () => reject(new Error('Image load failed'));
+                    clone.src = srcOrImg.src;
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Image load failed: ' + srcOrImg));
+                img.src = srcOrImg;
+            });
+        }
+
+        async function ensureLogo() {
+            if (_logoLoaded && _logoImg) return _logoImg;
+            try {
+                _logoImg = await loadImageAsync(qrLogo);
+                _logoLoaded = true;
+                return _logoImg;
+            } catch {
+                // Retry with cache buster
+                try {
+                    const src = qrLogo.src + (qrLogo.src.includes('?') ? '&' : '?') + '_r=' + Date.now();
+                    _logoImg = await loadImageAsync(src);
+                    _logoLoaded = true;
+                    return _logoImg;
+                } catch {
+                    console.warn('[QR] Logo load failed, will render QR without logo');
+                    _logoLoaded = false;
+                    _logoImg = null;
+                    return null;
+                }
+            }
+        }
+
+        // Start preloading immediately
+        ensureQrLib();
+        ensureJSZip();
+        ensureLogo();
+
+        /* ═══════════════════════════════════════════
+           QR RENDERING (completely rewritten)
+        ═══════════════════════════════════════════ */
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        /**
+         * Render QR code to an offscreen canvas at the given size.
+         * Returns the canvas.
+         */
+        async function renderQrToCanvas(url, size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d', { alpha: false });
+
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+
+            const libOk = await ensureQrLib();
+
+            if (libOk) {
+                // Use QRCode library
+                await QRCode.toCanvas(canvas, url, {
+                    width: size,
+                    margin: 4,
+                    errorCorrectionLevel: 'H',
+                    color: { dark: '#000000', light: '#ffffff' }
+                });
+            } else {
+                // Fallback: use quickchart API to generate QR image
+                const fallbackSize = Math.min(size, 600); // API limit
+                const fallbackUrl = `https://quickchart.io/qr?size=${fallbackSize}&margin=4&ecLevel=H&text=${encodeURIComponent(url)}`;
+                try {
+                    const fallbackImg = await loadImageAsync(fallbackUrl);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(fallbackImg, 0, 0, size, size);
+                } catch (e) {
+                    // Last resort: draw error text
+                    ctx.fillStyle = '#dc2626';
+                    ctx.font = `${Math.floor(size * 0.04)}px Inter, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('QR generation failed', size / 2, size / 2 - 10);
+                    ctx.fillText('Library tidak tersedia', size / 2, size / 2 + 20);
+                   // throw new Error('QR library dan fallback API gagal');
+                }
+            }
+
+            return canvas;
+        }
+
+        /**
+         * Draw logo overlay on a QR canvas
+         */
+        async function drawLogoOverlay(canvas) {
+            const logoImg = await ensureLogo();
+            if (!logoImg) return; // Skip if logo not available
+
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+
+            const logoBoxSize = Math.floor(size * 0.18);
+            const logoSize = Math.floor(size * 0.12);
+            const x = Math.floor((size - logoBoxSize) / 2);
+            const y = Math.floor((size - logoBoxSize) / 2);
+            const radius = Math.floor(size * 0.022);
+
+            ctx.save();
+
+            // White background with shadow
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(0,0,0,0.12)';
+            ctx.shadowBlur = Math.floor(size * 0.015);
+            ctx.shadowOffsetY = Math.floor(size * 0.004);
+            roundRect(ctx, x, y, logoBoxSize, logoBoxSize, radius);
+            ctx.fill();
+
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // Draw logo centered
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            const logoX = Math.floor((size - logoSize) / 2);
+            const logoY = Math.floor((size - logoSize) / 2);
+            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+
+            ctx.restore();
+        }
+
+        /**
+         * Generate a full QR+logo at export size, return as PNG Blob
+         */
+        async function generateQrBlob(url) {
+            const canvas = await renderQrToCanvas(url, QR_EXPORT_SIZE);
+            await drawLogoOverlay(canvas);
+
+            return new Promise((resolve, reject) => {
+                canvas.toBlob(blob => {
+                    if (!blob) { reject(new Error('Canvas toBlob failed')); return; }
+                    resolve(blob);
+                }, 'image/png');
+            });
+        }
+
+        /**
+         * Generate QR+logo at export size, return as data URL
+         */
+        async function generateQrDataUrl(url) {
+            const canvas = await renderQrToCanvas(url, QR_EXPORT_SIZE);
+            await drawLogoOverlay(canvas);
+            return canvas.toDataURL('image/png');
+        }
+
+        /**
+         * Render QR for the modal preview
+         */
+        async function renderModalQr(url) {
+            qrLoading.style.display = 'block';
+            qrCanvas.style.opacity = '0.3';
+
+            try {
+                // Generate high-res export
+                const exportCanvas = await renderQrToCanvas(url, QR_EXPORT_SIZE);
+                await drawLogoOverlay(exportCanvas);
+                qrHighResDataUrl = exportCanvas.toDataURL('image/png');
+
+                // Scale down to preview
+                qrCanvas.width = QR_PREVIEW_SIZE;
+                qrCanvas.height = QR_PREVIEW_SIZE;
+                const ctx = qrCanvas.getContext('2d', { alpha: false });
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, QR_PREVIEW_SIZE, QR_PREVIEW_SIZE);
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(exportCanvas, 0, 0, QR_PREVIEW_SIZE, QR_PREVIEW_SIZE);
+
+                qrCanvas.style.opacity = '1';
+                qrLoading.style.display = 'none';
+            } catch (e) {
+                qrLoading.textContent = 'Gagal generate QR';
+                qrCanvas.style.opacity = '0.2';
+                throw e;
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           QR MODAL
+        ═══════════════════════════════════════════ */
+        async function openQrModal(item) {
+            currentQrItem = item;
+            const url = buildViewerUrl(item);
+            qrUrlInput.value = url;
+            qrModalSubtitle.textContent = `ID ${item.id} • ${item.filename || '—'}`;
+            qrLoading.textContent = 'Generating QR...';
+            qrModalBackdrop.classList.add('show');
+
+            try { await renderModalQr(url); }
+            catch (e) { showError(e); }
+        }
+
+        function closeQrModal() { qrModalBackdrop.classList.remove('show'); }
+
+        function downloadQrPng() {
+            if (!qrHighResDataUrl) { showToast('QR belum ready, tunggu sebentar', 'warning'); return; }
+            const n = (currentQrItem?.filename || 'catalog').replace(/[^A-Za-z0-9_.-]+/g, '_').replace(/\.pdf$/i, '');
+            const a = document.createElement('a');
+            a.href = qrHighResDataUrl;
+            a.download = `qr_${n || 'catalog'}.png`;
+            a.click();
+            showToast('QR downloaded!', 'success', 2000);
+        }
+
+        async function copyCatalogUrl(item) { await copyText(buildViewerUrl(item)); }
+        async function copyQrUrl() { if (qrUrlInput.value) await copyText(qrUrlInput.value); }
+        function openQrUrl() { if (qrUrlInput.value) window.open(qrUrlInput.value, '_blank'); }
+
+        qrModalBackdrop.addEventListener('click', e => { if (e.target === qrModalBackdrop) closeQrModal(); });
+        closeQrModalBtn.addEventListener('click', closeQrModal);
+        copyQrUrlBtn.addEventListener('click', copyQrUrl);
+        openQrUrlBtn.addEventListener('click', openQrUrl);
+        downloadQrBtn.addEventListener('click', downloadQrPng);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQrModal(); });
+
+        /* ═══════════════════════════════════════════
+           BULK DOWNLOAD (rewritten with better UX)
+        ═══════════════════════════════════════════ */
+        function showProgress(show) {
+            if (show) {
+                downloadProgress.classList.add('show');
+                downloadProgressBar.className = 'download-progress-bar';
+            } else {
+                downloadProgress.classList.remove('show');
+            }
+        }
+
+        function updateProgress(done, total, currentFile = '') {
+            const pct = total > 0 ? Math.round(done / total * 100) : 0;
+            downloadProgressBar.style.width = pct + '%';
+            downloadProgressPct.textContent = pct + '%';
+            downloadProgressText.textContent = `${done} / ${total} QR selesai`;
+            if (currentFile) {
+                downloadProgressDetail.textContent = `→ ${currentFile}`;
+            }
+        }
+
+        bulkDownloadBtn.addEventListener('click', async () => {
+            if (!selectedIds.size) return;
+
+            // Ensure libraries
+            const [qrOk, zipOk] = await Promise.all([ensureQrLib(), ensureJSZip()]);
+            if (!zipOk) {
+                showToast('JSZip library gagal dimuat. Coba refresh halaman.', 'error', 5000);
+                return;
+            }
+            if (!qrOk) {
+                showToast('QR library gagal dimuat. Menggunakan fallback API...', 'warning', 3000);
+            }
+
+            const ids = Array.from(selectedIds);
+            const total = ids.length;
+            let done = 0;
+            let failed = 0;
+            const failedItems = [];
+
+            // Show progress
+            downloadProgressTitle.textContent = `Generating ${total} QR Code${total > 1 ? 's' : ''}...`;
+            downloadProgressDetail.textContent = '';
+            showProgress(true);
+            updateProgress(0, total);
+
+            // Disable button during process
+            bulkDownloadBtn.disabled = true;
+            bulkDownloadBtn.textContent = 'Processing...';
+
+            const zip = new JSZip();
+            const qrFolder = zip.folder('qr-catalogs');
+
+            // Process sequentially to avoid overwhelming the browser
+            for (const id of ids) {
+                let filename = `catalog_${id}`;
+                try {
+                    // Get filename from table row
+                    const row = tableBody.querySelector(`tr[data-id="${id}"]`);
+                    if (row) {
+                        const c = row.querySelector('.filename-cell');
+                        if (c && c.textContent.trim()) {
+                            filename = c.textContent.trim().replace(/\.pdf$/i, '');
+                        }
+                    }
+
+                    const safeName = filename.replace(/[^\w\-\.]+/g, '_');
+                    updateProgress(done, total, safeName);
+
+                    const viewerUrl = toAbsoluteUrl('/catalogue?id=' + id);
+
+                    // Generate QR with retry
+                    let pngBlob = null;
+                    for (let attempt = 1; attempt <= 2; attempt++) {
+                        try {
+                            pngBlob = await generateQrBlob(viewerUrl);
+                            break;
+                        } catch (e) {
+                            if (attempt === 2) throw e;
+                            console.warn(`[Bulk QR] Retry ${attempt} for ID ${id}:`, e.message);
+                            await new Promise(r => setTimeout(r, 200));
+                        }
+                    }
+
+                    if (pngBlob) {
+                        qrFolder.file(`qr_${safeName}.png`, pngBlob);
+                    }
+                } catch (e) {
+                    console.error(`[Bulk QR] Failed ID ${id}:`, e);
+                    failed++;
+                    failedItems.push(filename);
+                }
+
+                done++;
+                updateProgress(done, total, '');
+
+                // Small delay to let UI breathe
+                if (done % 5 === 0) {
+                    await new Promise(r => setTimeout(r, 10));
+                }
+            }
+
+            // Generate ZIP
+            downloadProgressTitle.textContent = 'Membuat file ZIP...';
+            downloadProgressDetail.textContent = '';
+
+            try {
+                const zipBlob = await zip.generateAsync(
+                    { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+                    meta => {
+                        const zipPct = Math.round(meta.percent);
+                        downloadProgressBar.style.width = zipPct + '%';
+                        downloadProgressPct.textContent = zipPct + '%';
+                        downloadProgressText.textContent = 'Compressing ZIP...';
+                    }
+                );
+
+                // Trigger download
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(zipBlob);
+                a.download = `qr-catalogs-${new Date().toISOString().slice(0, 10)}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+
+                // Success state
+                downloadProgressBar.classList.add('done');
+                downloadProgressBar.style.width = '100%';
+                downloadProgressPct.textContent = '100%';
+                downloadProgressTitle.textContent = 'Download selesai!';
+
+                const successCount = total - failed;
+                let msg = `${successCount} QR berhasil di-zip.`;
+                if (failed > 0) {
+                    msg += ` ${failed} gagal.`;
+                    downloadProgressDetail.textContent = 'Gagal: ' + failedItems.join(', ');
+                    downloadProgressBar.classList.remove('done');
+                    downloadProgressBar.classList.add('error');
+                } else {
+                    downloadProgressDetail.textContent = '';
+                }
+                downloadProgressText.textContent = msg;
+                showToast(msg, failed > 0 ? 'warning' : 'success', 4000);
+
+            } catch (e) {
+                downloadProgressBar.classList.add('error');
+                downloadProgressBar.style.width = '100%';
+                downloadProgressTitle.textContent = 'Gagal membuat ZIP';
+                downloadProgressText.textContent = e.message;
+                downloadProgressPct.textContent = '✕';
+                showToast('Gagal membuat ZIP: ' + e.message, 'error', 5000);
+                console.error('[ZIP]', e);
+            }
+
+            bulkDownloadBtn.disabled = false;
+            bulkDownloadBtn.textContent = 'Download QR (.zip)';
+
+            // Auto-hide progress after delay
+            setTimeout(() => showProgress(false), failed > 0 ? 8000 : 4000);
+        });
+
+        /* ═══════════════════════════════════════════
+           BULK SELECTION
+        ═══════════════════════════════════════════ */
+        function updateBulkDownloadUI() {
+            const c = selectedIds.size;
+            bulkDlInfo.textContent = c > 0 ? `${c} dipilih` : 'Belum ada';
+            bulkDownloadBtn.disabled = c === 0;
+            if (c > 0) { bulkDownloadBar.classList.add('show'); } else { bulkDownloadBar.classList.remove('show'); }
+            const cbs = tableBody.querySelectorAll('.js-row-check');
+            if (cbs.length) {
+                const all = Array.from(cbs).every(cb => cb.checked);
+                const some = Array.from(cbs).some(cb => cb.checked);
+                checkAllHead.checked = all; checkAllHead.indeterminate = some && !all;
+            } else { checkAllHead.checked = false; checkAllHead.indeterminate = false; }
+        }
+
+        function toggleRowSelection(id, checked) {
+            if (checked) { selectedIds.add(String(id)); } else { selectedIds.delete(String(id)); }
+            updateBulkDownloadUI();
+            const row = tableBody.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.classList.toggle('selected', checked);
+        }
+
+        checkAllHead.addEventListener('change', () => {
+            tableBody.querySelectorAll('.js-row-check').forEach(cb => { cb.checked = checkAllHead.checked; toggleRowSelection(cb.dataset.id, checkAllHead.checked); });
+        });
+        selectAllBtn.addEventListener('click', () => {
+            tableBody.querySelectorAll('.js-row-check').forEach(cb => { cb.checked = true; toggleRowSelection(cb.dataset.id, true); });
+        });
+        deselectAllBtn.addEventListener('click', () => {
+            selectedIds.clear();
+            tableBody.querySelectorAll('.js-row-check').forEach(cb => { cb.checked = false; });
+            tableBody.querySelectorAll('tr.selected').forEach(tr => tr.classList.remove('selected'));
+            updateBulkDownloadUI();
+        });
+
+        document.addEventListener('change', e => { if (e.target.classList.contains('js-row-check')) toggleRowSelection(e.target.dataset.id, e.target.checked); });
+
+        /* ═══════════════════════════════════════════
+           BULK DL SEARCH
+        ═══════════════════════════════════════════ */
+        bulkDlSearchBtn.addEventListener('click', async () => {
+            const kw = bulkDlSearchInput.value.trim();
+            if (!kw) { bulkDlSearchInfo.textContent = 'Ketik keyword dulu'; return; }
+            bulkDlSearchBtn.disabled = true; bulkDlSearchBtn.textContent = 'Searching...'; bulkDlSearchInfo.textContent = '';
+            try {
+                const params = new URLSearchParams(); params.set('page', 0); params.set('size', 1000); params.set('q', kw);
+                const res = await fetch(`${LIST_ENDPOINT}?${params}`, { method: 'GET', cache: 'no-store' });
+                const data = await handleJsonResponse(res);
+                let matched = [];
+                if (Array.isArray(data)) { matched = data.filter(i => String(i.filename ?? '').toLowerCase().includes(kw.toLowerCase())); }
+                else if (data.content) { matched = data.content; }
+                if (!matched.length) { bulkDlSearchInfo.textContent = `Tidak ada match "${kw}"`; return; }
+                let added = 0;
+                for (const item of matched) { const id = String(item.id); if (!selectedIds.has(id)) { selectedIds.add(id); added++; } }
+                tableBody.querySelectorAll('.js-row-check').forEach(cb => {
+                    if (selectedIds.has(cb.dataset.id)) { cb.checked = true; const r = tableBody.querySelector(`tr[data-id="${cb.dataset.id}"]`); if (r) r.classList.add('selected'); }
+                });
+                updateBulkDownloadUI();
+                bulkDlSearchInfo.textContent = `${matched.length} match, +${added} baru (total ${selectedIds.size})`;
+            } catch (e) { bulkDlSearchInfo.textContent = 'Gagal: ' + (e.message || e); }
+            finally { bulkDlSearchBtn.disabled = false; bulkDlSearchBtn.textContent = 'Search & Select'; }
+        });
+        bulkDlSearchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); bulkDlSearchBtn.click(); } });
+        bulkDlSearchClearBtn.addEventListener('click', () => {
+            bulkDlSearchInput.value = ''; bulkDlSearchInfo.textContent = '';
+            selectedIds.clear();
+            tableBody.querySelectorAll('.js-row-check').forEach(cb => { cb.checked = false; });
+            tableBody.querySelectorAll('tr.selected').forEach(tr => tr.classList.remove('selected'));
+            updateBulkDownloadUI();
+        });
+
+        /* ═══════════════════════════════════════════
+           TABLE RENDERING
+        ═══════════════════════════════════════════ */
+        function renderCatalogs(items) {
+            if (!items || !items.length) { tableBody.innerHTML = '<tr><td colspan="5" class="empty">Tidak ada data.</td></tr>'; updateBulkDownloadUI(); return; }
+            tableBody.innerHTML = items.map(item => {
+                const pdfUrl = withCacheBuster(item.url || (API_BASE + '/pdf/' + item.id));
+                const viewerUrl = withCacheBuster(item.open_in_viewer || ('/catalogue?id=' + item.id));
+                const rawPdfUrl = item.url || (API_BASE + '/pdf/' + item.id);
+                const rawViewerUrl = item.open_in_viewer || ('/catalogue?id=' + item.id);
+                const sel = selectedIds.has(String(item.id));
+                return `<tr data-id="${escapeHtml(item.id ?? '')}" class="${sel ? 'selected' : ''}">
+                    <td class="td-check"><input type="checkbox" class="js-row-check" data-id="${escapeHtml(item.id ?? '')}" ${sel ? 'checked' : ''}></td>
                     <td class="id-cell">${item.id ?? '-'}</td>
                     <td class="filename-cell">${escapeHtml(item.filename ?? '-')}</td>
                     <td class="contenttype-cell">${escapeHtml(item.contentType ?? 'application/pdf')}</td>
-                    <td>
-                        <div class="actions">
-                            <a class="btn success" href="${pdfUrl}" target="_blank">PDF</a>
-                            <a class="btn warning" href="${viewerUrl}" target="_blank">Viewer</a>
-
-                            <button
-                                class="btn secondary js-edit-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}">
-                                Edit
-                            </button>
-
-                            <button
-                                class="btn primary js-copy-url-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}"
-                                data-url="${escapeHtml(rawViewerUrl)}">
-                                Copy URL
-                            </button>
-
-                            <button
-                                class="btn info js-qr-btn"
-                                type="button"
-                                data-id="${escapeHtml(item.id ?? '')}"
-                                data-filename="${escapeHtml(item.filename ?? '')}"
-                                data-content-type="${escapeHtml(item.contentType ?? 'application/pdf')}"
-                                data-url="${escapeHtml(rawPdfUrl)}"
-                                data-viewer="${escapeHtml(rawViewerUrl)}">
-                                QR
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-        }).join('');
-    }
-
-    function applyClientSideFallback(arrayData) {
-        fallbackAllItems = Array.isArray(arrayData) ? arrayData : [];
-
-        let filtered = fallbackAllItems;
-        const keyword = currentKeyword.trim().toLowerCase();
-
-        if (keyword) {
-            filtered = filtered.filter(item => {
-                const idText = String(item.id ?? '').toLowerCase();
-                const filenameText = String(item.filename ?? '').toLowerCase();
-                const contentTypeText = String(item.contentType ?? '').toLowerCase();
-                return idText.includes(keyword) || filenameText.includes(keyword) || contentTypeText.includes(keyword);
-            });
+                    <td><div class="actions">
+                        <a class="btn success" href="${pdfUrl}" target="_blank">PDF</a>
+                        <a class="btn warning" href="${viewerUrl}" target="_blank">Viewer</a>
+                        <button class="btn secondary js-edit-btn" type="button" data-id="${escapeHtml(item.id ?? '')}" data-filename="${escapeHtml(item.filename ?? '')}">Edit</button>
+                        <button class="btn primary js-copy-url-btn" type="button" data-id="${escapeHtml(item.id ?? '')}" data-filename="${escapeHtml(item.filename ?? '')}" data-url="${escapeHtml(rawViewerUrl)}">Copy URL</button>
+                        <button class="btn info js-qr-btn" type="button" data-id="${escapeHtml(item.id ?? '')}" data-filename="${escapeHtml(item.filename ?? '')}" data-content-type="${escapeHtml(item.contentType ?? 'application/pdf')}" data-url="${escapeHtml(rawPdfUrl)}" data-viewer="${escapeHtml(rawViewerUrl)}">QR</button>
+                    </div></td></tr>`;
+            }).join('');
+            updateBulkDownloadUI();
         }
 
-        currentTotalElements = filtered.length;
-        currentTotalPages = Math.max(1, Math.ceil(filtered.length / currentSize));
-
-        if (currentPage >= currentTotalPages) currentPage = currentTotalPages - 1;
-        if (currentPage < 0) currentPage = 0;
-
-        const start = currentPage * currentSize;
-        const end = start + currentSize;
-        const pageItems = filtered.slice(start, end);
-
-        renderCatalogs(pageItems);
-        setSummaryStats(currentTotalElements, currentPage, currentTotalPages, currentSize);
-        updatePaginationUI(currentPage, currentTotalPages, currentTotalElements);
-
-        if (keyword) {
-            catalogSearchInfo.textContent = `Fallback client-side • keyword "${keyword}" • ${currentTotalElements} data`;
-        } else {
-            catalogSearchInfo.textContent = `Fallback client-side • ${currentTotalElements} data`;
-        }
-    }
-
-    function loadImage(srcOrImg) {
-        return new Promise((resolve, reject) => {
-            if (srcOrImg instanceof HTMLImageElement) {
-                if (srcOrImg.complete && srcOrImg.naturalWidth > 0) {
-                    resolve(srcOrImg);
-                    return;
-                }
-                srcOrImg.onload = () => resolve(srcOrImg);
-                srcOrImg.onerror = reject;
-                return;
-            }
-
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = srcOrImg;
-        });
-    }
-
-    function roundRect(ctx, x, y, width, height, radius) {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-    }
-
-    async function drawLogoOnCanvas() {
-        const size = qrCanvas.width;
-        const ctx = qrCanvas.getContext('2d');
-        const logoImg = await loadImage(qrLogo);
-
-        const logoBoxSize = Math.floor(size * 0.24);
-        const logoSize = Math.floor(size * 0.18);
-        const x = Math.floor((size - logoBoxSize) / 2);
-        const y = Math.floor((size - logoBoxSize) / 2);
-
-        ctx.save();
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.12)';
-        ctx.shadowBlur = 12;
-        ctx.shadowOffsetY = 2;
-        roundRect(ctx, x, y, logoBoxSize, logoBoxSize, 16);
-        ctx.fill();
-        ctx.shadowColor = 'transparent';
-
-        const logoX = Math.floor((size - logoSize) / 2);
-        const logoY = Math.floor((size - logoSize) / 2);
-        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-        ctx.restore();
-    }
-
-    async function renderQrWithLogo(url) {
-        const size = 320;
-        const ctx = qrCanvas.getContext('2d');
-        qrCanvas.width = size;
-        qrCanvas.height = size;
-        ctx.clearRect(0, 0, size, size);
-
-        try {
-            if (!window.QRCode || typeof QRCode.toCanvas !== 'function') {
-                throw new Error('QRCode library not loaded');
-            }
-
-            await QRCode.toCanvas(qrCanvas, url, {
-                width: size,
-                margin: 2,
-                errorCorrectionLevel: 'H',
-                color: {
-                    dark: '#000000',
-                    light: '#ffffff'
-                }
-            });
-        } catch (err) {
-            const fallbackUrl = 'https://quickchart.io/qr?size=320&text=' + encodeURIComponent(url);
-            const qrImg = await loadImage(fallbackUrl);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, size, size);
-            ctx.drawImage(qrImg, 0, 0, size, size);
-        }
-
-        try {
-            await drawLogoOnCanvas();
-        } catch (e) {
-            console.warn('Logo gagal dimuat, QR tetap tampil tanpa logo.', e);
-        }
-    }
-
-    async function openQrModal(item) {
-        currentQrItem = item;
-        const absoluteViewerUrl = buildViewerUrl(item);
-
-        qrUrlInput.value = absoluteViewerUrl;
-        qrModalSubtitle.textContent = `Catalog ID ${item.id} • ${item.filename || 'Tanpa nama'}`;
-
-        try {
-            await renderQrWithLogo(absoluteViewerUrl);
-        } catch (err) {
-            showError(err);
-            return;
-        }
-
-        qrModalBackdrop.classList.add('show');
-    }
-
-    function closeQrModal() {
-        qrModalBackdrop.classList.remove('show');
-    }
-
-    async function copyText(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-        } catch {
-            const temp = document.createElement('input');
-            temp.value = text;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-        }
-    }
-
-    async function copyCatalogUrl(item) {
-        const url = buildViewerUrl(item);
-        await copyText(url);
-        showResult({ status: 'COPIED', url });
-    }
-
-    async function copyQrUrl() {
-        const value = qrUrlInput.value || '';
-        if (!value) return;
-        await copyText(value);
-        showResult({ status: 'COPIED', url: value });
-    }
-
-    function openQrUrl() {
-        const value = qrUrlInput.value || '';
-        if (!value) return;
-        window.open(value, '_blank');
-    }
-
-    function downloadQrPng() {
-        const safeName = (currentQrItem?.filename || 'catalog')
-            .replace(/[^\w\-\.]+/g, '_')
-            .replace(/\.pdf$/i, '');
-
-        const link = document.createElement('a');
-        link.href = qrCanvas.toDataURL('image/png');
-        link.download = `qr_${safeName || 'catalog'}.png`;
-        link.click();
-    }
-
-    function startEdit(item) {
-        currentEditItem = item;
-        filenameManuallyChanged = false;
-        editIdInput.value = item.id || '';
-        editFilenameInput.value = item.filename || '';
-        editPdfFileInput.value = '';
-
-        window.scrollTo({
-            top: document.getElementById('editForm').getBoundingClientRect().top + window.scrollY - 120,
-            behavior: 'smooth'
-        });
-    }
-
-    function formatFileSize(bytes) {
-        if (!bytes && bytes !== 0) return '-';
-        const units = ['B', 'KB', 'MB', 'GB'];
-        let size = bytes;
-        let unitIndex = 0;
-
-        while (size >= 1024 && unitIndex < units.length - 1) {
-            size /= 1024;
-            unitIndex++;
-        }
-
-        return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-    }
-
-    function renderBulkFiles() {
-        const files = Array.from(bulkPdfFilesInput.files || []);
-
-        if (!files.length) {
-            bulkFileCount.textContent = 'Belum ada file dipilih';
-            bulkFileHint.textContent = 'Pilih banyak file dengan Ctrl / Shift';
-            bulkFileList.innerHTML = '<div class="bulk-empty">Belum ada file yang dipilih.</div>';
-            return;
-        }
-
-        bulkFileCount.textContent = `${files.length} file dipilih`;
-        bulkFileHint.textContent = 'Semua file di bawah akan dikirim saat klik Upload Bulk';
-
-        bulkFileList.innerHTML = files.map(file => `
-            <div class="bulk-file-item">
-                <div class="bulk-file-name">${escapeHtml(file.name)}</div>
-                <div class="bulk-file-size">${formatFileSize(file.size)}</div>
-            </div>
-        `).join('');
-    }
-
-    async function loadCatalogs(page = currentPage) {
-        try {
-            currentPage = page;
-            currentSize = parseInt(pageSizeSelect.value, 10) || 20;
-            currentKeyword = catalogSearchInput.value.trim();
-
-            tableBody.innerHTML = '<tr><td colspan="4" class="empty">Memuat data catalog…</td></tr>';
-
-            const params = new URLSearchParams();
-            params.set('page', currentPage);
-            params.set('size', currentSize);
-            if (currentKeyword) params.set('q', currentKeyword);
-
-            const res = await fetch(`${LIST_ENDPOINT}?${params.toString()}`, {
-                method: 'GET',
-                cache: 'no-store'
-            });
-
-            if (res.status === 404) {
-                tableBody.innerHTML = '<tr><td colspan="4" class="empty">Endpoint /catalogs belum ada.</td></tr>';
-                setSummaryStats(0, 0, 1, currentSize);
-                updatePaginationUI(0, 1, 0);
-                catalogSearchInfo.textContent = 'Endpoint catalog belum tersedia';
-                return;
-            }
-
-            const data = await handleJsonResponse(res);
-
-            if (Array.isArray(data)) {
-                applyClientSideFallback(data);
-                return;
-            }
-
-            const items = Array.isArray(data.content) ? data.content : [];
-            currentTotalElements = Number(data.totalElements ?? items.length ?? 0);
-            currentTotalPages = Math.max(1, Number(data.totalPages ?? 1));
-            currentPage = Number(data.page ?? 0);
-
-            renderCatalogs(items);
-            setSummaryStats(currentTotalElements, currentPage, currentTotalPages, currentSize);
+        /* ═══════════════════════════════════════════
+           DATA LOADING
+        ═══════════════════════════════════════════ */
+        function applyClientSideFallback(arr) {
+            fallbackAllItems = Array.isArray(arr) ? arr : [];
+            let filtered = fallbackAllItems;
+            const kw = currentKeyword.trim().toLowerCase();
+            if (kw) filtered = filtered.filter(i => (String(i.id ?? '') + String(i.filename ?? '') + String(i.contentType ?? '')).toLowerCase().includes(kw));
+            currentTotalElements = filtered.length; currentTotalPages = Math.max(1, Math.ceil(filtered.length / currentSize));
+            if (currentPage >= currentTotalPages) currentPage = currentTotalPages - 1; if (currentPage < 0) currentPage = 0;
+            renderCatalogs(filtered.slice(currentPage * currentSize, (currentPage + 1) * currentSize));
+            setSummaryStats(currentTotalElements, currentPage, currentTotalPages);
             updatePaginationUI(currentPage, currentTotalPages, currentTotalElements);
+            catalogSearchInfo.textContent = kw ? `Client • "${kw}" • ${currentTotalElements}` : `Client • ${currentTotalElements} data`;
+        }
 
-            if (currentKeyword) {
-                catalogSearchInfo.textContent = `Server-side search • keyword "${currentKeyword}" • ${currentTotalElements} data`;
-            } else {
-                catalogSearchInfo.textContent = `Server-side pagination • ${currentTotalElements} data`;
+        async function loadCatalogs(page = currentPage) {
+            try {
+                currentPage = page; currentSize = parseInt(pageSizeSelect.value, 10) || 10; currentKeyword = catalogSearchInput.value.trim();
+                tableBody.innerHTML = '<tr><td colspan="5" class="empty">Memuat…</td></tr>';
+                const p = new URLSearchParams(); p.set('page', currentPage); p.set('size', currentSize); if (currentKeyword) p.set('q', currentKeyword);
+                const res = await fetch(`${LIST_ENDPOINT}?${p}`, { method: 'GET', cache: 'no-store' });
+                if (res.status === 404) { tableBody.innerHTML = '<tr><td colspan="5" class="empty">Endpoint belum ada.</td></tr>'; setSummaryStats(0, 0, 1); updatePaginationUI(0, 1, 0); return; }
+                const data = await handleJsonResponse(res);
+                if (Array.isArray(data)) { applyClientSideFallback(data); return; }
+                const items = Array.isArray(data.content) ? data.content : [];
+                currentTotalElements = Number(data.totalElements ?? items.length ?? 0);
+                currentTotalPages = Math.max(1, Number(data.totalPages ?? 1));
+                currentPage = Number(data.page ?? 0);
+                renderCatalogs(items); setSummaryStats(currentTotalElements, currentPage, currentTotalPages);
+                updatePaginationUI(currentPage, currentTotalPages, currentTotalElements);
+                catalogSearchInfo.textContent = currentKeyword ? `"${currentKeyword}" • ${currentTotalElements} data` : `${currentTotalElements} data`;
+            } catch (e) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty">Gagal: ${escapeHtml(e.message || e)}</td></tr>`;
+                setSummaryStats(0, 0, 1); updatePaginationUI(0, 1, 0); catalogSearchInfo.textContent = 'Gagal memuat';
             }
-        } catch (err) {
-            tableBody.innerHTML = `<tr><td colspan="4" class="empty">Gagal memuat: ${escapeHtml(err.message || String(err))}</td></tr>`;
-            setSummaryStats(0, 0, 1, currentSize);
-            updatePaginationUI(0, 1, 0);
-            catalogSearchInfo.textContent = 'Gagal memuat data catalog';
         }
-    }
 
-    refreshHeroBtn.addEventListener('click', () => loadCatalogs(currentPage));
-    refreshListBtn.addEventListener('click', () => loadCatalogs(currentPage));
+        refreshListBtn.addEventListener('click', () => loadCatalogs(currentPage));
+        clearSearchBtn.addEventListener('click', () => { catalogSearchInput.value = ''; currentPage = 0; loadCatalogs(0); });
+        pageSizeSelect.addEventListener('change', () => { currentPage = 0; loadCatalogs(0); });
+        catalogSearchInput.addEventListener('input', () => { clearTimeout(searchDebounceTimer); searchDebounceTimer = setTimeout(() => { currentPage = 0; loadCatalogs(0); }, 350); });
+        firstPageBtn.addEventListener('click', () => loadCatalogs(0));
+        prevPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentPage - 1)));
+        nextPageBtn.addEventListener('click', () => loadCatalogs(Math.min(currentTotalPages - 1, currentPage + 1)));
+        lastPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentTotalPages - 1)));
 
-    clearSearchBtn.addEventListener('click', () => {
-        catalogSearchInput.value = '';
-        currentPage = 0;
-        loadCatalogs(0);
-    });
-
-    pageSizeSelect.addEventListener('change', () => {
-        currentPage = 0;
-        loadCatalogs(0);
-    });
-
-    catalogSearchInput.addEventListener('input', () => {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = setTimeout(() => {
-            currentPage = 0;
-            loadCatalogs(0);
-        }, 350);
-    });
-
-    firstPageBtn.addEventListener('click', () => loadCatalogs(0));
-    prevPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentPage - 1)));
-    nextPageBtn.addEventListener('click', () => loadCatalogs(Math.min(currentTotalPages - 1, currentPage + 1)));
-    lastPageBtn.addEventListener('click', () => loadCatalogs(Math.max(0, currentTotalPages - 1)));
-
-    qrModalBackdrop.addEventListener('click', function (event) {
-        if (event.target === qrModalBackdrop) closeQrModal();
-    });
-
-    closeQrModalBtn.addEventListener('click', closeQrModal);
-    copyQrUrlBtn.addEventListener('click', copyQrUrl);
-    openQrUrlBtn.addEventListener('click', openQrUrl);
-    downloadQrBtn.addEventListener('click', downloadQrPng);
-
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') closeQrModal();
-    });
-
-    editFilenameInput.addEventListener('input', function () {
-        filenameManuallyChanged = true;
-    });
-
-    editPdfFileInput.addEventListener('change', function () {
-        const file = this.files?.[0];
-        if (!file) return;
-        if (!filenameManuallyChanged || !editFilenameInput.value.trim() || (currentEditItem && editFilenameInput.value.trim() === currentEditItem.filename)) {
-            editFilenameInput.value = file.name;
+        /* ═══════════════════════════════════════════
+           EDIT PANEL
+        ═══════════════════════════════════════════ */
+        function startEdit(item) {
+            currentEditItem = item; filenameManuallyChanged = false;
+            editIdInput.value = item.id || ''; editFilenameInput.value = item.filename || ''; editPdfFileInput.value = '';
+            document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+            document.querySelector('[data-panel="panelEdit"]').classList.add('active');
+            document.getElementById('panelEdit').classList.add('active');
         }
-    });
+        editFilenameInput.addEventListener('input', () => { filenameManuallyChanged = true; });
+        editPdfFileInput.addEventListener('change', function () {
+            const f = this.files?.[0]; if (!f) return;
+            if (!filenameManuallyChanged || !editFilenameInput.value.trim() || (currentEditItem && editFilenameInput.value.trim() === currentEditItem.filename))
+                editFilenameInput.value = f.name;
+        });
 
-    bulkPdfFilesInput.addEventListener('change', renderBulkFiles);
+        /* ═══════════════════════════════════════════
+           BULK UPLOAD FILES
+        ═══════════════════════════════════════════ */
+        function getBulkFilename(idx, orig) {
+            const mode = bulkNamingSelect.value;
+            if (mode === 'custom') { const c = bulkCustomNames[idx]; if (c && c.trim()) { let n = c.trim(); if (!n.toLowerCase().endsWith('.pdf')) n += '.pdf'; return n; } return orig; }
+            if (mode === 'prefix') { const p = bulkPrefixInput.value.trim() || 'Catalog'; return `${p}-${String(idx + 1).padStart(3, '0')}.pdf`; }
+            return orig;
+        }
 
-    clearBulkBtn.addEventListener('click', function () {
-        bulkPdfFilesInput.value = '';
+        function renderBulkFiles() {
+            const files = Array.from(bulkPdfFilesInput.files || []);
+            if (!files.length) { bulkNamingMode.style.display = 'none'; bulkFileCount.textContent = 'Belum ada file dipilih'; bulkFileHint.textContent = 'Ctrl/Shift untuk pilih banyak'; bulkFileList.innerHTML = '<div class="bulk-empty">Belum ada file.</div>'; bulkCustomNames = {}; return; }
+            bulkNamingMode.style.display = 'flex'; bulkFileCount.textContent = `${files.length} file dipilih`; bulkFileHint.textContent = 'Siap upload';
+            const mode = bulkNamingSelect.value;
+            bulkFileList.innerHTML = files.map((f, i) => {
+                const dn = getBulkFilename(i, f.name); const isCustom = mode === 'custom';
+                return `<div class="bulk-file-item" data-index="${i}">
+                    <div class="bulk-file-index">${i + 1}</div>
+                    <div class="bulk-file-info">
+                        <div class="bulk-file-original" title="${escapeHtml(f.name)}">📄 ${escapeHtml(f.name)}</div>
+                        ${isCustom
+                        ? `<input type="text" class="bulk-file-rename js-bulk-rename" data-index="${i}" placeholder="Nama baru (kosong=asli)" value="${escapeHtml(bulkCustomNames[i] || '')}">`
+                        : `<div class="bulk-file-resolved">→ ${escapeHtml(dn)}</div>`}
+                    </div>
+                    <div class="bulk-file-size">${formatFileSize(f.size)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        bulkNamingSelect.addEventListener('change', function () { bulkPrefixInput.style.display = this.value === 'prefix' ? 'block' : 'none'; renderBulkFiles(); });
+        bulkPrefixInput.addEventListener('input', () => { if (bulkNamingSelect.value === 'prefix') renderBulkFiles(); });
+        document.addEventListener('input', e => { if (e.target.classList.contains('js-bulk-rename')) { bulkCustomNames[parseInt(e.target.dataset.index, 10)] = e.target.value; } });
+        bulkPdfFilesInput.addEventListener('change', () => { bulkCustomNames = {}; renderBulkFiles(); });
+        clearBulkBtn.addEventListener('click', () => { bulkPdfFilesInput.value = ''; bulkCustomNames = {}; renderBulkFiles(); });
+
+        /* ═══════════════════════════════════════════
+           TABLE ACTION DELEGATION
+        ═══════════════════════════════════════════ */
+        document.addEventListener('click', e => {
+            const qr = e.target.closest('.js-qr-btn');
+            if (qr) { openQrModal({ id: htmlDecode(qr.dataset.id), filename: htmlDecode(qr.dataset.filename), contentType: htmlDecode(qr.dataset.contentType || 'application/pdf'), url: htmlDecode(qr.dataset.url), open_in_viewer: htmlDecode(qr.dataset.viewer) }); return; }
+            const ed = e.target.closest('.js-edit-btn');
+            if (ed) { startEdit({ id: htmlDecode(ed.dataset.id), filename: htmlDecode(ed.dataset.filename) }); return; }
+            const cp = e.target.closest('.js-copy-url-btn');
+            if (cp) { copyCatalogUrl({ id: htmlDecode(cp.dataset.id), filename: htmlDecode(cp.dataset.filename), open_in_viewer: htmlDecode(cp.dataset.url) }); }
+        });
+
+        /* ═══════════════════════════════════════════
+           FORM SUBMISSIONS
+        ═══════════════════════════════════════════ */
+        document.getElementById('createForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            try {
+                const f = document.getElementById('createPdfFile').files[0]; if (!f) throw new Error('File belum dipilih');
+                const fd = new FormData(); fd.append('file', f);
+                const res = await fetch(API_BASE + '/pdf', { method: 'POST', body: fd }); await handleJsonResponse(res);
+                this.reset(); await loadCatalogs(0);
+                showToast('Catalog berhasil dibuat!', 'success');
+            } catch (e) { showError(e); }
+        });
+
+        document.getElementById('bulkForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            try {
+                const files = bulkPdfFilesInput.files; if (!files || !files.length) throw new Error('Belum ada file');
+                const fd = new FormData(); const fns = [];
+                for (let i = 0; i < files.length; i++) { fd.append('files', files[i]); fns.push(getBulkFilename(i, files[i].name)); }
+                for (const fn of fns) fd.append('filenames', fn);
+                const res = await fetch(API_BASE + '/pdf/bulk', { method: 'POST', body: fd });
+                const data = await handleJsonResponse(res);
+                showToast(`Upload selesai: ${data.success ?? 0} sukses, ${data.failed ?? 0} gagal`, data.failed > 0 ? 'warning' : 'success');
+                this.reset(); bulkCustomNames = {}; renderBulkFiles(); await loadCatalogs(0);
+            } catch (e) { showError(e); }
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            try {
+                const id = editIdInput.value.trim(), fn = editFilenameInput.value.trim(), f = editPdfFileInput.files[0];
+                if (!id) throw new Error('Pilih catalog dulu'); if (!f) throw new Error('File wajib dipilih');
+                const fd = new FormData(); fd.append('file', f); fd.append('filename', fn || f.name);
+                const res = await fetch(API_BASE + '/' + encodeURIComponent(id), { method: 'PUT', body: fd });
+                const data = await handleJsonResponse(res);
+                const latest = data?.filename || fn || f.name;
+                currentEditItem = { id, filename: latest }; editIdInput.value = id; editFilenameInput.value = latest; editPdfFileInput.value = ''; filenameManuallyChanged = false;
+                await loadCatalogs(currentPage);
+                showToast('Catalog berhasil diupdate!', 'success');
+            } catch (e) { showError(e); }
+        });
+
+        /* ═══════════════════════════════════════════
+           INIT
+        ═══════════════════════════════════════════ */
         renderBulkFiles();
-    });
+        loadCatalogs(0);
 
-    document.addEventListener('click', function (event) {
-        const qrBtn = event.target.closest('.js-qr-btn');
-        if (qrBtn) {
-            const item = {
-                id: htmlDecode(qrBtn.dataset.id || ''),
-                filename: htmlDecode(qrBtn.dataset.filename || ''),
-                contentType: htmlDecode(qrBtn.dataset.contentType || 'application/pdf'),
-                url: htmlDecode(qrBtn.dataset.url || ''),
-                open_in_viewer: htmlDecode(qrBtn.dataset.viewer || '')
-            };
-            openQrModal(item);
-            return;
-        }
-
-        const editBtn = event.target.closest('.js-edit-btn');
-        if (editBtn) {
-            const item = {
-                id: htmlDecode(editBtn.dataset.id || ''),
-                filename: htmlDecode(editBtn.dataset.filename || '')
-            };
-            startEdit(item);
-            return;
-        }
-
-        const copyBtn = event.target.closest('.js-copy-url-btn');
-        if (copyBtn) {
-            const item = {
-                id: htmlDecode(copyBtn.dataset.id || ''),
-                filename: htmlDecode(copyBtn.dataset.filename || ''),
-                open_in_viewer: htmlDecode(copyBtn.dataset.url || '')
-            };
-            copyCatalogUrl(item);
-        }
-    });
-
-    document.getElementById('createForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        try {
-            const file = document.getElementById('createPdfFile').files[0];
-            if (!file) throw new Error('File PDF belum dipilih');
-
-            const fd = new FormData();
-            fd.append('file', file);
-
-            const res = await fetch(API_BASE + '/pdf', {
-                method: 'POST',
-                body: fd
-            });
-
-            const data = await handleJsonResponse(res);
-            showResult(data);
-            this.reset();
-            await loadCatalogs(0);
-        } catch (err) {
-            showError(err);
-        }
-    });
-
-    document.getElementById('bulkForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        try {
-            const files = bulkPdfFilesInput.files;
-            if (!files || !files.length) throw new Error('Belum ada file PDF yang dipilih');
-
-            const fd = new FormData();
-            for (const file of files) {
-                fd.append('files', file);
-            }
-
-            const res = await fetch(API_BASE + '/pdf/bulk', {
-                method: 'POST',
-                body: fd
-            });
-
-            const data = await handleJsonResponse(res);
-            showResult(data);
-            this.reset();
-            renderBulkFiles();
-            await loadCatalogs(0);
-        } catch (err) {
-            showError(err);
-        }
-    });
-
-    document.getElementById('editForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        try {
-            const id = editIdInput.value.trim();
-            const filename = editFilenameInput.value.trim();
-            const file = editPdfFileInput.files[0];
-
-            if (!id) throw new Error('Pilih catalog dari list dulu');
-            if (!file) throw new Error('File PDF baru wajib dipilih');
-
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('filename', filename || file.name);
-
-            const res = await fetch(API_BASE + '/' + encodeURIComponent(id), {
-                method: 'PUT',
-                body: fd
-            });
-
-            const data = await handleJsonResponse(res);
-            const latestFilename = data?.filename || filename || file.name;
-
-            currentEditItem = { id, filename: latestFilename };
-            editIdInput.value = id;
-            editFilenameInput.value = latestFilename;
-            editPdfFileInput.value = '';
-            filenameManuallyChanged = false;
-
-            showResult({
-                ...data,
-                pdf_preview_url: withCacheBuster(API_BASE + '/pdf/' + id),
-                viewer_preview_url: withCacheBuster('/catalogue?id=' + id)
-            });
-
-            await loadCatalogs(currentPage);
-        } catch (err) {
-            showError(err);
-        }
-    });
-
-    renderBulkFiles();
-    loadCatalogs(0);
+    })();
 </script>
-
 </body>
 </html>

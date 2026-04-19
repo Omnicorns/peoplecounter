@@ -1,6 +1,7 @@
 package com.sarinah.peoplecounter.controller;
 
 import com.sarinah.peoplecounter.entity.PdfDocs;
+import com.sarinah.peoplecounter.projection.PdfDocSummary;
 import com.sarinah.peoplecounter.repository.PdfDocRepository;
 import com.sarinah.peoplecounter.service.UserImportService;
 
@@ -105,12 +106,14 @@ public class UserImportApi {
 
     // ====== sesuai schema kamu (tanpa ubah tabel) ======
     @PostMapping(value = "/pdf/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Map<String, Object> uploadBulk(@RequestPart("files") List<MultipartFile> files) {
+    public Map<String, Object> uploadBulk(
+            @RequestPart("files") List<MultipartFile> files,
+            @RequestParam(value = "filenames", required = false) List<String> filenames) {
+
         if (files == null || files.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tidak ada file yang diunggah");
         }
 
-        // Batas wajar biar nggak kebablasan (opsional)
         if (files.size() > 100) {
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Maksimum 100 file per unggahan");
         }
@@ -120,14 +123,24 @@ public class UserImportApi {
 
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            String fname = file != null ? file.getOriginalFilename() : null;
+            String originalName = file != null ? file.getOriginalFilename() : null;
+
+            // Resolve filename: custom name dari frontend, atau fallback ke nama asli
+            String fname;
+            if (filenames != null && i < filenames.size()
+                    && filenames.get(i) != null && !filenames.get(i).isBlank()) {
+                fname = filenames.get(i).trim();
+                if (!fname.toLowerCase().endsWith(".pdf")) {
+                    fname += ".pdf";
+                }
+            } else {
+                fname = originalName;
+            }
 
             try {
-                // Validasi dasar
                 if (file == null || file.isEmpty()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File kosong: " + fname);
                 }
-                // Beberapa browser kadang kirim application/octet-stream — cek magic header %PDF juga
                 if (!isPdf(file)) {
                     throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                             "Bukan PDF: " + fname);
@@ -177,11 +190,12 @@ public class UserImportApi {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
-        Page<PdfDocs> result;
+        // Pakai projection yang TIDAK select kolom data
+        Page<PdfDocSummary> result;
         if (q != null && !q.isBlank()) {
-            result = pdfDocRepository.findByFilenameContainingIgnoreCase(q.trim(), pageable);
+            result = pdfDocRepository.searchByFilename(q.trim(), pageable);
         } else {
-            result = pdfDocRepository.findAll(pageable);
+            result = pdfDocRepository.findAllSummary(pageable);
         }
 
         List<Map<String, Object>> items = result.getContent().stream()
