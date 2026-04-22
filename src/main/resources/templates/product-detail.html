@@ -7,6 +7,9 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- ZXing library (UMD) — handle EAN/UPC/CODE128/CODE39/QR, jalan di Safari iOS 14+ -->
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
+
     <style>
         :root{--bg:#f5f7fb;--ink:#0b1220;--muted:#667085;--ring:#e6e8ee;--card:#ffffff;--pri:#2DB36D;--pri-2:#229957;--pri-3:#157248;--chip:#eef2f6;--chip-tx:#0b1220;--surface:#0b1220;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px;--table-stripe:#fafbfc;--ok-bg:#dcfce7;--ok-br:#86efac;--ok-tx:#065f46;--ring-focus:0 0 0 3px rgba(45,179,109,.25)}
 
@@ -96,7 +99,7 @@
         .cam-ft{position:sticky;bottom:0;z-index:1;display:flex;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--ring);background:inherit;flex-wrap:wrap}
         .btn-lite{padding:8px 12px;border:1px solid var(--ring);background:#fff;border-radius:10px;cursor:pointer;font-weight:800}
         .btn-danger{background:#ef4444;color:#fff;border:0}.btn-ok{background:var(--pri);color:#fff;border:0}
-        .note{font-size:12px;color:#muted;margin-top:8px}.hide{display:none!important}
+        .note{font-size:12px;color:var(--muted);margin-top:8px}.hide{display:none!important}
         .warn{margin-top:8px;padding:8px 10px;border:1px solid #f59e0b;background:#fffbeb;border-radius:10px;color:#92400e;font-weight:700}
 
         /* layout dua kolom detail produk */
@@ -119,7 +122,7 @@
         .promo-more[open]{ background:#fff; border-style:solid; }
         .promo-more .promo-list{ margin-top:10px; }
 
-        /* ==== Header responsif (perbaikan) ==== */
+        /* ==== Header responsif ==== */
         .appbar{ position: sticky; top: 0; z-index: 50; color:#fff; background: linear-gradient(180deg,#0b1220 0%,#101a32 100%); border-bottom:1px solid rgba(255,255,255,.06); }
         .appbar-inner{ max-width:1100px; margin:0 auto; padding: calc(10px + env(safe-area-inset-top,0px)) 16px 10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
         .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; }
@@ -135,17 +138,15 @@
         .btn-ghost:hover{ background:rgba(255,255,255,.12); }
         @media (max-width:360px){ .appbar-inner{ padding: calc(8px + env(safe-area-inset-top,0px)) 12px 8px; gap:8px; } .btn-ghost{ padding:6px 10px; } }
 
-
-
         /* ===== MOBILE SWITCHER ===== */
-    .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
-    @media (min-width:720px){.mobile-switch-wrap{display:none}}
-    .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
-    .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
-    .segbtn:hover{filter:brightness(1.02)}
-    .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
-    :root{--appbarH:56px}
-    @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
+        .mobile-switch-wrap{display:block;background:#fff;border-bottom:1px solid var(--ring)}
+        @media (min-width:720px){.mobile-switch-wrap{display:none}}
+        .mobile-switch{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:8px}
+        .segbtn{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ring);background:#fff;color:#0b1220;border-radius:999px;font-weight:800;text-align:center;cursor:pointer;user-select:none}
+        .segbtn:hover{filter:brightness(1.02)}
+        .segbtn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+        :root{--appbarH:56px}
+        @media (max-width:720px){.mobile-switch-wrap.sticky{position:sticky;top:var(--appbarH);z-index:45}}
     </style>
 </head>
 <body>
@@ -355,10 +356,11 @@
           currentDeviceId = track.getSettings().deviceId || preferredDeviceId || null;
           try{
             const caps=track.getCapabilities?.()||{};
-            torchBtn&&(torchBtn.disabled = !(caps.torch || caps.torch !== undefined));
+            torchBtn && (torchBtn.disabled = !caps.torch);
           }catch(_){ torchBtn&&(torchBtn.disabled=true); }
           return true;
         }catch(err){
+          console.warn('[camera] start error:', err);
           if (isSafari){
             try{
               stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
@@ -382,7 +384,7 @@
       function stopCamera(){
         if(stream){ stream.getTracks().forEach(t=>{ try{ t.stop(); t.enabled=false; }catch(_){ } }); stream=null; }
         torchOn=false; if(torchBtn){ torchBtn.textContent='Nyalakan Lampu'; torchBtn.disabled=true; }
-        stopNativeLoop(); stopFallback();
+        stopDecoding();
       }
       async function toggleTorch(){
         if(!stream) return; const track=stream.getVideoTracks()[0];
@@ -396,195 +398,94 @@
         const ok=await startCamera(devices[idx].deviceId); if(ok) startDecoding();
       }
 
-      // ======== BarcodeDetector (Native) vs Fallback ========
-      let nativeDetector=null, nativeLoop=false;
-      async function tryNativeDetector(){
-        if(!('BarcodeDetector' in window)) return false;
-        try{
-          const supported = (await BarcodeDetector.getSupportedFormats?.()) || [];
-          const needFormats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'];
-          const supportsLinear = needFormats.some(f => supported.includes(f));
-          if(!supportsLinear) return false;
-          nativeDetector = new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
-          return true;
-        }catch(_){ return false; }
-      }
-      function startNativeLoop(){
-        if(!nativeDetector) return;
-        nativeLoop=true;
-        const tick=()=>{
-          if(!nativeLoop) return;
-          if(videoEl.readyState>=2){
-            nativeDetector.detect(videoEl).then(codes=>{
-              if(codes&&codes.length){ const raw=codes[0].rawValue||''; if(raw){ onScan(raw); return; } }
-              if(nativeLoop) requestAnimationFrame(tick);
-            }).catch(()=>{ if(nativeLoop) requestAnimationFrame(tick); });
-          } else { if(nativeLoop) requestAnimationFrame(tick); }
-        };
-        requestAnimationFrame(tick);
-      }
-      function stopNativeLoop(){ nativeLoop=false; }
+      // ======== ZXing Decoder ========
+      let zxingReader = null;
+      let zxingControls = null;
 
-      // ======== Fallback decoder (EAN/UPC + CODE128) ========
-      const canvas=document.createElement('canvas');
-      const ctx=canvas.getContext('2d',{willReadFrequently:true});
-      let fbActive=false, fbTimer=null;
+      function getZXing(){
+        return window.ZXingBrowser || window.ZXing || null;
+      }
 
-      function stopFallback(){
-        fbActive=false;
-        if(fbTimer){
-          if(typeof fbTimer==='number') cancelAnimationFrame(fbTimer);
-          else if(videoEl && videoEl.cancelVideoFrameCallback) videoEl.cancelVideoFrameCallback(fbTimer);
-          fbTimer=null;
+      async function startDecoding(){
+        stopDecoding();
+        const ZX = getZXing();
+        if (!ZX) {
+          noteEl && (noteEl.textContent = 'Library scanner gagal dimuat. Coba refresh halaman.');
+          console.warn('[zxing] library not found on window');
+          return;
+        }
+
+        // Hints: batasi format yang umum dipakai retail
+        let hints = null;
+        try {
+          const BF = ZX.BarcodeFormat;
+          const DH = ZX.DecodeHintType;
+          if (BF && DH) {
+            hints = new Map();
+            hints.set(DH.POSSIBLE_FORMATS, [
+              BF.EAN_13, BF.EAN_8, BF.UPC_A, BF.UPC_E,
+              BF.CODE_128, BF.CODE_39, BF.ITF, BF.QR_CODE
+            ]);
+            hints.set(DH.TRY_HARDER, true);
+          }
+        } catch(_){ hints = null; }
+
+        try {
+          try {
+            zxingReader = new ZX.BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
+          } catch(_) {
+            zxingReader = new ZX.BrowserMultiFormatReader();
+          }
+
+          // Preferred: continuous decode dari video element yang stream-nya sudah aktif
+          if (typeof zxingReader.decodeFromVideoElementContinuously === 'function') {
+            zxingReader.decodeFromVideoElementContinuously(videoEl, (result, err) => {
+              if (result) {
+                const text = (result.getText && result.getText()) || result.text || String(result);
+                if (text) onScan(text);
+              }
+            });
+          } else if (typeof zxingReader.decodeFromVideoElement === 'function') {
+            // Fallback nama method di versi lain
+            zxingReader.decodeFromVideoElement(videoEl, (result) => {
+              if (result) {
+                const text = (result.getText && result.getText()) || result.text || '';
+                if (text) onScan(text);
+              }
+            });
+          } else if (typeof zxingReader.decodeFromVideoDevice === 'function') {
+            // Last resort: minta stream sendiri pakai deviceId
+            zxingControls = await zxingReader.decodeFromVideoDevice(
+              currentDeviceId || undefined, videoEl,
+              (result) => {
+                if (result) {
+                  const text = (result.getText && result.getText()) || result.text || '';
+                  if (text) onScan(text);
+                }
+              }
+            );
+          } else {
+            throw new Error('ZXing reader tidak punya method decode yang cocok');
+          }
+        } catch(e) {
+          console.warn('[zxing] start error:', e);
+          noteEl && (noteEl.textContent = 'Gagal memulai scanner: ' + (e.message || e));
         }
       }
-      function getROIFor(video){
-        const vw=video.videoWidth, vh=video.videoHeight;
-        const sw=Math.floor(vw*.82), sh=Math.floor(vh*.48);
-        const sx=Math.floor((vw-sw)/2), sy=Math.floor((vh-sh)/2);
-        return {sx,sy,sw,sh};
-      }
-      function rowThreshold(data,offset,w){
-        const hist=new Uint16Array(256);
-        for(let x=0;x<w;x++){ const i=offset+x*4; const Y=(data[i]*.2126+data[i+1]*.7152+data[i+2]*.0722)|0; hist[Y]++; }
-        let sum=0,total=0; for(let i=0;i<256;i++){sum+=i*hist[i]; total+=hist[i];}
-        let sumB=0,wB=0,max=0,thr=127;
-        for(let t=0;t<256;t++){
-          wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break;
-          sumB+=t*hist[t]; const mB=sumB/wB, mF=(sum-sumB)/wF;
-          const between=wB*wF*(mB-mF)*(mB-mF);
-          if(between>max){max=between;thr=t;}
-        }
-        return thr;
-      }
-      function startFallback(){
-        fbActive=true;
-        const useRVFC='requestVideoFrameCallback'in HTMLVideoElement.prototype;
-        const step=()=>{
-          if(!fbActive||!videoEl||videoEl.readyState<2){
-            fbTimer=useRVFC?videoEl.requestVideoFrameCallback(()=>step()):requestAnimationFrame(step); return;
+
+      function stopDecoding(){
+        try {
+          if (zxingControls && typeof zxingControls.stop === 'function') zxingControls.stop();
+        } catch(_){}
+        try {
+          if (zxingReader) {
+            if (typeof zxingReader.reset === 'function') zxingReader.reset();
+            else if (typeof zxingReader.stopContinuousDecode === 'function') zxingReader.stopContinuousDecode();
+            else if (typeof zxingReader.stopAsyncDecode === 'function') zxingReader.stopAsyncDecode();
           }
-          const {sx,sy,sw,sh}=getROIFor(videoEl);
-          const scale=Math.min(1600/sw,1.8);
-          const cw=Math.floor(sw*scale), ch=Math.floor(sh*scale);
-          canvas.width=cw; canvas.height=ch; ctx.imageSmoothingEnabled=false;
-          ctx.drawImage(videoEl,sx,sy,sw,sh,0,0,cw,ch);
-          const img=ctx.getImageData(0,0,cw,ch), d=img.data;
-
-          const ys=[]; const y0=Math.floor(ch*.35), y1=Math.floor(ch*.65);
-          for(let y=y0;y<=y1;y+=1) ys.push(y);
-
-          for(const y of ys){
-            const off=y*cw*4, thr=rowThreshold(d,off,cw);
-            const bits=new Uint8Array(cw);
-            for(let x=0;x<cw;x++){ const i=off+x*4; const Y=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)|0; bits[x]=(Y<thr)?1:0; }
-
-            const e13=decodeEAN(bits)||decodeEAN(bits.slice().reverse());
-            const upc=e13?decodeUPCA(e13):null;
-            const e8=e13?null:(decodeEAN8(bits)||decodeEAN8(bits.slice().reverse()));
-            const resEAN = e13||upc||e8;
-            if(resEAN){ onScan(resEAN); return; }
-
-            const c128 = decodeCode128(bits) || decodeCode128(bits.slice().reverse());
-            if(c128){ onScan(c128); return; }
-          }
-          fbTimer=useRVFC?videoEl.requestVideoFrameCallback(()=>step()):requestAnimationFrame(step);
-        };
-        step();
-      }
-
-      function RLE(bits){ const rl=[]; let cur=bits[0],cnt=1; for(let i=1;i<bits.length;i++){ if(bits[i]===cur) cnt++; else{ rl.push(cnt); cur=bits[i]; cnt=1; } } rl.push(cnt); return rl; }
-      function norm(run,mods){ const sum=run.reduce((a,b)=>a+b,0); if(!sum) return null; const s=mods/sum,out=run.map(v=>Math.max(1,Math.round(v*s))); return out; }
-
-      const L={'0001101':0,'0011001':1,'0010011':2,'0111101':3,'0100011':4,'0110001':5,'0101111':6,'0111011':7,'0110111':8,'0001011':9};
-      const G={'0100111':0,'0110011':1,'0011011':2,'0100001':3,'0011101':4,'0111001':5,'0000101':6,'0010001':7,'0001001':8,'0010111':9};
-      const Rm={'1110010':0,'1100110':1,'1101100':2,'1000010':3,'1011100':4,'1001110':5,'1010000':6,'1000100':7,'1001000':8,'1110100':9};
-      const PAR=['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
-
-      function decodeEAN(bits){
-        const rl=RLE(bits); if(bits[0]===0) rl.shift();
-        for(let s=0;s<Math.max(0,rl.length-59);s++){
-          const slice=rl.slice(s,s+59), nm=norm(slice,95); if(!nm) continue;
-          const m=[]; let c=1; for(let i=0;i<nm.length;i++){ for(let k=0;k<nm[i];k++) m.push(c); c=1-c; }
-          if(m.length!==95) continue;
-          const okS=m[0]===1&&m[1]===0&&m[2]===1, okM=m[45]===0&&m[46]===1&&m[47]===0&&m[48]===1&&m[49]===0, okE=m[92]===1&&m[93]===0&&m[94]===1;
-          if(!(okS&&okM&&okE)) continue;
-          const r7=i=>{ let s=''; for(let k=0;k<7;k++) s+=m[i+k]?'1':'0'; return s; }
-          const Lb=[r7(3),r7(10),r7(17),r7(24),r7(31),r7(38)], Rb=[r7(50),r7(57),r7(64),r7(71),r7(78),r7(85)];
-          let par='',left=[]; for(let i=0;i<6;i++){ const b=Lb[i]; if(L[b]!=null){ left.push(L[b]); par+='L'; } else if(G[b]!=null){ left.push(G[b]); par+='G'; } else { par='?'; break; } }
-          if(par==='?') continue;
-          const first=PAR.indexOf(par); if(first<0) continue;
-          const right=[]; for(let i=0;i<6;i++){ const b=Rb[i]; if(Rm[b]==null){ par='?'; break; } right.push(Rm[b]); }
-          if(par==='?') continue;
-          const d=[first,...left,...right];
-          let sum=0; for(let i=0;i<12;i++) sum += (i%2===0? d[i] : d[i]*3);
-          const chk=(10-(sum%10))%10; if(chk!==d[12]) continue;
-          return d.join('');
-        } return null;
-      }
-      function decodeEAN8(bits){
-        const rl=RLE(bits); if(bits[0]===0) rl.shift();
-        for(let s=0;s<Math.max(0,rl.length-43);s++){
-          const slice=rl.slice(s,s+43), nm=norm(slice,67); if(!nm) continue;
-          const m=[]; let c=1; for(let i=0;i<nm.length;i++){ for(let k=0;k<nm[i];k++) m.push(c); c=1-c; }
-          if(m.length!==67) continue;
-          const okS=m[0]===1&&m[1]===0&&m[2]===1, okM=m[31]===0&&m[32]===1&&m[33]===0&&m[34]===1&&m[35]===0, okE=m[64]===1&&m[65]===0&&m[66]===1;
-          if(!(okS&&okM&&okE)) continue;
-          const r7=i=>{ let s=''; for(let k=0;k<7;k++) s+=m[i+k]?'1':'0'; return s; }
-          const Lb=[r7(3),r7(10),r7(17),r7(24)], Rb=[r7(36),r7(43),r7(50),r7(57)];
-          const left=[]; for(const b of Lb){ if(L[b]!=null) left.push(L[b]); else if(G[b]!=null) left.push(G[b]); else { left.length=0; break; } }
-          if(!left.length) continue;
-          const right=[]; for(const b of Rb){ if(Rm[b]!=null) right.push(Rm[b]); else { right.length=0; break; } }
-          if(!right.length) continue;
-          const d=[...left,...right];
-          let sum=0; for(let i=0;i<7;i++) sum += (i%2===0? d[i]*3 : d[i]);
-          const chk=(10-(sum%10))%10; if(chk!==d[7]) continue;
-          return d.join('');
-        } return null;
-      }
-      function decodeUPCA(e13){ return (e13 && e13.length===13 && e13[0]==='0') ? e13.slice(1) : null; }
-
-      const CODE128_PATTERNS = [/* dipotong di sini untuk singkat: pakai daftar aslimu */];
-
-      const START_A=103, START_B=104, START_C=105, STOP=106;
-      const CODE128_CODEB = (()=>{ const a=[]; for(let i=0;i<=95;i++) a[i]=String.fromCharCode(32+i);
-        a[96]='FNC3'; a[97]='FNC2'; a[98]='SHIFT'; a[99]='CODE_C'; a[100]='CODE_B'; a[101]='CODE_A'; a[102]='FNC1';
-        a[103]='START_A'; a[104]='START_B'; a[105]='START_C'; return a; })();
-      function matchSymbol(run6){ const nm = norm(run6,11); if(!nm) return -1; let best=-1, bestErr=1e9;
-        for(let i=0;i<CODE128_PATTERNS.length;i++){ const pat=CODE128_PATTERNS[i]; let err=0; for(let k=0;k<6;k++){ const diff=nm[k]-pat[k]; err += diff*diff; } if(err<bestErr){ bestErr=err; best=i; } }
-        return bestErr<8 ? best : -1;
-      }
-      function decodeCode128(bits){
-        if(bits[0]===0){ bits = bits.slice(1); }
-        const rl=RLE(bits);
-        for(let s=0; s+11 < rl.length; s+=2){
-          const codeStart = matchSymbol(rl.slice(s, s+6));
-          if(codeStart===START_B || codeStart===START_A || codeStart===START_C){
-            let idx=s+6, codes=[codeStart];
-            while(idx+5<rl.length){
-              const c=matchSymbol(rl.slice(idx,idx+6));
-              if(c<0) break; codes.push(c); idx+=6; if(c===STOP) break;
-            }
-            if(codes[codes.length-1]!==STOP) continue;
-            let startVal = codeStart;
-            let chkCalc = (startVal===START_A?103:startVal===START_B?104:105), pos=1;
-            for(let i=1;i<codes.length-2;i++){ chkCalc += codes[i]*pos; pos++; }
-            chkCalc%=103; const chkCode=codes[codes.length-2]; if(chkCalc!==chkCode) continue;
-            let set=(startVal===START_A?'A':startVal===START_B?'B':'C'); const out=[];
-            for(let i=1;i<codes.length-2;i++){
-              const c=codes[i];
-              if(c===100){ set='B'; continue; }
-              if(c===101){ set='A'; continue; }
-              if(c===99){ set='C'; continue; }
-              if(c===98||c===102||c===97||c===96){ continue; }
-              if(set==='B'){ if(c>=0 && c<=95) out.push(CODE128_CODEB[c]); }
-              else if(set==='C'){ if(c>=0 && c<=99) out.push((c<10?'0':'')+String(c)); }
-              else { if(c>=0 && c<=95){ const ch=String.fromCharCode((c<64)?(c+32):(c-64)); out.push(ch); } }
-            }
-            const txt=out.join('').trim(); if(txt) return txt;
-          }
-        }
-        return null;
+        } catch(_){}
+        zxingControls = null;
+        zxingReader = null;
       }
 
       function onScan(text){
@@ -592,50 +493,44 @@
         closeCam();
       }
 
-      async function startDecoding(){
-        if(!videoEl||videoEl.readyState<2){
-          await new Promise(res=>{
-            const t=setInterval(()=>{ if(videoEl.readyState>=2){ clearInterval(t); res(); } },50);
-          });
-        }
-        const hasNative=await tryNativeDetector();
-        if(hasNative) startNativeLoop(); else startFallback();
-      }
       function closeCam(){
         backdrop?.classList.remove('show');
         document.body.classList.remove('scroll-lock');
         modalOpen=false;
-        stopNativeLoop(); stopFallback(); stopCamera();
+        stopDecoding(); stopCamera();
       }
 
-      // ==== Foto fallback (gambar) ====
+      // ==== Foto fallback (pakai ZXing juga) ====
       photoBtn?.addEventListener('click',()=>photoInput.click());
-      photoInput?.addEventListener('change',async(e)=>{
-        const file=e.target.files&&e.target.files[0]; if(!file) return;
-        try{
-          const bmp=('createImageBitmap'in window)?await createImageBitmap(file):await fileToImg(file);
-          const code=await decodeFromImageBitmap(bmp);
-          if(code) onScan(code); else alert('Barcode tidak terdeteksi dari foto. Coba ulangi.');
-        }catch(_){ alert('Gagal membaca gambar.'); }
-        finally{ photoInput.value=''; }
-      });
-      function fileToImg(file){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=URL.createObjectURL(file); }); }
-      async function decodeFromImageBitmap(img){
-        const maxW=1600,w=Math.min(maxW,img.width||maxW),h=Math.round(w*(img.height||maxW)/(img.width||maxW));
-        canvas.width=w; canvas.height=h; ctx.drawImage(img,0,0,w,h);
-        const id=ctx.getImageData(0,0,w,h), d=id.data;
-        const y0=Math.floor(h*.35), y1=Math.floor(h*.65);
-        for(let y=y0;y<=y1;y+=2){
-          const off=y*w*4, thr=rowThreshold(d,off,w);
-          const bits=new Uint8Array(w);
-          for(let x=0;x<w;x++){ const i=off+x*4; const Y=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)|0; bits[x]=(Y<thr)?1:0; }
-          const e13=decodeEAN(bits)||decodeEAN(bits.slice().reverse());
-          const upc=e13?decodeUPCA(e13):null;
-          const e8=e13?null:(decodeEAN8(bits)||decodeEAN8(bits.slice().reverse()));
-          const c128=decodeCode128(bits)||decodeCode128(bits.slice().reverse());
-          const res=e13||upc||e8||c128; if(res) return res;
+      photoInput?.addEventListener('change', async (e)=>{
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          const ZX = getZXing();
+          if (!ZX) { alert('Library scanner belum dimuat.'); return; }
+          const reader = new ZX.BrowserMultiFormatReader();
+          const imgEl = await fileToImg(file);
+          try {
+            const result = await reader.decodeFromImageElement(imgEl);
+            const text = (result && (result.getText ? result.getText() : result.text)) || '';
+            if (text) onScan(text);
+            else alert('Barcode tidak terdeteksi dari foto. Coba ulangi.');
+          } catch(err) {
+            alert('Barcode tidak terdeteksi dari foto. Coba ulangi.');
+          }
+        } catch(_) {
+          alert('Gagal membaca gambar.');
+        } finally {
+          photoInput.value = '';
         }
-        return null;
+      });
+      function fileToImg(file){
+        return new Promise((res,rej)=>{
+          const img=new Image();
+          img.onload=()=>res(img);
+          img.onerror=rej;
+          img.src=URL.createObjectURL(file);
+        });
       }
 
       // ====== Open/Close Modal & events ======
@@ -655,7 +550,8 @@
           const back=devices.find(d=>/back|rear|environment/i.test(d.label));
           const ok=await startCamera(currentDeviceId||(back&&back.deviceId));
           if(ok) await startDecoding(); else throw new Error('Failed to start camera');
-        }catch(_){
+        }catch(e){
+          console.warn('[camera] open failed:', e);
           alert('Kamera tidak dapat diaktifkan di browser ini.');
           closeCam();
         }
@@ -668,7 +564,7 @@
       document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&backdrop?.classList.contains('show')) closeCam(); });
       document.addEventListener('visibilitychange', async ()=>{
         if(!modalOpen) return;
-        if(document.visibilityState==='hidden'){ stopNativeLoop(); stopFallback(); }
+        if(document.visibilityState==='hidden'){ stopDecoding(); }
         else { try{ await startCamera(currentDeviceId); await startDecoding(); }catch(_){ } }
       });
 
