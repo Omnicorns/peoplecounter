@@ -101,6 +101,17 @@ public class AddTaskFileProcessor implements Processor {
 
             if (existing.isPresent()) {
                 PeopleCount entity = existing.get();
+
+                if (entity.getInCount().compareTo(totalIn) >= 0
+                        && entity.getOutCount().compareTo(totalOut) >= 0
+                        && entity.getAvgCount().compareTo(totalAvg) >= 0) {
+                    log.info("⏭️  SKIPPED: {} - {} (existing in={}, out={}, avg={} >= new in={}, out={}, avg={})",
+                            date, location,
+                            entity.getInCount(), entity.getOutCount(), entity.getAvgCount(),
+                            totalIn, totalOut, totalAvg);
+                    return; // atau continue; tergantung ini di dalam loop atau method
+                }
+
                 entity.setInCount(totalIn);
                 entity.setOutCount(totalOut);
                 entity.setAvgCount(totalAvg);
