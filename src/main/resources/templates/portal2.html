@@ -17,13 +17,13 @@
             height: 100%;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            background: #008ee8;
+            background: #111;
         }
 
         /*
            PAGE FULL SCREEN
-           Tidak pakai background-size: cover lagi,
-           karena cover bikin gambar kepotong.
+           Background biru diganti jadi gambar utama yang dibuat blur.
+           Gambar utama tetap tampil contain supaya tidak kepotong.
         */
         .village-page {
             position: relative;
@@ -31,10 +31,50 @@
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
-            background: #008ee8;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: #111;
+        }
+
+        /*
+           BACKGROUND BLUR LANDSCAPE
+           Ini mengisi area kosong di belakang gambar utama.
+        */
+        .village-page::before {
+            content: "";
+            position: absolute;
+            inset: -40px;
+            z-index: 0;
+            background-image: url('/template.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            filter: blur(26px);
+            transform: scale(1.08);
+            opacity: 0.9;
+        }
+
+        /*
+           Overlay tipis supaya background blur tidak terlalu ramai.
+        */
+        .village-page::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: rgba(0, 0, 0, 0.16);
+            pointer-events: none;
+        }
+
+        /*
+           PORTRAIT pakai template1.png sebagai background blur.
+        */
+        @media (orientation: portrait) {
+            .village-page::before {
+                background-image: url('/template1.png');
+                background-position: center center;
+            }
         }
 
         /*
@@ -43,6 +83,7 @@
         */
         .village-image-wrap {
             position: relative;
+            z-index: 1;
             display: inline-block;
             line-height: 0;
             max-width: 100vw;
@@ -86,8 +127,7 @@
 
         /*
            Hotspot transparan.
-           Posisi sekarang relatif ke gambar asli,
-           bukan relatif ke layar.
+           Posisi relatif ke gambar asli.
         */
         .hotspot {
             position: absolute;
