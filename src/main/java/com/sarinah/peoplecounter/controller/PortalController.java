@@ -36,7 +36,7 @@ import java.security.cert.X509Certificate;
 @RequiredArgsConstructor
 public class PortalController {
 
-    @GetMapping("/portal")
+    @GetMapping("/townhall")
    public String loginPage(Model model) {
         return "portal2";
     }

@@ -6,12 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        html,
-        body {
+        html, body {
             margin: 0;
             width: 100%;
             height: 100%;
@@ -20,197 +17,123 @@
             background: #008ee8;
         }
 
+        /* gambar PENUH LAYAR (cover): tidak ada celah, tepi boleh sedikit terpotong */
         .village-page {
             position: relative;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background: #008ee8;
+            background-color: #008ee8;
+            background-image: url('/template.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
         }
 
-        .village-image {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover;
-            object-position: center center;
-            user-select: none;
-            -webkit-user-drag: none;
-            cursor: default;
+        @media (orientation: portrait) {
+            .village-page {
+                background-image: url('/template1.png');
+            }
+        }
+
+        /* hotspot = area klik transparan, TANPA lingkaran / efek hover */
+        .hotspot {
+            position: absolute;
+            z-index: 10;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            padding: 0;
+            outline: none;
+        }
+        .hotspot:active { transform: translate(-50%, -50%) scale(0.96); }
+
+        /* ===== posisi hotspot: LANDSCAPE (template.png) ===== */
+        .hotspot-hc        { left: 25%; top: 53%; width: 9%;  height: 16%; }
+        .hotspot-marketing { left: 40%; top: 67%; width: 9%;  height: 16%; }
+        .hotspot-it        { left: 75%; top: 52%; width: 9%;  height: 16%; }
+
+        /* ===== posisi hotspot: PORTRAIT (template1.png) ===== */
+        @media (orientation: portrait) {
+            .hotspot-hc        { left: 13%; top: 51%; width: 22%; height: 14%; }
+            .hotspot-it        { left: 84%; top: 53%; width: 22%; height: 14%; }
+            .hotspot-marketing { left: 53%; top: 78%; width: 28%; height: 15%; }
         }
 
         .debug-box {
             position: fixed;
-            left: 16px;
-            bottom: 16px;
+            left: 16px; bottom: 16px;
             z-index: 99;
             padding: 10px 14px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #ffffff;
+            background: rgba(0, 0, 0, 0.72);
+            color: white;
             font-size: 12px;
             display: none;
         }
+        .debug-on .debug-box { display: block; }
 
-        .back-btn {
-            position: fixed;
-            left: 20px;
-            top: 20px;
-            z-index: 20;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.4);
-            background: rgba(0, 84, 170, 0.55);
-            color: white;
-            font-size: 34px;
-            font-weight: bold;
-            cursor: pointer;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-        }
-
-        .back-btn:hover {
-            background: rgba(0, 84, 170, 0.85);
-        }
+        /* saat debug ON, hotspot diberi garis bantu agar mudah dipaskan */
+        .debug-on .hotspot { outline: 2px dashed rgba(255,255,255,.9); background: rgba(255,255,255,.12); }
     </style>
 </head>
 
 <body>
 
-<div class="village-page">
+<div id="villagePage" class="village-page">
 
+    <button type="button"
+            class="hotspot hotspot-hc"
+            onclick="pindahBooth('hc')"
+            onmousemove="debugPosisi(event, 'HC')"
+            aria-label="Masuk Booth HC"></button>
 
+    <button type="button"
+            class="hotspot hotspot-marketing"
+            onclick="pindahBooth('marketing')"
+            onmousemove="debugPosisi(event, 'Marketing')"
+            aria-label="Masuk Booth Marketing"></button>
 
-    <img
-            id="villageImage"
-            class="village-image"
-            th:src="@{/template.png}"
-            src="/template.png"
-            alt="Sarinah Village"
-            onclick="klikBooth(event)"
-            onmousemove="ubahCursorBooth(event)"
-            onmouseleave="resetCursor()"
-    >
+    <button type="button"
+            class="hotspot hotspot-it"
+            onclick="pindahBooth('it')"
+            onmousemove="debugPosisi(event, 'IT')"
+            aria-label="Masuk Booth IT"></button>
 
     <div id="debugBox" class="debug-box"></div>
 
 </div>
 
 <script th:inline="javascript">
+    /* Ubah jadi true untuk memaskan posisi hotspot, lalu kembalikan ke false. */
     const DEBUG_MODE = false;
 
+    /* URL booth → /booth/hc , /booth/marketing , /booth/it */
     const boothBaseUrl = /*[[@{/booth/}]]*/ "/booth/";
 
-    /*
-        Posisi area klik berdasarkan gambar landscape yang kamu pakai.
-
-        HC        = marker ungu kiri
-        Marketing = marker orange bawah tengah
-        IT        = marker biru kanan
-
-        Kalau posisi kurang pas:
-        ubah angka minX, maxX, minY, maxY.
-    */
-    const AREA_BOOTHS = [
-        {
-            kode: "hc",
-            nama: "HC",
-            minX: 16,
-            maxX: 29,
-            minY: 41,
-            maxY: 67
-        },
-        {
-            kode: "marketing",
-            nama: "Marketing",
-            minX: 34,
-            maxX: 48,
-            minY: 52,
-            maxY: 77
-        },
-        {
-            kode: "it",
-            nama: "IT",
-            minX: 70,
-            maxX: 86,
-            minY: 38,
-            maxY: 64
-        }
-    ];
-
-    function klikBooth(event) {
-        const posisi = ambilPosisiPersen(event);
-        const booth = cariBooth(posisi.x, posisi.y);
-
-        tampilkanDebug(posisi.x, posisi.y, booth);
-
-        if (booth) {
-            pindahBooth(booth.kode);
-            return;
-        }
-
-        alert("Klik marker HC, IT, atau Marketing.");
-    }
+    if (DEBUG_MODE) document.body.classList.add("debug-on");
 
     function pindahBooth(kodeBooth) {
         window.location.href = boothBaseUrl + kodeBooth;
     }
 
-    function ubahCursorBooth(event) {
-        const img = event.currentTarget;
-        const posisi = ambilPosisiPersen(event);
-        const booth = cariBooth(posisi.x, posisi.y);
-
-        if (booth) {
-            img.style.cursor = "pointer";
-            img.title = "Masuk Booth " + booth.nama;
-        } else {
-            img.style.cursor = "default";
-            img.title = "";
-        }
-    }
-
-    function resetCursor() {
-        const img = document.getElementById("villageImage");
-        img.style.cursor = "default";
-        img.title = "";
-    }
-
-    function ambilPosisiPersen(event) {
-        const img = event.currentTarget;
-        const rect = img.getBoundingClientRect();
-
+    function debugPosisi(event, namaBooth) {
+        if (!DEBUG_MODE) return;
+        const page = document.getElementById("villagePage");
+        const debugBox = document.getElementById("debugBox");
+        const rect = page.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * 100;
         const y = ((event.clientY - rect.top) / rect.height) * 100;
-
-        return { x, y };
-    }
-
-    function cariBooth(x, y) {
-        for (const area of AREA_BOOTHS) {
-            if (
-                x >= area.minX &&
-                x <= area.maxX &&
-                y >= area.minY &&
-                y <= area.maxY
-            ) {
-                return area;
-            }
-        }
-
-        return null;
-    }
-
-    function tampilkanDebug(x, y, booth) {
-        if (!DEBUG_MODE) return;
-
-        const debugBox = document.getElementById("debugBox");
-        debugBox.style.display = "block";
         debugBox.innerHTML =
+            "Booth: <b>" + namaBooth + "</b><br>" +
+            "Mode: <b>" + getMode() + "</b><br>" +
             "x: <b>" + x.toFixed(1) + "%</b> | " +
-            "y: <b>" + y.toFixed(1) + "%</b><br>" +
-            "Booth: <b>" + (booth ? booth.nama : "-") + "</b>";
+            "y: <b>" + y.toFixed(1) + "%</b>";
+    }
+
+    function getMode() {
+        return window.innerHeight > window.innerWidth ? "portrait / template1.png" : "landscape / template.png";
     }
 </script>
 
