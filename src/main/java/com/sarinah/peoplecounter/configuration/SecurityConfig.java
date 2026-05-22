@@ -78,6 +78,7 @@ public class SecurityConfig {
             "/Danantara_Indonesia.png",
             "/injourney.png",
             "/logo2.png",
+            "/template.png",
             "/t.png",
             "/topspender",
             "/event/townhall",
