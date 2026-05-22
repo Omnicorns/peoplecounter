@@ -80,7 +80,8 @@ public class SecurityConfig {
             "/logo2.png",
             "/t.png",
             "/topspender",
-            "/portal/login",
+            "/event/townhall",
+            "/portal/**",
 
 
             // Swagger (opsional)
