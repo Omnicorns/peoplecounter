@@ -2,13 +2,16 @@
 <html lang="id" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Sarinah Village</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarinah</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             width: 100%;
             height: 100%;
@@ -17,26 +20,75 @@
             background: #008ee8;
         }
 
-        /* gambar PENUH LAYAR (cover): tidak ada celah, tepi boleh sedikit terpotong */
+        /*
+           PAGE FULL SCREEN
+           Tidak pakai background-size: cover lagi,
+           karena cover bikin gambar kepotong.
+        */
         .village-page {
             position: relative;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
-            background-color: #008ee8;
-            background-image: url('/template.png');
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
+            background: #008ee8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /*
+           WRAPPER INI UKURANNYA IKUT GAMBAR.
+           Jadi hotspot dihitung dari gambar, bukan dari layar.
+        */
+        .village-image-wrap {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+            max-width: 100vw;
+            max-height: 100vh;
+            max-height: 100dvh;
+        }
+
+        /*
+           KUNCI SUPAYA GAMBAR AUTO RESIZE DAN TIDAK KEPOTONG
+        */
+        .village-img {
+            display: block;
+            max-width: 100vw;
+            max-height: 100vh;
+            max-height: 100dvh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .img-portrait {
+            display: none;
+        }
+
+        .img-landscape {
+            display: block;
         }
 
         @media (orientation: portrait) {
-            .village-page {
-                background-image: url('/template1.png');
+            .img-landscape {
+                display: none;
+            }
+
+            .img-portrait {
+                display: block;
             }
         }
 
-        /* hotspot = area klik transparan, TANPA lingkaran / efek hover */
+        /*
+           Hotspot transparan.
+           Posisi sekarang relatif ke gambar asli,
+           bukan relatif ke layar.
+        */
         .hotspot {
             position: absolute;
             z-index: 10;
@@ -47,35 +99,77 @@
             padding: 0;
             outline: none;
         }
-        .hotspot:active { transform: translate(-50%, -50%) scale(0.96); }
 
-        /* ===== posisi hotspot: LANDSCAPE (template.png) ===== */
-        .hotspot-hc        { left: 25%; top: 53%; width: 9%;  height: 16%; }
-        .hotspot-marketing { left: 40%; top: 67%; width: 9%;  height: 16%; }
-        .hotspot-it        { left: 75%; top: 52%; width: 9%;  height: 16%; }
+        .hotspot:active {
+            transform: translate(-50%, -50%) scale(0.96);
+        }
 
-        /* ===== posisi hotspot: PORTRAIT (template1.png) ===== */
-        @media (orientation: portrait) {
-            .hotspot-hc        { left: 13%; top: 51%; width: 22%; height: 14%; }
-            .hotspot-it        { left: 84%; top: 53%; width: 22%; height: 14%; }
-            .hotspot-marketing { left: 53%; top: 78%; width: 28%; height: 15%; }
+        /* ===== posisi hotspot: LANDSCAPE / template.png ===== */
+        .village-image-wrap.landscape .hotspot-hc {
+            left: 25%;
+            top: 53%;
+            width: 9%;
+            height: 16%;
+        }
+
+        .village-image-wrap.landscape .hotspot-marketing {
+            left: 40%;
+            top: 67%;
+            width: 9%;
+            height: 16%;
+        }
+
+        .village-image-wrap.landscape .hotspot-it {
+            left: 75%;
+            top: 52%;
+            width: 9%;
+            height: 16%;
+        }
+
+        /* ===== posisi hotspot: PORTRAIT / template1.png ===== */
+        .village-image-wrap.portrait .hotspot-hc {
+            left: 13%;
+            top: 51%;
+            width: 22%;
+            height: 14%;
+        }
+
+        .village-image-wrap.portrait .hotspot-it {
+            left: 84%;
+            top: 53%;
+            width: 22%;
+            height: 14%;
+        }
+
+        .village-image-wrap.portrait .hotspot-marketing {
+            left: 53%;
+            top: 78%;
+            width: 28%;
+            height: 15%;
         }
 
         .debug-box {
             position: fixed;
-            left: 16px; bottom: 16px;
+            left: 16px;
+            bottom: 16px;
             z-index: 99;
             padding: 10px 14px;
             border-radius: 12px;
             background: rgba(0, 0, 0, 0.72);
             color: white;
             font-size: 12px;
+            line-height: 1.45;
             display: none;
         }
-        .debug-on .debug-box { display: block; }
 
-        /* saat debug ON, hotspot diberi garis bantu agar mudah dipaskan */
-        .debug-on .hotspot { outline: 2px dashed rgba(255,255,255,.9); background: rgba(255,255,255,.12); }
+        .debug-on .debug-box {
+            display: block;
+        }
+
+        .debug-on .hotspot {
+            outline: 2px dashed rgba(255,255,255,.9);
+            background: rgba(255,255,255,.12);
+        }
     </style>
 </head>
 
@@ -83,36 +177,73 @@
 
 <div id="villagePage" class="village-page">
 
-    <button type="button"
-            class="hotspot hotspot-hc"
-            onclick="pindahBooth('hc')"
-            onmousemove="debugPosisi(event, 'HC')"
-            aria-label="Masuk Booth HC"></button>
+    <div id="imageWrap" class="village-image-wrap landscape">
 
-    <button type="button"
-            class="hotspot hotspot-marketing"
-            onclick="pindahBooth('marketing')"
-            onmousemove="debugPosisi(event, 'Marketing')"
-            aria-label="Masuk Booth Marketing"></button>
+        <!-- LANDSCAPE -->
+        <img
+                class="village-img img-landscape"
+                th:src="@{/template.png}"
+                src="/template.png"
+                alt="Sarinah Village Landscape">
 
-    <button type="button"
-            class="hotspot hotspot-it"
-            onclick="pindahBooth('it')"
-            onmousemove="debugPosisi(event, 'IT')"
-            aria-label="Masuk Booth IT"></button>
+        <!-- PORTRAIT -->
+        <img
+                class="village-img img-portrait"
+                th:src="@{/template1.png}"
+                src="/template1.png"
+                alt="Sarinah Village Portrait">
+
+        <button type="button"
+                class="hotspot hotspot-hc"
+                onclick="pindahBooth('hc')"
+                onmousemove="debugPosisi(event, 'HC')"
+                aria-label="Masuk Booth HC"></button>
+
+        <button type="button"
+                class="hotspot hotspot-marketing"
+                onclick="pindahBooth('marketing')"
+                onmousemove="debugPosisi(event, 'Marketing')"
+                aria-label="Masuk Booth Marketing"></button>
+
+        <button type="button"
+                class="hotspot hotspot-it"
+                onclick="pindahBooth('it')"
+                onmousemove="debugPosisi(event, 'IT')"
+                aria-label="Masuk Booth IT"></button>
+
+    </div>
 
     <div id="debugBox" class="debug-box"></div>
 
 </div>
 
 <script th:inline="javascript">
-    /* Ubah jadi true untuk memaskan posisi hotspot, lalu kembalikan ke false. */
+    /*
+       Ubah jadi true untuk cek posisi hotspot.
+       Kalau sudah pas, balikkan ke false.
+    */
     const DEBUG_MODE = false;
 
-    /* URL booth → /booth/hc , /booth/marketing , /booth/it */
+    /*
+       URL booth:
+       /booth/hc
+       /booth/marketing
+       /booth/it
+    */
     const boothBaseUrl = /*[[@{/booth/}]]*/ "/booth/";
 
-    if (DEBUG_MODE) document.body.classList.add("debug-on");
+    const imageWrap = document.getElementById("imageWrap");
+
+    if (DEBUG_MODE) {
+        document.body.classList.add("debug-on");
+    }
+
+    function syncOrientation() {
+        const isPortrait = window.innerHeight > window.innerWidth;
+
+        imageWrap.classList.toggle("portrait", isPortrait);
+        imageWrap.classList.toggle("landscape", !isPortrait);
+    }
 
     function pindahBooth(kodeBooth) {
         window.location.href = boothBaseUrl + kodeBooth;
@@ -120,11 +251,13 @@
 
     function debugPosisi(event, namaBooth) {
         if (!DEBUG_MODE) return;
-        const page = document.getElementById("villagePage");
+
         const debugBox = document.getElementById("debugBox");
-        const rect = page.getBoundingClientRect();
+        const rect = imageWrap.getBoundingClientRect();
+
         const x = ((event.clientX - rect.left) / rect.width) * 100;
         const y = ((event.clientY - rect.top) / rect.height) * 100;
+
         debugBox.innerHTML =
             "Booth: <b>" + namaBooth + "</b><br>" +
             "Mode: <b>" + getMode() + "</b><br>" +
@@ -133,8 +266,15 @@
     }
 
     function getMode() {
-        return window.innerHeight > window.innerWidth ? "portrait / template1.png" : "landscape / template.png";
+        return window.innerHeight > window.innerWidth
+            ? "portrait / template1.png"
+            : "landscape / template.png";
     }
+
+    syncOrientation();
+
+    window.addEventListener("resize", syncOrientation);
+    window.addEventListener("orientationchange", syncOrientation);
 </script>
 
 </body>
