@@ -81,7 +81,7 @@ public class SecurityConfig {
             "/template.png",
             "/t.png",
             "/topspender",
-            "/event/townhall",
+            "/townhall",
             "/portal/**",
 
 
