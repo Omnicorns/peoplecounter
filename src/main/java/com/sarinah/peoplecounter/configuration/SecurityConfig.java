@@ -79,10 +79,16 @@ public class SecurityConfig {
             "/injourney.png",
             "/logo2.png",
             "/template.png",
+            "/template1.png",
+            "/template-clean.png",
+            "/walker-sprite.png",
+            "/car-sprite.png",
             "/t.png",
             "/topspender",
             "/townhall",
             "/portal/**",
+            "/booth/**",
+            "/boothIT.pdf",
 
 
             // Swagger (opsional)
@@ -97,6 +103,9 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())   // izinkan embed PDF dari origin sendiri
+                )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         // 1) Izinkan static resources yang umum (/static/**, /public/**, /resources/**, webjars)

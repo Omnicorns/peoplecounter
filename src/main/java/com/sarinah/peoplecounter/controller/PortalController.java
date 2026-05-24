@@ -41,6 +41,23 @@ public class PortalController {
         return "portal2";
     }
 
+    @GetMapping("/booth/{kode}")
+    public String booth(@PathVariable String kode) {
+        if (kode.equalsIgnoreCase("hc")) {
+            return "booth-hc";
+        }
+
+        if (kode.equalsIgnoreCase("it")) {
+            return "booth-it";
+        }
+
+        if (kode.equalsIgnoreCase("marketing")) {
+            return "booth-marketing";
+        }
+
+        return "redirect:/townhall";
+    }
+
 
 
 //    @Autowired
