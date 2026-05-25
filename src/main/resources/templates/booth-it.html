@@ -232,6 +232,7 @@
         /* ===== Stage ===== */
         #stage{
           position:relative;flex:1 1 auto;min-height:0;
+          touch-action:none;user-select:none;-webkit-user-select:none;
           background:
             radial-gradient(ellipse 70% 55% at 50% 32%, rgba(54,197,255,.05), transparent 70%),
             radial-gradient(ellipse at 50% 38%,#0c0f16,#07090e 72%);
@@ -308,6 +309,19 @@
         .swipe-hint.left{left:0;background:linear-gradient(90deg, var(--glow), transparent)}
         .swipe-hint.right{right:0;background:linear-gradient(270deg, var(--glow), transparent)}
         .swipe-hint.show{opacity:.55}
+        .swipe-label{
+          position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:16;
+          pointer-events:none;padding:8px 12px;border-radius:999px;
+          background:rgba(13,16,24,.70);border:1px solid rgba(255,255,255,.09);
+          color:rgba(238,242,251,.78);font-size:12px;font-weight:700;letter-spacing:.2px;
+          backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+          opacity:0;animation:swipeTip 4.2s ease 1.2s 1 both;
+        }
+        @keyframes swipeTip{
+          0%,100%{opacity:0;transform:translateX(-50%) translateY(6px)}
+          18%,78%{opacity:1;transform:translateX(-50%) translateY(0)}
+        }
+        @media (max-width: 640px){.swipe-label{bottom:12px;font-size:11px;padding:7px 10px}}
 
         #read{
           flex:1 1 auto;min-height:0;overflow:auto;background:#080b10;display:none;
@@ -466,6 +480,7 @@
     <div id="stage" aria-live="polite">
         <div class="swipe-hint left" id="hintLeft"></div>
         <div class="swipe-hint right" id="hintRight"></div>
+        <div class="swipe-label" id="swipeLabel">← Geser kiri / kanan untuk pindah halaman →</div>
 
         <button class="nav" id="prev" aria-label="Previous Page">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -1023,6 +1038,7 @@
       if (e.target.closest('.pdf-link')) return;
       if(viewMode!=='slide' || zoomPct>100 || animating) return;
       swipe.active=true; swipe.id=e.pointerId;
+      try { stage.setPointerCapture?.(e.pointerId); } catch(_) {}
       swipe.startX=swipe.lastX=e.clientX; swipe.startY=e.clientY;
       swipe.dx=0; swipe.locked=null;
     });
@@ -1053,9 +1069,10 @@
       else clearHints();
     });
 
-    function endSwipe(){
+    function endSwipe(e){
       if(!swipe.active) return;
       const dx = swipe.dx;
+      try { if(e?.pointerId != null) stage.releasePointerCapture?.(e.pointerId); } catch(_) {}
       swipe.active=false; swipe.id=null;
       clearHints();
       const w=wrapOf();
