@@ -285,7 +285,7 @@
         }
         canvas.rendering{opacity:.65;transition:opacity .2s ease}
 
-        .linkLayer{position:absolute;inset:0;pointer-events:auto;z-index:10}
+        .linkLayer{position:absolute;inset:0;pointer-events:none;z-index:10}
         .pageWrap canvas{ pointer-events:none; }
         .linkLayer .pdf-link{
           position:absolute;display:block;pointer-events:auto;
@@ -925,15 +925,19 @@
       if(viewMode!=='slide') return;
       stopAutoOnInteraction();
       const w=wrapOf();
-      w.setPointerCapture?.(e.pointerId);
       gesture.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(gesture.pointers.size===2){
+        // capture hanya untuk pinch
+        w.setPointerCapture?.(e.pointerId);
         gesture.mode='pinch';
         gesture.dist0=dist(); gesture.scaleTmp=1; gesture.mid0=getMid();
         gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
         gesture.startZoom = zoomPct; gesture.livePct = zoomPct;
         gesture.anchor = clientToWrapLocal(gesture.mid0);
       }else if(gesture.pointers.size===1 && zoomPct>100){
+        // capture hanya untuk pan (saat sudah zoom). Saat zoom<=100,
+        // JANGAN capture: biarkan event mengalir ke window agar SWIPE jalan.
+        w.setPointerCapture?.(e.pointerId);
         gesture.mode='pan';
         gesture.startTx=gesture.tx; gesture.startTy=gesture.ty;
         gesture._anchor = {x:e.clientX,y:e.clientY};
@@ -1025,11 +1029,16 @@
       swipe.active=true; swipe.id=e.pointerId;
       swipe.startX=swipe.lastX=e.clientX; swipe.startY=e.clientY;
       swipe.dx=0; swipe.locked=null;
+      // Dengarkan move/up di window: wrapper canvas punya pointer-capture sendiri
+      // (untuk pan/pinch) yang bisa mencuri event dari stage. Window selalu menerima.
+      window.addEventListener('pointermove', onSwipeMove, {passive:false});
+      window.addEventListener('pointerup', endSwipe, {passive:true});
+      window.addEventListener('pointercancel', endSwipe, {passive:true});
     });
 
-    stage.addEventListener('pointermove', (e)=> {
+    function onSwipeMove(e){
       if(!swipe.active || e.pointerId!==swipe.id) return;
-      if(gesture.mode==='pinch' || zoomPct>100){ swipe.active=false; clearHints(); return; }
+      if(gesture.mode==='pinch' || zoomPct>100){ endSwipe(); return; }
       const dx = e.clientX - swipe.startX;
       const dy = e.clientY - swipe.startY;
       // lock axis once intent is clear
@@ -1051,27 +1060,30 @@
       if(dx<0 && !atEnd) setHint('right', strength);
       else if(dx>0 && !atStart) setHint('left', strength);
       else clearHints();
-    });
+    }
 
     function endSwipe(){
       if(!swipe.active) return;
       const dx = swipe.dx;
+      const locked = swipe.locked;
       swipe.active=false; swipe.id=null;
+      window.removeEventListener('pointermove', onSwipeMove);
+      window.removeEventListener('pointerup', endSwipe);
+      window.removeEventListener('pointercancel', endSwipe);
       clearHints();
       const w=wrapOf();
       w.style.transition='';
       // snap back first
       w.style.transform = `translate(0,0) scale(${zoomPct/100})`;
-      if(swipe.locked==='x' && Math.abs(dx)>SWIPE_THRESHOLD){
+      if(locked==='x' && Math.abs(dx)>SWIPE_THRESHOLD){
         stopAutoOnInteraction();
         if(dx<0 && pageNum<numPages) show(pageNum+1,'right');
         else if(dx>0 && pageNum>1) show(pageNum-1,'left');
       }
       swipe.locked=null;
+      // biarkan handler double-tap membaca dx dulu, baru reset di frame berikutnya
+      requestAnimationFrame(()=>{ swipe.dx=0; });
     }
-    stage.addEventListener('pointerup', endSwipe);
-    stage.addEventListener('pointercancel', endSwipe);
-    stage.addEventListener('pointerleave', (e)=>{ if(swipe.active) endSwipe(); });
 
     /* double-tap to zoom (kept, but separated from swipe) */
     stage.addEventListener('pointerup', (e)=> {
