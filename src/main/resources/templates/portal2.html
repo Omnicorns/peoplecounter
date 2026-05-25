@@ -2,10 +2,8 @@
 <html lang="id" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
-  <title>Sarinah Village</title>
+  <title>Sarinah</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     * {
@@ -25,7 +23,7 @@
     :root {
       --app-height: 100dvh;
       --marker-size: clamp(68px, 6.8vw, 104px);
-      --text-shadow: 0 2px 8px rgba(0,0,0,.34);
+      --template-image: url("/template.png");
     }
 
     .loading-overlay {
@@ -59,7 +57,7 @@
       border: 4px solid rgba(255,255,255,.12);
       border-top-color: #38bdf8;
       border-radius: 50%;
-      animation: spin .9s cubic-bezier(.4,0,.2,1) infinite;
+      animation: spin .9s linear infinite;
     }
 
     .loader-ring .ring.inner {
@@ -77,7 +75,6 @@
     .loading-text {
       color: #cbd5e1;
       font-size: 14px;
-      letter-spacing: .4px;
       font-weight: 700;
     }
 
@@ -111,9 +108,9 @@
       position: absolute;
       inset: -36px;
       z-index: 0;
-      background-image: url("/template.png");
+      background-image: var(--template-image);
       background-size: cover;
-      background-position: center center;
+      background-position: center;
       background-repeat: no-repeat;
       filter: blur(22px);
       transform: scale(1.08);
@@ -135,7 +132,6 @@
       display: inline-block;
       line-height: 0;
       max-width: 100vw;
-      max-height: 100vh;
       max-height: var(--app-height);
       isolation: isolate;
     }
@@ -143,7 +139,6 @@
     .village-img {
       display: block;
       max-width: 100vw;
-      max-height: 100vh;
       max-height: var(--app-height);
       width: auto;
       height: auto;
@@ -153,28 +148,369 @@
       -webkit-user-drag: none;
     }
 
-    /* ============================================================
-       MARKER BUBBLE CSS
-       Titik koordinat marker berada di ujung pin / titik putih.
-       Ubah left/top kalau mau geser posisi.
-       ============================================================ */
-    /* ============================================================
-       PRODUCTION MARKER BUBBLE
-       Bentuk marker dibuat dari SVG teardrop, bukan kotak/diamond.
-       Titik koordinat marker ada di ujung pin bagian bawah.
-       Geser posisi cukup ubah --x dan --y di .marker-hc/.marker-marketing/.marker-it
-       ============================================================ */
+    /* BACKGROUND MUSIC */
+    .sv-music-toggle {
+      position: fixed;
+      right: 14px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      z-index: 9998;
+      min-height: 38px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(15, 23, 42, .50);
+      box-shadow: 0 14px 34px rgba(0,0,0,.24);
+      backdrop-filter: blur(12px) saturate(145%);
+      -webkit-backdrop-filter: blur(12px) saturate(145%);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .sv-music-toggle:hover {
+      background: rgba(15, 23, 42, .68);
+    }
+
+    .sv-music-toggle.need-click {
+      background: rgba(239, 68, 68, .78);
+      animation: musicPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes musicPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.045); }
+    }
+
+    /* MINI LEADERBOARD */
+    .sv-mini-lb {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 40;
+      width: min(260px, calc(100% - 88px));
+      padding: 9px 11px 10px;
+      border-radius: 10px;
+      color: #fff;
+      background: rgba(24, 126, 218, .58);
+      border: 1px solid rgba(255,255,255,.26);
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      backdrop-filter: blur(8px) saturate(145%);
+      -webkit-backdrop-filter: blur(8px) saturate(145%);
+      pointer-events: auto;
+      line-height: normal;
+    }
+
+    .sv-mini-lb-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .sv-mini-lb-title {
+      margin: 0;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: .15px;
+      text-shadow: 0 1px 2px rgba(0,0,0,.28);
+    }
+
+    .sv-mini-lb-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 46px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      color: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.14);
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .sv-mini-lb-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34,197,94,.16);
+    }
+
+    .sv-mini-lb-list {
+      display: grid;
+      gap: 2px;
+    }
+
+    .sv-mini-lb-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      min-height: 20px;
+      color: rgba(255,255,255,.98);
+      font-size: 10px;
+      line-height: 1.05;
+      font-weight: 850;
+      letter-spacing: .1px;
+    }
+
+    .sv-mini-lb-rank {
+      text-align: center;
+      font-weight: 950;
+      opacity: .95;
+    }
+
+    .sv-mini-lb-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 1px 1px rgba(0,0,0,.18);
+    }
+
+    .sv-mini-lb-score {
+      font-size: 9px;
+      font-weight: 950;
+      color: #facc15;
+      white-space: nowrap;
+    }
+
+    /* QUIZ BUTTON */
+    .sv-gift-quiz-float {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 40;
+      min-width: 54px;
+      min-height: 54px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 7px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: #fff;
+      background: rgba(239, 68, 68, .75);
+      border: 1px solid rgba(255,255,255,.30);
+      box-shadow: 0 14px 34px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.24);
+      backdrop-filter: blur(11px) saturate(145%);
+      -webkit-backdrop-filter: blur(11px) saturate(145%);
+      transition: transform .16s ease, filter .16s ease, background .16s ease;
+      pointer-events: auto;
+      line-height: normal;
+    }
+
+    .sv-gift-quiz-float:hover {
+      transform: translateY(-2px) scale(1.04);
+      filter: brightness(1.06);
+      background: rgba(220, 38, 38, .84);
+    }
+
+    .sv-gift-quiz-float:active {
+      transform: scale(.96);
+    }
+
+    .sv-gift-quiz-float svg {
+      width: 26px;
+      height: 26px;
+      display: block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.26));
+    }
+
+    .sv-gift-quiz-label {
+      display: block;
+      color: #fff;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: .15px;
+      text-shadow: 0 1px 1px rgba(0,0,0,.22);
+      white-space: nowrap;
+    }
+
+    /* QR MODAL QUIZ */
+    .sv-modal-open {
+      overflow: hidden;
+    }
+
+    .sv-qr-modal[hidden] {
+      display: none;
+    }
+
+    .sv-qr-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      line-height: normal;
+    }
+
+    .sv-qr-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, .62);
+      backdrop-filter: blur(12px) saturate(140%);
+      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      opacity: 0;
+      transition: opacity .18s ease;
+    }
+
+    .sv-qr-card {
+      position: relative;
+      z-index: 1;
+      width: min(420px, calc(100vw - 28px));
+      padding: 18px 18px 20px;
+      border-radius: 26px;
+      color: #111827;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(239,68,68,.12), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.92));
+      border: 1px solid rgba(255,255,255,.72);
+      box-shadow: 0 30px 80px rgba(0,0,0,.36);
+      transform: translateY(14px) scale(.94);
+      opacity: 0;
+      transition: transform .22s cubic-bezier(.16, 1, .3, 1), opacity .18s ease;
+    }
+
+    .sv-qr-modal.show .sv-qr-backdrop {
+      opacity: 1;
+    }
+
+    .sv-qr-modal.show .sv-qr-card {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .sv-qr-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border: 0;
+      border-radius: 999px;
+      color: #334155;
+      background: rgba(15,23,42,.08);
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+      transition: transform .16s ease, background .16s ease;
+    }
+
+    .sv-qr-close:hover {
+      transform: scale(1.06);
+      background: rgba(15,23,42,.13);
+    }
+
+    .sv-qr-title {
+      margin: 4px 42px 4px;
+      color: #991b1b;
+      text-align: center;
+      font-size: clamp(20px, 4.8vw, 26px);
+      line-height: 1.1;
+      font-weight: 950;
+      letter-spacing: -.4px;
+    }
+
+    .sv-qr-subtitle {
+      margin: 0 auto 14px;
+      max-width: 320px;
+      color: #475569;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 750;
+    }
+
+    .sv-qr-box {
+      position: relative;
+      width: min(326px, 78vw);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px solid rgba(148,163,184,.28);
+      box-shadow:
+        inset 0 0 0 7px rgba(248,250,252,.86),
+        0 18px 42px rgba(15,23,42,.14);
+    }
+
+    .sv-qr-img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .sv-qr-logo-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(62px, 17vw, 84px);
+      height: clamp(62px, 17vw, 84px);
+      transform: translate(-50%, -50%);
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      border-radius: 22px;
+      color: #c1121f;
+      background: rgba(255,255,255,.98);
+      border: 1px solid rgba(226,232,240,.95);
+      box-shadow: 0 8px 22px rgba(15,23,42,.18);
+      font-size: 12px;
+      font-weight: 950;
+      text-align: center;
+    }
+
+    .sv-qr-logo {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .sv-qr-note {
+      margin: 11px 0 0;
+      color: #64748b;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.3;
+      font-weight: 750;
+      word-break: break-word;
+    }
+
+    /* MARKER */
     .booth-marker {
       --pin-color: #8b3dff;
-      --pin-color-2: #6d28d9;
-      --pin-glow: rgba(139,61,255,.42);
       --delay: 0s;
       --marker-local-size: var(--marker-size);
-
       position: absolute;
       left: var(--x);
       top: var(--y);
-      z-index: 12;
+      z-index: 25;
       width: calc(var(--marker-local-size) * 1.16);
       height: calc(var(--marker-local-size) * 1.48);
       padding: 0;
@@ -207,7 +543,6 @@
     .booth-marker:hover {
       animation-play-state: paused;
       transform: translate(-50%, -103%) scale(1.035);
-      filter: drop-shadow(0 24px 34px rgba(0,0,0,.34));
     }
 
     .booth-marker:active {
@@ -221,13 +556,6 @@
       height: 100%;
       overflow: visible;
       display: block;
-    }
-
-    .pin-main {
-      fill: url(#markerGradient);
-      stroke: rgba(255,255,255,.78);
-      stroke-width: 3.4;
-      vector-effect: non-scaling-stroke;
     }
 
     .pin-main-solid {
@@ -315,57 +643,29 @@
     }
 
     .marker-hc {
-      --pin-color: #8b3dff;
-      --pin-color-2: #5b21b6;
-      --pin-glow: rgba(139,61,255,.52);
+      --pin-color: #7c3aed;
       --delay: 0s;
-
-      /* Akurat ke atap booth ungu */
       --x: 23.2%;
       --y: 59.5%;
     }
 
     .marker-marketing {
-      --pin-color: #ff7a12;
-      --pin-color-2: #d9480f;
-      --pin-glow: rgba(255,122,18,.52);
+      --pin-color: #f97316;
       --delay: .35s;
       --marker-local-size: clamp(72px, 7.25vw, 112px);
-
-      /* Akurat ke atap booth orange */
       --x: 38.6%;
       --y: 71.0%;
     }
 
     .marker-marketing .pin-title {
       font-size: clamp(11px, .92vw, 15px);
-      letter-spacing: 0;
     }
 
     .marker-it {
-      --pin-color: #168cff;
-      --pin-color-2: #075cb8;
-      --pin-glow: rgba(22,140,255,.52);
+      --pin-color: #0ea5e9;
       --delay: .7s;
-
-      /* Akurat ke atap booth biru */
       --x: 76.8%;
       --y: 59.5%;
-    }
-
-    .marker-hc .pin-main,
-    .marker-hc .pin-main-solid {
-      fill: #7c3aed;
-    }
-
-    .marker-marketing .pin-main,
-    .marker-marketing .pin-main-solid {
-      fill: #f97316;
-    }
-
-    .marker-it .pin-main,
-    .marker-it .pin-main-solid {
-      fill: #0ea5e9;
     }
 
     @keyframes markerFloat {
@@ -383,38 +683,7 @@
       100% { transform: scale(1.22); opacity: 0; }
     }
 
-    @media (max-width: 768px) {
-      :root {
-        --marker-size: clamp(58px, 12vw, 80px);
-      }
-
-      .marker-marketing {
-        --marker-local-size: clamp(64px, 13.2vw, 88px);
-      }
-
-      .pin-dot {
-        width: 10px;
-        height: 10px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .loader-ring .ring,
-      .loading-dots::after,
-      .booth-marker,
-      .pin-dot,
-      .pin-dot::after {
-        animation: none !important;
-      }
-    }
-
-
-    /* ============================================================
-       PORTRAIT + LANDSCAPE RESPONSIVE MODE
-       - Landscape: gambar contain full screen.
-       - Portrait: gambar dibuat full-height dan bisa swipe kiri/kanan.
-       - Bubble production tetap menempel di koordinat gambar.
-       ============================================================ */
+    /* PORTRAIT MODE */
     .village-page.landscape-mode {
       justify-content: center;
       align-items: center;
@@ -476,7 +745,6 @@
       font-size: 11px;
       line-height: 1;
       font-weight: 800;
-      letter-spacing: .2px;
       pointer-events: none;
     }
 
@@ -517,7 +785,6 @@
       cursor: pointer;
       font-weight: 900;
       font-size: 12px;
-      letter-spacing: .2px;
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,.30),
         0 6px 18px rgba(0,0,0,.20);
@@ -535,10 +802,6 @@
       background: linear-gradient(180deg, #38bdf8, #0284c7);
     }
 
-    .booth-quicknav button:active {
-      transform: scale(.95);
-    }
-
     body.portrait-on .orientation-badge,
     body.portrait-on .booth-quicknav {
       display: flex;
@@ -548,705 +811,15 @@
       display: none;
     }
 
-    @media (orientation: portrait) {
-      :root {
-        --marker-size: clamp(62px, 9.8vh, 86px);
-      }
-
-      .marker-marketing {
-        --marker-local-size: clamp(68px, 10.2vh, 94px);
-      }
-
-      .booth-marker {
-        filter: drop-shadow(0 14px 22px rgba(0,0,0,.30));
-      }
-
-      .pin-title {
-        font-size: clamp(12px, 2.25vh, 16px);
-      }
-
-      .marker-marketing .pin-title {
-        font-size: clamp(10px, 1.92vh, 14px);
-      }
-
-      .pin-icon {
-        width: clamp(23px, 3.9vh, 32px);
-        height: clamp(23px, 3.9vh, 32px);
-      }
-    }
-
-
-    .debug-box {
-      position: fixed;
-      left: 16px;
-      bottom: 16px;
-      z-index: 100;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(0,0,0,.72);
-      color: white;
-      font-size: 12px;
-      line-height: 1.45;
-      display: none;
-    }
-
-    .debug-on .debug-box {
-      display: block;
-    }
-
-    .debug-on .booth-marker {
-      outline: 2px dashed rgba(255,255,255,.9);
-    }
-
-    @media (max-width: 768px) {
+    @media (max-width: 760px) {
       :root {
         --marker-size: clamp(58px, 12vw, 78px);
       }
 
-      .pin-dot {
-        width: 10px;
-        height: 10px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .loader-ring .ring,
-      .loading-dots::after,
-      .booth-marker,
-      .pin-dot {
-        animation: none !important;
-      }
-    }
-
-    /* ============================================================
-       QUIZ BUTTON + AUTO REFRESH LEADERBOARD TOP 5
-       Ranking: Total points tertinggi, lalu durasi pengerjaan tercepat.
-       ============================================================ */
-    .sv-quiz-actions {
-      position: fixed;
-      top: calc(14px + env(safe-area-inset-top, 0px));
-      right: calc(14px + env(safe-area-inset-right, 0px));
-      z-index: 85;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      pointer-events: auto;
-    }
-
-    .sv-quiz-btn {
-      border: 0;
-      min-height: 42px;
-      padding: 0 16px;
-      border-radius: 999px;
-      color: #fff;
-      cursor: pointer;
-      font-weight: 950;
-      font-size: 13px;
-      letter-spacing: .2px;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.35),
-        0 16px 35px rgba(0,0,0,.28);
-      backdrop-filter: blur(16px) saturate(155%);
-      -webkit-backdrop-filter: blur(16px) saturate(155%);
-      transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
-      white-space: nowrap;
-    }
-
-    .sv-quiz-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.06);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.38),
-        0 20px 42px rgba(0,0,0,.34);
-    }
-
-    .sv-quiz-btn:active {
-      transform: scale(.96);
-    }
-
-    .sv-quiz-btn.quiz {
-      background: linear-gradient(180deg, #ef4444, #dc2626);
-    }
-
-    .sv-quiz-btn.leaderboard {
-      background: linear-gradient(180deg, #f59e0b, #d97706);
-    }
-
-    .sv-lb-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 9000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(3, 7, 18, .72);
-      backdrop-filter: blur(16px) saturate(145%);
-      -webkit-backdrop-filter: blur(16px) saturate(145%);
-    }
-
-    .sv-lb-backdrop.show {
-      display: flex;
-      animation: svLbFade .18s ease both;
-    }
-
-    @keyframes svLbFade {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .sv-lb-modal {
-      width: min(980px, 100%);
-      max-height: min(90vh, 760px);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      border-radius: 28px;
-      color: #f8fafc;
-      background:
-        radial-gradient(circle at 50% 0%, rgba(245,158,11,.18), transparent 32%),
-        linear-gradient(180deg, #121625, #0b0f19);
-      border: 1px solid rgba(255,255,255,.11);
-      box-shadow:
-        0 34px 95px rgba(0,0,0,.56),
-        inset 0 1px 0 rgba(255,255,255,.08);
-    }
-
-    .sv-lb-head {
-      padding: 22px 22px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      background:
-        linear-gradient(90deg, rgba(250,204,21,.12), transparent 44%),
-        rgba(255,255,255,.02);
-    }
-
-    .sv-lb-head-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-    }
-
-    .sv-lb-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.10);
-      color: #facc15;
-      font-size: 11px;
-      font-weight: 950;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .sv-lb-title {
-      margin: 12px 0 4px;
-      font-size: clamp(26px, 4vw, 42px);
-      line-height: 1;
-      letter-spacing: -.045em;
-      font-weight: 1000;
-    }
-
-    .sv-lb-subtitle {
-      margin: 0;
-      color: rgba(226,232,240,.76);
-      font-size: 13px;
-      line-height: 1.5;
-      max-width: 760px;
-    }
-
-    .sv-lb-close {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 auto;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: white;
-      cursor: pointer;
-      font-size: 25px;
-      line-height: 1;
-      transition: transform .16s ease, background .16s ease;
-    }
-
-    .sv-lb-close:hover {
-      transform: rotate(90deg);
-      background: rgba(255,255,255,.14);
-    }
-
-    .sv-lb-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 14px 22px;
-      background: rgba(255,255,255,.03);
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-
-    .sv-lb-tools-left,
-    .sv-lb-tools-right {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sv-lb-tool,
-    .sv-lb-upload {
-      min-height: 38px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 0 13px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.08);
-      color: #f8fafc;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 900;
-      text-decoration: none;
-      transition: transform .14s ease, background .14s ease;
-    }
-
-    .sv-lb-tool:hover,
-    .sv-lb-upload:hover {
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.13);
-    }
-
-    .sv-lb-upload input {
-      display: none;
-    }
-
-    .sv-lb-refresh {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: rgba(226,232,240,.74);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .sv-lb-refresh-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 14px rgba(34,197,94,.8);
-      animation: svLbPulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes svLbPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: .45; transform: scale(.78); }
-    }
-
-    .sv-lb-body {
-      overflow: auto;
-      padding: 18px 22px 22px;
-    }
-
-    .sv-lb-podium {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .sv-lb-podium-card {
-      position: relative;
-      min-height: 166px;
-      padding: 20px 16px;
-      border-radius: 22px;
-      text-align: center;
-      overflow: hidden;
-      background: rgba(255,255,255,.075);
-      border: 1px solid rgba(255,255,255,.10);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-    }
-
-    .sv-lb-podium-card.rank-1 {
-      min-height: 182px;
-      transform: translateY(-8px);
-      background:
-        radial-gradient(circle at 50% 0%, rgba(250,204,21,.26), transparent 55%),
-        rgba(255,255,255,.075);
-      border-color: rgba(250,204,21,.45);
-      box-shadow: 0 14px 35px rgba(250,204,21,.09), inset 0 1px 0 rgba(255,255,255,.10);
-    }
-
-    .sv-lb-rank-circle {
-      width: 54px;
-      height: 54px;
-      margin: 0 auto 12px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      color: #facc15;
-      background: rgba(250,204,21,.10);
-      border: 2px solid rgba(250,204,21,.24);
-      font-size: 19px;
-      font-weight: 1000;
-      box-shadow: 0 0 22px rgba(250,204,21,.09);
-    }
-
-    .sv-lb-podium-card.rank-1 .sv-lb-rank-circle {
-      width: 62px;
-      height: 62px;
-      color: #0b0f19;
-      background: linear-gradient(180deg, #facc15, #f59e0b);
-      border-color: rgba(255,255,255,.20);
-      font-size: 21px;
-    }
-
-    .sv-lb-name {
-      font-size: 18px;
-      font-weight: 1000;
-      line-height: 1.15;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sv-lb-sub {
-      margin-top: 4px;
-      color: rgba(226,232,240,.46);
-      font-size: 11px;
-      font-weight: 800;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sv-lb-score {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 12px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      color: #facc15;
-      background: rgba(250,204,21,.10);
-      font-weight: 1000;
-      font-size: 14px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .sv-lb-list {
-      display: grid;
-      gap: 8px;
-    }
-
-    .sv-lb-row {
-      display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) auto auto;
-      gap: 10px;
-      align-items: center;
-      min-height: 64px;
-      padding: 10px 14px;
-      border-radius: 15px;
-      background: rgba(255,255,255,.055);
-      border: 1px solid rgba(255,255,255,.075);
-    }
-
-    .sv-lb-row-rank {
-      width: 38px;
-      height: 38px;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: rgba(255,255,255,.07);
-      color: rgba(226,232,240,.45);
-      font-weight: 1000;
-      font-size: 16px;
-    }
-
-    .sv-lb-row-name {
-      min-width: 0;
-    }
-
-    .sv-lb-row-name b {
-      display: block;
-      color: #f8fafc;
-      font-size: 15px;
-      line-height: 1.1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sv-lb-row-name span {
-      display: block;
-      color: rgba(226,232,240,.46);
-      margin-top: 3px;
-      font-size: 11px;
-      font-weight: 750;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sv-lb-row-time,
-    .sv-lb-row-score {
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      font-weight: 1000;
-    }
-
-    .sv-lb-row-time {
-      color: rgba(226,232,240,.72);
-      font-size: 12px;
-    }
-
-    .sv-lb-row-score {
-      color: #facc15;
-      font-size: 14px;
-    }
-
-    .sv-lb-empty {
-      padding: 26px;
-      border-radius: 20px;
-      border: 1px dashed rgba(255,255,255,.18);
-      background: rgba(255,255,255,.045);
-      color: rgba(226,232,240,.72);
-      text-align: center;
-      font-size: 13px;
-      line-height: 1.55;
-      font-weight: 800;
-    }
-
-    .sv-lb-note {
-      margin-top: 12px;
-      color: rgba(226,232,240,.46);
-      font-size: 11px;
-      line-height: 1.45;
-      font-weight: 700;
-    }
-
-    @media (max-width: 760px) {
-      .sv-quiz-actions {
-        top: calc(12px + env(safe-area-inset-top, 0px));
-        right: calc(12px + env(safe-area-inset-right, 0px));
-        gap: 7px;
-        flex-direction: column;
-        align-items: flex-end;
-      }
-
-      .sv-quiz-btn {
-        min-height: 38px;
-        padding: 0 12px;
-        font-size: 12px;
-      }
-
-      .sv-lb-backdrop {
-        align-items: flex-end;
-        padding: 0;
-      }
-
-      .sv-lb-modal {
-        width: 100%;
-        max-height: 92vh;
-        border-radius: 24px 24px 0 0;
-      }
-
-      .sv-lb-head,
-      .sv-lb-toolbar,
-      .sv-lb-body {
-        padding-left: 14px;
-        padding-right: 14px;
-      }
-
-      .sv-lb-podium {
-        grid-template-columns: 1fr;
-      }
-
-      .sv-lb-podium-card,
-      .sv-lb-podium-card.rank-1 {
-        min-height: auto;
-        transform: none;
-      }
-
-      .sv-lb-row {
-        grid-template-columns: 38px minmax(0, 1fr) auto;
-      }
-
-      .sv-lb-row-time {
-        display: none;
-      }
-    }
-
-
-    /* ============================================================
-       SIAP MINI LEADERBOARD LEFT + GIFT QUIZ RIGHT
-       - Leaderboard kecil di kiri, tanpa nilai dan tanpa icon kado per baris.
-       - Icon kado untuk quiz dipindah ke kanan background.
-       - Auto refresh tetap aktif via SV_LB_REFRESH_MS.
-       ============================================================ */
-    .sv-quiz-actions,
-    .sv-lb-backdrop {
-      display: none !important;
-    }
-
-    .sv-mini-lb {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 30;
-      width: min(252px, calc(100% - 88px));
-      max-width: calc(100% - 88px);
-      padding: 8px 10px 9px;
-      border-radius: 9px;
-      color: #fff;
-      background: rgba(24, 126, 218, .56);
-      border: 1px solid rgba(255,255,255,.24);
-      box-shadow: 0 8px 24px rgba(0,0,0,.18);
-      backdrop-filter: blur(7px) saturate(145%);
-      -webkit-backdrop-filter: blur(7px) saturate(145%);
-      pointer-events: auto;
-    }
-
-    .sv-mini-lb-head {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
-    }
-
-    .sv-mini-lb-title {
-      margin: 0;
-      text-align: center;
-      font-size: 14px;
-      line-height: 1;
-      font-weight: 950;
-      letter-spacing: .15px;
-      text-shadow: 0 1px 2px rgba(0,0,0,.28);
-    }
-
-    .sv-mini-lb-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      min-width: 42px;
-      padding: 3px 6px;
-      border-radius: 999px;
-      color: rgba(255,255,255,.86);
-      background: rgba(255,255,255,.13);
-      font-size: 8px;
-      line-height: 1;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .sv-mini-lb-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 3px rgba(34,197,94,.16);
-    }
-
-    .sv-mini-lb-list {
-      display: grid;
-      gap: 2px;
-    }
-
-    .sv-mini-lb-row {
-      display: grid;
-      grid-template-columns: 18px minmax(0, 1fr);
-      align-items: center;
-      gap: 7px;
-      min-height: 18px;
-      color: rgba(255,255,255,.96);
-      font-size: 10px;
-      line-height: 1.05;
-      font-weight: 850;
-      letter-spacing: .1px;
-    }
-
-    .sv-mini-lb-rank {
-      text-align: center;
-      font-weight: 950;
-      opacity: .95;
-    }
-
-    .sv-mini-lb-name {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      text-shadow: 0 1px 1px rgba(0,0,0,.18);
-    }
-
-    .sv-gift-quiz-float {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 30;
-      min-width: 54px;
-      min-height: 54px;
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      padding: 6px 7px;
-      border-radius: 999px;
-      text-decoration: none;
-      color: #fff;
-      background: rgba(239, 68, 68, .72);
-      border: 1px solid rgba(255,255,255,.28);
-      box-shadow: 0 14px 34px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.24);
-      backdrop-filter: blur(11px) saturate(145%);
-      -webkit-backdrop-filter: blur(11px) saturate(145%);
-      transition: transform .16s ease, filter .16s ease, background .16s ease;
-      pointer-events: auto;
-      overflow: hidden;
-    }
-
-    .sv-gift-quiz-float:hover {
-      transform: translateY(-2px) scale(1.04);
-      filter: brightness(1.06);
-      background: rgba(220, 38, 38, .82);
-    }
-
-    .sv-gift-quiz-float:active {
-      transform: scale(.96);
-    }
-
-    .sv-gift-quiz-float svg {
-      width: 26px;
-      height: 26px;
-      display: block;
-      flex: 0 0 auto;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.26));
-    }
-
-    .sv-gift-quiz-label {
-      display: block;
-      color: #fff;
-      font-size: 9px;
-      line-height: 1;
-      font-weight: 900;
-      letter-spacing: .15px;
-      text-shadow: 0 1px 1px rgba(0,0,0,.22);
-      white-space: nowrap;
-    }
-
-    @media (max-width: 760px) {
       .sv-mini-lb {
         top: 8px;
         left: 8px;
-        width: min(220px, calc(100% - 74px));
-        max-width: calc(100% - 74px);
+        width: min(230px, calc(100% - 74px));
         padding: 7px 9px 8px;
       }
 
@@ -1255,9 +828,9 @@
       }
 
       .sv-mini-lb-row {
-        grid-template-columns: 16px minmax(0, 1fr);
+        grid-template-columns: 18px minmax(0, 1fr) auto;
         gap: 6px;
-        min-height: 17px;
+        min-height: 18px;
         font-size: 9px;
       }
 
@@ -1277,740 +850,678 @@
       .sv-gift-quiz-label {
         font-size: 8px;
       }
-    }
+
+      .sv-music-toggle {
+        right: 8px;
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+        min-height: 34px;
+        padding: 0 11px;
+        font-size: 11px;
+      }
+
+      .pin-dot {
+        width: 10px;
+        height: 10px;
+      }
     }
 
+    @media (orientation: portrait) {
+      :root {
+        --marker-size: clamp(62px, 9.8vh, 86px);
+      }
 
+      .marker-marketing {
+        --marker-local-size: clamp(68px, 10.2vh, 94px);
+      }
+
+      .pin-title {
+        font-size: clamp(12px, 2.25vh, 16px);
+      }
+
+      .marker-marketing .pin-title {
+        font-size: clamp(10px, 1.92vh, 14px);
+      }
+
+      .pin-icon {
+        width: clamp(23px, 3.9vh, 32px);
+        height: clamp(23px, 3.9vh, 32px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loader-ring .ring,
+      .loading-dots::after,
+      .booth-marker,
+      .pin-dot,
+      .pin-dot::after,
+      .sv-music-toggle.need-click {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 
 <body>
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="loader-ring">
-      <div class="ring"></div>
-      <div class="ring inner"></div>
-    </div>
-    <div class="loading-text">Memuat<span class="loading-dots"></span></div>
+
+<audio id="svBgMusic"
+       preload="auto"
+       autoplay
+       loop
+       playsinline>
+  <source th:src="@{/haverst.mpeg}" src="/haverst.mpeg" type="audio/mpeg">
+  <source th:src="@{/haverst.mpeg}" src="/haverst.mpeg" type="audio/mpeg">
+</audio>
+
+<button type="button"
+        id="svMusicToggle"
+        class="sv-music-toggle"
+        aria-label="Toggle musik">
+  🔊 Musik
+</button>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loader-ring">
+    <div class="ring"></div>
+    <div class="ring inner"></div>
+  </div>
+  <div class="loading-text">Memuat<span class="loading-dots"></span></div>
+</div>
+
+<div id="villagePage" class="village-page">
+  <div id="imageWrap" class="village-image-wrap">
+
+    <section class="sv-mini-lb" aria-label="Leaderboard quiz">
+      <div class="sv-mini-lb-head">
+        <h2 class="sv-mini-lb-title">Leaderboard</h2>
+        <span id="svMiniLbStatusText" class="sv-mini-lb-status">
+          <span class="sv-mini-lb-dot"></span>Load
+        </span>
+      </div>
+
+      <div id="svMiniLeaderboardList" class="sv-mini-lb-list">
+        <div class="sv-mini-lb-row">
+          <span class="sv-mini-lb-rank">-</span>
+          <span class="sv-mini-lb-name">Memuat data...</span>
+          <span class="sv-mini-lb-score"></span>
+        </div>
+      </div>
+    </section>
+
+    <button type="button"
+            id="svGiftQuizButton"
+            class="sv-gift-quiz-float"
+            aria-label="Tampilkan QR Quiz"
+            title="Tampilkan QR Quiz">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path fill="#ffd166" d="M10 28h44v27a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V28Z"/>
+        <path fill="#f59e0b" d="M8 20a5 5 0 0 1 5-5h38a5 5 0 0 1 5 5v9H8v-9Z"/>
+        <path fill="#ef4444" d="M28 15h8v45h-8z"/>
+        <path fill="#dc2626" d="M8 27h48v7H8z" opacity=".92"/>
+        <path fill="#fff" d="M23.4 15.4c-5.4-.8-9.3-3.3-9.3-7.1 0-3 2.4-5.4 5.8-5.4 5.7 0 9.1 7.1 10.3 11.7-1.8.5-4.1 1.1-6.8.8Zm-3.5-8.2c-1 0-1.8.5-1.8 1.3 0 1.5 2.3 2.6 6.5 3.1-1.2-2.4-2.8-4.4-4.7-4.4Zm20.7 8.2c-2.7.3-5-.3-6.8-.8C35 10 38.4 2.9 44.1 2.9c3.4 0 5.8 2.4 5.8 5.4 0 3.8-3.9 6.3-9.3 7.1Zm-1.2-3.8c4.2-.5 6.5-1.6 6.5-3.1 0-.8-.8-1.3-1.8-1.3-1.9 0-3.5 2-4.7 4.4Z" opacity=".96"/>
+      </svg>
+      <span class="sv-gift-quiz-label">Quiz</span>
+    </button>
+
+    <img id="villageImg" class="village-img" th:src="@{/template.png}" src="/template.png" alt="Sarinah Village">
+
+    <button type="button" class="booth-marker marker-hc"
+            onclick="pindahBooth('hc')"
+            aria-label="Masuk Booth HC">
+      <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
+        <path class="pin-main-solid"
+              d="M60 150 C55 140 49 132 39 121 C20 101 10 79 10 56 C10 25 33 6 60 6 C87 6 110 25 110 56 C110 79 100 101 81 121 C71 132 65 140 60 150 Z"/>
+        <path class="pin-glass"
+              d="M25 43 C32 20 54 13 74 18 C87 21 96 30 101 41 C90 32 75 27 59 27 C45 27 33 33 25 43 Z"/>
+        <circle class="pin-rim" cx="60" cy="57" r="39"/>
+        <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
+      </svg>
+      <span class="pin-content">
+        <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="20" cy="23" r="8" fill="currentColor"/>
+          <circle cx="44" cy="23" r="8" fill="currentColor"/>
+          <circle cx="32" cy="17" r="9" fill="currentColor"/>
+          <path d="M8 51c0-8.2 6.6-14.2 15-14.2S38 42.8 38 51" fill="currentColor" opacity=".88"/>
+          <path d="M26 52c0-9.4 7.8-16.2 18-16.2S62 42.6 62 52" fill="currentColor" opacity=".72"/>
+          <path d="M16 53c0-10 7-17.8 16-17.8S48 43 48 53" fill="currentColor"/>
+        </svg>
+        <span class="pin-title">HC</span>
+      </span>
+      <span class="pin-dot"></span>
+    </button>
+
+    <button type="button" class="booth-marker marker-marketing"
+            onclick="pindahBooth('marketing')"
+            aria-label="Masuk Booth Marketing">
+      <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
+        <path class="pin-main-solid"
+              d="M60 150 C55 140 49 132 39 121 C20 101 10 79 10 56 C10 25 33 6 60 6 C87 6 110 25 110 56 C110 79 100 101 81 121 C71 132 65 140 60 150 Z"/>
+        <path class="pin-glass"
+              d="M25 43 C32 20 54 13 74 18 C87 21 96 30 101 41 C90 32 75 27 59 27 C45 27 33 33 25 43 Z"/>
+        <circle class="pin-rim" cx="60" cy="57" r="39"/>
+        <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
+      </svg>
+      <span class="pin-content">
+        <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <path fill="currentColor" d="M10 29.5c0-2.5 2-4.5 4.5-4.5H23l18.5-10.4c3-1.7 6.7.5 6.7 4v26.8c0 3.5-3.7 5.7-6.7 4L23 39H14.5c-2.5 0-4.5-2-4.5-4.5v-5z"/>
+          <path fill="currentColor" d="M23.5 39.5l4.2 12.3c.7 2.2-.9 4.2-3.1 4.2H22c-1.7 0-3.1-1.1-3.6-2.7L15 41h8.5z" opacity=".9"/>
+          <path fill="currentColor" d="M52 24.5c2.2 2.3 3.4 5 3.4 7.5s-1.2 5.2-3.4 7.5" opacity=".95"/>
+          <path fill="currentColor" d="M56.5 18.5c4.1 4.1 6.1 8.8 6.1 13.5s-2 9.4-6.1 13.5" opacity=".68"/>
+        </svg>
+        <span class="pin-title">Marketing</span>
+      </span>
+      <span class="pin-dot"></span>
+    </button>
+
+    <button type="button" class="booth-marker marker-it"
+            onclick="pindahBooth('it')"
+            aria-label="Masuk Booth IT">
+      <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
+        <path class="pin-main-solid"
+              d="M60 150 C55 140 49 132 39 121 C20 101 10 79 10 56 C10 25 33 6 60 6 C87 6 110 25 110 56 C110 79 100 101 81 121 C71 132 65 140 60 150 Z"/>
+        <path class="pin-glass"
+              d="M25 43 C32 20 54 13 74 18 C87 21 96 30 101 41 C90 32 75 27 59 27 C45 27 33 33 25 43 Z"/>
+        <circle class="pin-rim" cx="60" cy="57" r="39"/>
+        <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
+      </svg>
+      <span class="pin-content">
+        <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="9" y="13" width="46" height="30" rx="4" fill="currentColor"/>
+          <rect x="14" y="18" width="36" height="20" rx="2.5" fill="rgba(14,165,233,.25)"/>
+          <rect x="26" y="47" width="12" height="4" rx="1.5" fill="currentColor"/>
+          <rect x="19" y="51" width="26" height="4" rx="2" fill="currentColor"/>
+        </svg>
+        <span class="pin-title">IT</span>
+      </span>
+      <span class="pin-dot"></span>
+    </button>
   </div>
 
-  <div id="villagePage" class="village-page">
+  <div id="orientationBadge" class="orientation-badge">Geser kiri/kanan untuk pilih booth</div>
 
-    <div id="imageWrap" class="village-image-wrap">
-
-      <!-- SIAP Mini Leaderboard kiri: tetap di dalam area background -->
-      <section class="sv-mini-lb" aria-label="Leaderboard quiz">
-        <div class="sv-mini-lb-head">
-          <h2 class="sv-mini-lb-title">Leaderboard</h2>
-          <span id="svMiniLbStatusText" class="sv-mini-lb-status"><span class="sv-mini-lb-dot"></span>Auto</span>
-        </div>
-        <div id="svMiniLeaderboardList" class="sv-mini-lb-list">
-          <div class="sv-mini-lb-row"><span class="sv-mini-lb-rank">-</span><span class="sv-mini-lb-name">Memuat data...</span></div>
-        </div>
-      </section>
-
-      <!-- SIAP Icon kado + tulisan Quiz kanan atas, tetap di dalam area background -->
-      <a class="sv-gift-quiz-float" href="https://forms.office.com/r/gyEkcLHRTu" target="_blank" rel="noopener noreferrer" aria-label="Buka Quiz" title="Buka Quiz">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path fill="#ffd166" d="M10 28h44v27a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V28Z"/>
-          <path fill="#f59e0b" d="M8 20a5 5 0 0 1 5-5h38a5 5 0 0 1 5 5v9H8v-9Z"/>
-          <path fill="#ef4444" d="M28 15h8v45h-8z"/>
-          <path fill="#dc2626" d="M8 27h48v7H8z" opacity=".92"/>
-          <path fill="#fff" d="M23.4 15.4c-5.4-.8-9.3-3.3-9.3-7.1 0-3 2.4-5.4 5.8-5.4 5.7 0 9.1 7.1 10.3 11.7-1.8.5-4.1 1.1-6.8.8Zm-3.5-8.2c-1 0-1.8.5-1.8 1.3 0 1.5 2.3 2.6 6.5 3.1-1.2-2.4-2.8-4.4-4.7-4.4Zm20.7 8.2c-2.7.3-5-.3-6.8-.8C35 10 38.4 2.9 44.1 2.9c3.4 0 5.8 2.4 5.8 5.4 0 3.8-3.9 6.3-9.3 7.1Zm-1.2-3.8c4.2-.5 6.5-1.6 6.5-3.1 0-.8-.8-1.3-1.8-1.3-1.9 0-3.5 2-4.7 4.4Z" opacity=".96"/>
-        </svg>
-        <span class="sv-gift-quiz-label">Quiz</span>
-      </a>
-
-      <!-- Background bersih tanpa bubble, sudah embed di HTML -->
-      <img id="villageImg" class="village-img" src="/template.png" alt="Sarinah Village">
-
-      <!-- Bubble HC -->
-      <button type="button" class="booth-marker marker-hc"
-              onclick="pindahBooth('hc')" onmousemove="debugPosisi(event, 'HC')"
-              aria-label="Masuk Booth HC">
-        <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
-          <!-- Smooth production teardrop marker -->
-          <path class="pin-main-solid"
-                d="M60 150
-                   C55 140 49 132 39 121
-                   C20 101 10 79 10 56
-                   C10 25 33 6 60 6
-                   C87 6 110 25 110 56
-                   C110 79 100 101 81 121
-                   C71 132 65 140 60 150 Z"/>
-          <path class="pin-glass"
-                d="M25 43
-                   C32 20 54 13 74 18
-                   C87 21 96 30 101 41
-                   C90 32 75 27 59 27
-                   C45 27 33 33 25 43 Z"/>
-          <circle class="pin-rim" cx="60" cy="57" r="39"/>
-          <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
-        </svg>
-        <span class="pin-content">
-          <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="20" cy="23" r="8" fill="currentColor"/>
-            <circle cx="44" cy="23" r="8" fill="currentColor"/>
-            <circle cx="32" cy="17" r="9" fill="currentColor"/>
-            <path d="M8 51c0-8.2 6.6-14.2 15-14.2S38 42.8 38 51" fill="currentColor" opacity=".88"/>
-            <path d="M26 52c0-9.4 7.8-16.2 18-16.2S62 42.6 62 52" fill="currentColor" opacity=".72"/>
-            <path d="M16 53c0-10 7-17.8 16-17.8S48 43 48 53" fill="currentColor"/>
-          </svg>
-          <span class="pin-title">HC</span>
-        </span>
-        <span class="pin-dot"></span>
-      </button>
-
-      <!-- Bubble Marketing -->
-      <button type="button" class="booth-marker marker-marketing"
-              onclick="pindahBooth('marketing')" onmousemove="debugPosisi(event, 'Marketing')"
-              aria-label="Masuk Booth Marketing">
-        <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
-          <!-- Smooth production teardrop marker -->
-          <path class="pin-main-solid"
-                d="M60 150
-                   C55 140 49 132 39 121
-                   C20 101 10 79 10 56
-                   C10 25 33 6 60 6
-                   C87 6 110 25 110 56
-                   C110 79 100 101 81 121
-                   C71 132 65 140 60 150 Z"/>
-          <path class="pin-glass"
-                d="M25 43
-                   C32 20 54 13 74 18
-                   C87 21 96 30 101 41
-                   C90 32 75 27 59 27
-                   C45 27 33 33 25 43 Z"/>
-          <circle class="pin-rim" cx="60" cy="57" r="39"/>
-          <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
-        </svg>
-        <span class="pin-content">
-          <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
-            <path fill="currentColor" d="M10 29.5c0-2.5 2-4.5 4.5-4.5H23l18.5-10.4c3-1.7 6.7.5 6.7 4v26.8c0 3.5-3.7 5.7-6.7 4L23 39H14.5c-2.5 0-4.5-2-4.5-4.5v-5z"/>
-            <path fill="currentColor" d="M23.5 39.5l4.2 12.3c.7 2.2-.9 4.2-3.1 4.2H22c-1.7 0-3.1-1.1-3.6-2.7L15 41h8.5z" opacity=".9"/>
-            <path fill="currentColor" d="M52 24.5c2.2 2.3 3.4 5 3.4 7.5s-1.2 5.2-3.4 7.5" opacity=".95"/>
-            <path fill="currentColor" d="M56.5 18.5c4.1 4.1 6.1 8.8 6.1 13.5s-2 9.4-6.1 13.5" opacity=".68"/>
-          </svg>
-          <span class="pin-title">Marketing</span>
-        </span>
-        <span class="pin-dot"></span>
-      </button>
-
-      <!-- Bubble IT -->
-      <button type="button" class="booth-marker marker-it"
-              onclick="pindahBooth('it')" onmousemove="debugPosisi(event, 'IT')"
-              aria-label="Masuk Booth IT">
-        <svg class="pin-svg" viewBox="0 0 120 154" aria-hidden="true">
-          <!-- Smooth production teardrop marker -->
-          <path class="pin-main-solid"
-                d="M60 150
-                   C55 140 49 132 39 121
-                   C20 101 10 79 10 56
-                   C10 25 33 6 60 6
-                   C87 6 110 25 110 56
-                   C110 79 100 101 81 121
-                   C71 132 65 140 60 150 Z"/>
-          <path class="pin-glass"
-                d="M25 43
-                   C32 20 54 13 74 18
-                   C87 21 96 30 101 41
-                   C90 32 75 27 59 27
-                   C45 27 33 33 25 43 Z"/>
-          <circle class="pin-rim" cx="60" cy="57" r="39"/>
-          <ellipse class="pin-shine" cx="43" cy="31" rx="13" ry="7" transform="rotate(-25 43 31)"/>
-        </svg>
-        <span class="pin-content">
-          <svg class="pin-icon" viewBox="0 0 64 64" aria-hidden="true">
-            <rect x="9" y="13" width="46" height="30" rx="4" fill="currentColor"/>
-            <rect x="14" y="18" width="36" height="20" rx="2.5" fill="rgba(14,165,233,.25)"/>
-            <rect x="26" y="47" width="12" height="4" rx="1.5" fill="currentColor"/>
-            <rect x="19" y="51" width="26" height="4" rx="2" fill="currentColor"/>
-          </svg>
-          <span class="pin-title">IT</span>
-        </span>
-        <span class="pin-dot"></span>
-      </button>
-    </div>
-
-
-    <div id="orientationBadge" class="orientation-badge">Geser kiri/kanan untuk pilih booth</div>
-
-    <div id="boothQuickNav" class="booth-quicknav" aria-label="Navigasi booth">
-      <button type="button" onclick="scrollToBooth('hc')">HC</button>
-      <button type="button" onclick="scrollToBooth('marketing')">Marketing</button>
-      <button type="button" onclick="scrollToBooth('it')">IT</button>
-    </div>
-
-    <div id="debugBox" class="debug-box"></div>
+  <div id="boothQuickNav" class="booth-quicknav" aria-label="Navigasi booth">
+    <button type="button" onclick="scrollToBooth('hc')">HC</button>
+    <button type="button" onclick="scrollToBooth('marketing')">Marketing</button>
+    <button type="button" onclick="scrollToBooth('it')">IT</button>
   </div>
+</div>
 
-  <script th:inline="javascript">
-    const DEBUG_MODE = false;
-    const boothBaseUrl = /*[[@{/booth/}]]*/ "/booth/";
+<div id="svQrModal" class="sv-qr-modal" hidden aria-hidden="true">
+  <div class="sv-qr-backdrop" data-close-qr></div>
 
-    const villagePage = document.getElementById("villagePage");
-    const imageWrap = document.getElementById("imageWrap");
-    const villageImg = document.getElementById("villageImg");
-    const loadingOverlay = document.getElementById("loadingOverlay");
+  <section class="sv-qr-card" role="dialog" aria-modal="true" aria-labelledby="svQrTitle">
+    <button type="button" class="sv-qr-close" data-close-qr aria-label="Tutup QR">×</button>
 
-    if (DEBUG_MODE) {
-      document.body.classList.add("debug-on");
+    <h2 id="svQrTitle" class="sv-qr-title">Scan QR Quiz</h2>
+    <p class="sv-qr-subtitle">Scan QR di bawah ini untuk membuka quiz Sarinah.</p>
+
+    <a id="svQrBoxLink"
+       class="sv-qr-box"
+       href="/quiz-booth3"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Buka link quiz dari QR">
+      <img id="svQrImg"
+           class="sv-qr-img"
+           src=""
+           alt="QR Quiz Sarinah">
+
+      <span class="sv-qr-logo-wrap">
+        <img class="sv-qr-logo"
+             th:src="@{/sarinah.png}"
+             src="/sarinah.png"
+             alt="Sarinah"
+             onerror="this.remove(); this.parentElement.textContent='Sarinah';">
+      </span>
+    </a>
+
+    <p id="svQrNote" class="sv-qr-note">/quiz-booth3</p>
+  </section>
+</div>
+
+<script th:inline="javascript">
+  const boothBaseUrl = /*[[@{/booth/}]]*/ "/booth/";
+  const SV_LEADERBOARD_API_URL = /*[[@{/api/quiz-booth-3/leaderboard(limit=5)}]]*/ "/api/quiz-booth-3/leaderboard?limit=5";
+  const SV_LB_REFRESH_MS = 10000;
+
+  const SV_QUIZ_PATH = /*[[@{/quiz-booth3}]]*/ "/quiz-booth3";
+  const SV_QUIZ_URL = new URL(SV_QUIZ_PATH, window.location.origin).href;
+  const SV_TEMPLATE_IMAGE_URL = /*[[@{/template.png}]]*/ "/template.png";
+
+  const villagePage = document.getElementById("villagePage");
+  const imageWrap = document.getElementById("imageWrap");
+  const villageImg = document.getElementById("villageImg");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const svGiftQuizButton = document.getElementById("svGiftQuizButton");
+  const svQrModal = document.getElementById("svQrModal");
+
+  function initTemplateImage() {
+    document.documentElement.style.setProperty(
+      "--template-image",
+      `url("${SV_TEMPLATE_IMAGE_URL}")`
+    );
+
+    if (villageImg && villageImg.getAttribute("src") !== SV_TEMPLATE_IMAGE_URL) {
+      villageImg.setAttribute("src", SV_TEMPLATE_IMAGE_URL);
     }
+  }
 
-    function setAppHeight() {
-      const h = Math.max(320, Math.round(window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 0));
-      document.documentElement.style.setProperty("--app-height", h + "px");
-    }
+  function initQuizQr() {
+    const qrUrl = "https://quickchart.io/qr?size=420&margin=1&ecLevel=H&text=" + encodeURIComponent(SV_QUIZ_URL);
 
+    const qrBoxLink = document.getElementById("svQrBoxLink");
+    const qrImg = document.getElementById("svQrImg");
+    const qrNote = document.getElementById("svQrNote");
 
-    function isPortraitMode() {
-      return window.innerHeight > window.innerWidth;
-    }
+    if (qrBoxLink) qrBoxLink.href = SV_QUIZ_URL;
+    if (qrImg) qrImg.src = qrUrl;
+    if (qrNote) qrNote.innerText = SV_QUIZ_URL;
+  }
 
-    function syncOrientationMode() {
-      const portrait = isPortraitMode();
+  let svLbRows = [];
+  let svLbRefreshTimer = null;
+  let svLbRefreshRunning = false;
 
-      document.body.classList.toggle("portrait-on", portrait);
-      document.body.classList.toggle("landscape-on", !portrait);
+  function svOpenQrModal() {
+    if (!svQrModal) return;
 
-      villagePage.classList.toggle("portrait-mode", portrait);
-      villagePage.classList.toggle("landscape-mode", !portrait);
+    svQrModal.hidden = false;
+    svQrModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("sv-modal-open");
 
-      imageWrap.classList.toggle("portrait", portrait);
-      imageWrap.classList.toggle("landscape", !portrait);
-    }
+    requestAnimationFrame(() => {
+      svQrModal.classList.add("show");
+    });
+  }
 
-    function scrollToBooth(kodeBooth) {
-      const marker = document.querySelector(".marker-" + kodeBooth);
-      if (!marker) return;
+  function svCloseQrModal() {
+    if (!svQrModal) return;
 
-      if (!isPortraitMode()) {
-        marker.animate(
-          [
-            { transform: "translate(-50%, -100%) scale(1)" },
-            { transform: "translate(-50%, -106%) scale(1.08)" },
-            { transform: "translate(-50%, -100%) scale(1)" }
-          ],
-          { duration: 480, easing: "cubic-bezier(.16,1,.3,1)" }
-        );
-        return;
+    svQrModal.classList.remove("show");
+    svQrModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("sv-modal-open");
+
+    window.setTimeout(() => {
+      if (!svQrModal.classList.contains("show")) {
+        svQrModal.hidden = true;
       }
+    }, 220);
+  }
 
-      const targetLeft = marker.offsetLeft - (villagePage.clientWidth / 2);
+  svGiftQuizButton?.addEventListener("click", svOpenQrModal);
+
+  svQrModal?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close-qr]")) {
+      svCloseQrModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && svQrModal && !svQrModal.hidden) {
+      svCloseQrModal();
+    }
+  });
+
+  function setAppHeight() {
+    const h = Math.max(
+      320,
+      Math.round(
+        window.visualViewport?.height ||
+        window.innerHeight ||
+        document.documentElement.clientHeight ||
+        0
+      )
+    );
+    document.documentElement.style.setProperty("--app-height", h + "px");
+  }
+
+  function isPortraitMode() {
+    return window.innerHeight > window.innerWidth;
+  }
+
+  function syncOrientationMode() {
+    const portrait = isPortraitMode();
+
+    document.body.classList.toggle("portrait-on", portrait);
+    document.body.classList.toggle("landscape-on", !portrait);
+
+    villagePage.classList.toggle("portrait-mode", portrait);
+    villagePage.classList.toggle("landscape-mode", !portrait);
+  }
+
+  function scrollToBooth(kodeBooth) {
+    const marker = document.querySelector(".marker-" + kodeBooth);
+    if (!marker) return;
+
+    if (!isPortraitMode()) {
+      marker.animate(
+        [
+          { transform: "translate(-50%, -100%) scale(1)" },
+          { transform: "translate(-50%, -106%) scale(1.08)" },
+          { transform: "translate(-50%, -100%) scale(1)" }
+        ],
+        { duration: 480, easing: "cubic-bezier(.16,1,.3,1)" }
+      );
+      return;
+    }
+
+    const targetLeft = marker.offsetLeft - (villagePage.clientWidth / 2);
+    villagePage.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior: "smooth"
+    });
+  }
+
+  function centerPortraitDefault(instant = false) {
+    if (!isPortraitMode()) return;
+
+    const target = document.querySelector(".marker-marketing") || document.querySelector(".marker-hc");
+    if (!target) return;
+
+    requestAnimationFrame(() => {
+      const targetLeft = target.offsetLeft - (villagePage.clientWidth / 2);
       villagePage.scrollTo({
         left: Math.max(0, targetLeft),
-        behavior: "smooth"
+        behavior: instant ? "auto" : "smooth"
       });
-    }
+    });
+  }
 
-    function centerPortraitDefault(instant = false) {
-      if (!isPortraitMode()) return;
+  function pindahBooth(kodeBooth) {
+    window.location.href = boothBaseUrl + kodeBooth;
+  }
 
-      const target = document.querySelector(".marker-marketing") || document.querySelector(".marker-hc");
-      if (!target) return;
+  function hideLoading() {
+    loadingOverlay.classList.add("hide");
+  }
 
-      requestAnimationFrame(() => {
-        const targetLeft = target.offsetLeft - (villagePage.clientWidth / 2);
-        villagePage.scrollTo({
-          left: Math.max(0, targetLeft),
-          behavior: instant ? "auto" : "smooth"
-        });
+  function svStartLeaderboardAutoRefresh() {
+    if (svLbRefreshTimer) clearInterval(svLbRefreshTimer);
+    svLbRefreshTimer = setInterval(() => {
+      svRefreshLeaderboard();
+    }, SV_LB_REFRESH_MS);
+  }
+
+  async function svRefreshLeaderboard() {
+    if (svLbRefreshRunning) return;
+
+    svLbRefreshRunning = true;
+    svSetMiniLeaderboardStatus("Sync");
+
+    try {
+      const response = await fetch(SV_LEADERBOARD_API_URL, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        },
+        cache: "no-store"
       });
-    }
 
-    function pindahBooth(kodeBooth) {
-      window.location.href = boothBaseUrl + kodeBooth;
-    }
-
-    function debugPosisi(event, namaBooth) {
-      if (!DEBUG_MODE) return;
-
-      const debugBox = document.getElementById("debugBox");
-      const rect = imageWrap.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 100;
-      const y = ((event.clientY - rect.top) / rect.height) * 100;
-
-      debugBox.innerHTML =
-        "Booth: <b>" + namaBooth + "</b><br>" +
-        "x: <b>" + x.toFixed(1) + "%</b> | " +
-        "y: <b>" + y.toFixed(1) + "%</b>";
-    }
-
-    function hideLoading() {
-      loadingOverlay.classList.add("hide");
-    }
-
-    setAppHeight();
-    syncOrientationMode();
-
-    if (villageImg.complete && villageImg.naturalWidth > 0) {
-      hideLoading();
-      centerPortraitDefault(true);
-    } else {
-      villageImg.addEventListener("load", () => {
-        hideLoading();
-        centerPortraitDefault(true);
-      }, { once: true });
-      villageImg.addEventListener("error", hideLoading, { once: true });
-    }
-
-    setTimeout(hideLoading, 5000);
-    window.addEventListener("resize", () => {
-      setAppHeight();
-      syncOrientationMode();
-      centerPortraitDefault(true);
-    }, { passive: true });
-
-    window.addEventListener("orientationchange", () => {
-      setTimeout(() => {
-        setAppHeight();
-        syncOrientationMode();
-        centerPortraitDefault(true);
-      }, 250);
-    }, { passive: true });
-
-    window.visualViewport?.addEventListener("resize", () => {
-      setAppHeight();
-      syncOrientationMode();
-    }, { passive: true });
-
-
-    /* ============================================================
-       QUIZ + LEADERBOARD AUTO REFRESH
-       ============================================================ */
-    const SV_QUIZ_FORM_URL = "https://forms.office.com/r/gyEkcLHRTu";
-    const SV_LEADERBOARD_EXCEL_URL = "https://ptsarinah-my.sharepoint.com/:x:/g/personal/frisca_adiesthy_sarinah_co_id/IQAMuVmzLVhaTp2GxxOr_C7DARMv8aBuTNd1-D-VT4n_NcE?email=aloysius.tanto%40sarinah.co.id&e=hWGKas";
-    const SV_LEADERBOARD_API_URL = /*[[${leaderboardApiUrl} != null ? ${leaderboardApiUrl} : '' ]]*/ "";
-    const SV_LB_REFRESH_MS = 10000;
-    const SV_LB_STORAGE_KEY = "sarinah_quiz_leaderboard_rows_v2";
-
-    let svLbRows = [];
-    let svLbRefreshTimer = null;
-    let svLbRefreshRunning = false;
-
-    function svOpenQuiz() {
-      window.open(SV_QUIZ_FORM_URL, "_blank", "noopener,noreferrer");
-    }
-
-    function svOpenLeaderboard() {
-      const panel = document.getElementById("svLeaderboardBackdrop");
-      if (!panel) return;
-      panel.classList.add("show");
-      panel.setAttribute("aria-hidden", "false");
-      svRenderLeaderboard();
-      svRefreshLeaderboard(false);
-    }
-
-    function svCloseLeaderboard() {
-      const panel = document.getElementById("svLeaderboardBackdrop");
-      if (!panel) return;
-      panel.classList.remove("show");
-      panel.setAttribute("aria-hidden", "true");
-    }
-
-    function svStartLeaderboardAutoRefresh() {
-      if (svLbRefreshTimer) clearInterval(svLbRefreshTimer);
-      svLbRefreshTimer = setInterval(() => svRefreshLeaderboard(false), SV_LB_REFRESH_MS);
-    }
-
-    async function svRefreshLeaderboard(force) {
-      if (svLbRefreshRunning) return;
-      svLbRefreshRunning = true;
-      const refreshText = document.getElementById("svLbRefreshText");
-      if (refreshText) refreshText.textContent = "Memuat data...";
-      svSetMiniLeaderboardStatus("Sync");
-
-      try {
-        if (SV_LEADERBOARD_API_URL && String(SV_LEADERBOARD_API_URL).trim() !== "") {
-          const response = await fetch(SV_LEADERBOARD_API_URL, {
-            method: "GET",
-            headers: { "Accept": "application/json" },
-            credentials: "same-origin",
-            cache: "no-store"
-          });
-          if (!response.ok) throw new Error("HTTP " + response.status);
-          const json = await response.json();
-          const rows = Array.isArray(json) ? json : (json.data || json.rows || json.value || []);
-          svLbRows = svNormalizeLeaderboardRows(rows);
-          svSaveStoredLeaderboardRows(rows);
-        } else {
-          const stored = svLoadStoredLeaderboardRows();
-          if (stored.length) svLbRows = svNormalizeLeaderboardRows(stored);
-        }
-
-        svRenderLeaderboard();
-        if (refreshText) {
-          const now = new Date();
-          refreshText.textContent = "Auto refresh aktif • " + now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        }
-        svSetMiniLeaderboardStatus("Auto");
-      } catch (error) {
-        console.warn("Leaderboard refresh gagal:", error);
-        if (refreshText) refreshText.textContent = "Auto refresh gagal, pakai data terakhir";
-        svSetMiniLeaderboardStatus("Demo");
-        if (force) alert("Leaderboard belum bisa refresh. Cek endpoint/data Excel.");
-      } finally {
-        svLbRefreshRunning = false;
-      }
-    }
-
-    function svSaveStoredLeaderboardRows(rows) {
-      try {
-        localStorage.setItem(SV_LB_STORAGE_KEY, JSON.stringify(rows || []));
-      } catch (err) {
-        console.warn("Tidak bisa simpan leaderboard ke localStorage", err);
-      }
-    }
-
-    function svLoadStoredLeaderboardRows() {
-      try {
-        const raw = localStorage.getItem(SV_LB_STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (err) {
-        return [];
-      }
-    }
-
-    async function svHandleLeaderboardFile(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-
-      try {
-        let rows = [];
-        const lower = file.name.toLowerCase();
-
-        if (lower.endsWith(".csv")) {
-          const text = await file.text();
-          rows = svParseCsv(text);
-        } else {
-          if (!window.XLSX) {
-            throw new Error("Library XLSX belum termuat. Coba refresh halaman lalu upload lagi.");
-          }
-          const buffer = await file.arrayBuffer();
-          const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
-        }
-
-        svSaveStoredLeaderboardRows(rows);
-        svLbRows = svNormalizeLeaderboardRows(rows);
-        svRenderLeaderboard();
-        svOpenLeaderboard();
-      } catch (error) {
-        console.error(error);
-        alert(error.message || "File leaderboard belum bisa dibaca. Gunakan .xlsx, .xls, atau .csv.");
-      } finally {
-        event.target.value = "";
-      }
-    }
-
-    function svNormalizeLeaderboardRows(rows) {
-      return (rows || [])
-        .map((row, index) => {
-          const nama = svPickValue(row, [
-            "Nama Lengkap", "Nama lengkap", "nama lengkap",
-            "Name", "name", "Nama", "nama",
-            "Full Name", "full name"
-          ]);
-
-          const email = svPickValue(row, ["Email", "email", "E-mail", "User principal name"]);
-          const scoreRaw = svPickValue(row, [
-            "Total points", "Total Points", "total points",
-            "Score", "score", "Nilai", "nilai", "Poin", "poin"
-          ]);
-          const startRaw = svPickValue(row, [
-            "Start time", "Start Time", "start time",
-            "Waktu Mulai", "waktu mulai", "Started", "started"
-          ]);
-          const completeRaw = svPickValue(row, [
-            "Completion time", "Completion Time", "completion time",
-            "Waktu Selesai", "waktu selesai", "Completed", "completed"
-          ]);
-
-          const name = String(nama || email || ("Peserta " + (index + 1))).trim();
-          const score = svToNumber(scoreRaw);
-          const startDate = svParseDate(startRaw);
-          const completeDate = svParseDate(completeRaw);
-
-          let durationMs = Number.POSITIVE_INFINITY;
-          if (startDate && completeDate) {
-            durationMs = Math.max(0, completeDate.getTime() - startDate.getTime());
-          }
-
-          return {
-            name,
-            email: String(email || "").trim(),
-            score,
-            startRaw: String(startRaw || "").trim(),
-            completeRaw: String(completeRaw || "").trim(),
-            startDate,
-            completeDate,
-            durationMs,
-            originalIndex: index
-          };
-        })
-        .filter(item => item.name && Number.isFinite(item.score))
-        .sort(svCompareLeaderboard);
-    }
-
-    function svCompareLeaderboard(a, b) {
-      // 1) Nilai tertinggi
-      if (b.score !== a.score) return b.score - a.score;
-
-      // 2) Durasi pengerjaan tercepat: Completion time - Start time
-      if (a.durationMs !== b.durationMs) return a.durationMs - b.durationMs;
-
-      // 3) Kalau durasi sama / start kosong, Completion time paling awal
-      const ac = a.completeDate ? a.completeDate.getTime() : Number.POSITIVE_INFINITY;
-      const bc = b.completeDate ? b.completeDate.getTime() : Number.POSITIVE_INFINITY;
-      if (ac !== bc) return ac - bc;
-
-      // 4) Urutan data asli
-      return a.originalIndex - b.originalIndex;
-    }
-
-
-    function svSetMiniLeaderboardStatus(text) {
-      const status = document.getElementById("svMiniLbStatusText");
-      if (!status) return;
-      status.innerHTML = '<span class="sv-mini-lb-dot"></span>' + svEscapeHtml(text || "Auto");
-    }
-
-    function svRenderMiniLeaderboardRows(rows) {
-      const target = document.getElementById("svMiniLeaderboardList");
-      if (!target) return;
-
-      const top5 = (rows || []).slice().sort(svCompareLeaderboard).slice(0, 5);
-      if (!top5.length) {
-        target.innerHTML = '<div class="sv-mini-lb-row"><span class="sv-mini-lb-rank">-</span><span class="sv-mini-lb-name">Belum ada data</span></div>';
-        return;
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
       }
 
-      target.innerHTML = top5.map((item, idx) => `
+      const json = await response.json();
+
+      const rows = Array.isArray(json)
+        ? json
+        : (json.data || json.rows || json.value || []);
+
+      svLbRows = svNormalizeLeaderboardRows(rows);
+      svRenderMiniLeaderboardRows(svLbRows);
+      svSetMiniLeaderboardStatus("Auto");
+
+      console.log("Leaderboard API HIT:", SV_LEADERBOARD_API_URL, rows);
+
+    } catch (error) {
+      console.error("Leaderboard refresh gagal:", error);
+      svSetMiniLeaderboardStatus("Error");
+      svRenderMiniLeaderboardRows([]);
+    } finally {
+      svLbRefreshRunning = false;
+    }
+  }
+
+  function svNormalizeLeaderboardRows(rows) {
+    return (rows || [])
+      .map((row, index) => {
+        const name = String(
+          row.name ??
+          row.Name ??
+          row.nama ??
+          row.Nama ??
+          row["Nama Lengkap"] ??
+          row["Nama lengkap"] ??
+          ""
+        ).trim();
+
+        const email = String(
+          row.email ??
+          row.Email ??
+          row["E-mail"] ??
+          ""
+        ).trim();
+
+        const division = String(
+          row.division ??
+          row.Division ??
+          row.divisi ??
+          row.Divisi ??
+          ""
+        ).trim();
+
+        const score = Number(
+          row.score ??
+          row.Score ??
+          row.nilai ??
+          row.Nilai ??
+          row["Total points"] ??
+          row["Total Points"] ??
+          0
+        );
+
+        const durationSeconds = Number(
+          row.durationSeconds ??
+          row.DurationSeconds ??
+          row.duration_seconds ??
+          row["durationSeconds"] ??
+          999999999
+        );
+
+        const start = String(row.start ?? row.Start ?? row["Start time"] ?? "").trim();
+        const done = String(row.done ?? row.Done ?? row["Completion time"] ?? "").trim();
+
+        return {
+          name,
+          email,
+          division,
+          score: Number.isFinite(score) ? score : 0,
+          durationSeconds: Number.isFinite(durationSeconds) ? durationSeconds : 999999999,
+          durationMs: Number.isFinite(durationSeconds) ? durationSeconds * 1000 : 999999999000,
+          start,
+          done,
+          originalIndex: index
+        };
+      })
+      .filter(item => item.name)
+      .sort(svCompareLeaderboard)
+      .slice(0, 5);
+  }
+
+  function svCompareLeaderboard(a, b) {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds - b.durationSeconds;
+    return a.originalIndex - b.originalIndex;
+  }
+
+  function svRenderMiniLeaderboardRows(rows) {
+    const target = document.getElementById("svMiniLeaderboardList");
+    if (!target) return;
+
+    const top5 = (rows || []).slice().sort(svCompareLeaderboard).slice(0, 5);
+
+    if (!top5.length) {
+      target.innerHTML = `
+        <div class="sv-mini-lb-row">
+          <span class="sv-mini-lb-rank">-</span>
+          <span class="sv-mini-lb-name">Belum ada data</span>
+          <span class="sv-mini-lb-score"></span>
+        </div>
+      `;
+      return;
+    }
+
+    target.innerHTML = top5.map((item, idx) => {
+      return `
         <div class="sv-mini-lb-row">
           <span class="sv-mini-lb-rank">${idx + 1}</span>
           <span class="sv-mini-lb-name" title="${svEscapeHtml(item.name)}">${svEscapeHtml(item.name)}</span>
+          <span class="sv-mini-lb-score">${svFormatNumber(item.score)}/100 · ${svFormatDuration(item.durationSeconds)}</span>
         </div>
-      `).join("");
-    }
+      `;
+    }).join("");
+  }
 
+  function svSetMiniLeaderboardStatus(text) {
+    const status = document.getElementById("svMiniLbStatusText");
+    if (!status) return;
 
-    function svRenderLeaderboard() {
-      const top5 = (svLbRows || []).slice().sort(svCompareLeaderboard).slice(0, 5);
-      svRenderMiniLeaderboardRows(top5);
-      const podium = document.getElementById("svLbPodium");
-      const list = document.getElementById("svLbList");
-      const empty = document.getElementById("svLbEmpty");
+    status.innerHTML = `<span class="sv-mini-lb-dot"></span>${svEscapeHtml(text || "Auto")}`;
+  }
 
-      if (!podium || !list || !empty) return;
+  function svEscapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-      if (!top5.length) {
-        podium.innerHTML = "";
-        list.innerHTML = "";
-        empty.style.display = "block";
-        return;
+  function svFormatNumber(value) {
+    const number = Number(value || 0);
+    if (!Number.isFinite(number)) return "0";
+    return number.toLocaleString("id-ID");
+  }
+
+  function svFormatDuration(seconds) {
+    const safe = Number.isFinite(Number(seconds)) ? Math.max(0, Number(seconds)) : 0;
+    const m = Math.floor(safe / 60);
+    const s = Math.floor(safe % 60);
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  // BACKGROUND MUSIC AUTOPLAY
+  const svBgMusic = document.getElementById("svBgMusic");
+  const svMusicToggle = document.getElementById("svMusicToggle");
+
+  let svMusicPlaying = false;
+
+  async function svPlayMusic() {
+    if (!svBgMusic) return;
+
+    try {
+      svBgMusic.volume = 0.55;
+      svBgMusic.muted = false;
+
+      await svBgMusic.play();
+
+      svMusicPlaying = true;
+
+      if (svMusicToggle) {
+        svMusicToggle.innerHTML = "🔊 Musik";
+        svMusicToggle.classList.remove("need-click");
       }
+    } catch (error) {
+      console.warn("Autoplay musik diblokir browser, perlu klik user:", error);
 
-      empty.style.display = "none";
+      svMusicPlaying = false;
 
-      const top3 = top5.slice(0, 3);
-      podium.innerHTML = top3.map((item, idx) => {
-        const rank = idx + 1;
-        const medal = rank === 1 ? "🥇" : (rank === 2 ? "🥈" : "🥉");
-        return `
-          <article class="sv-lb-podium-card rank-${rank}">
-            <div class="sv-lb-rank-circle">${rank}</div>
-            <div class="sv-lb-name" title="${svEscapeHtml(item.name)}">${svEscapeHtml(item.name)}</div>
-            <div class="sv-lb-sub">${svEscapeHtml(svMaskIdentity(item.email || item.completeRaw || "Quiz participant"))}</div>
-            <div class="sv-lb-score">${medal} ${svFormatNumber(item.score)} poin</div>
-            <div class="sv-lb-sub">⏱ ${svFormatDuration(item.durationMs)} • selesai ${svEscapeHtml(item.completeRaw || "-")}</div>
-          </article>
-        `;
-      }).join("");
-
-      const rows = top5.slice(3);
-      list.innerHTML = rows.map((item, idx) => {
-        const rank = idx + 4;
-        return `
-          <div class="sv-lb-row">
-            <div class="sv-lb-row-rank">${rank}</div>
-            <div class="sv-lb-row-name">
-              <b title="${svEscapeHtml(item.name)}">${svEscapeHtml(item.name)}</b>
-              <span>${svEscapeHtml(svMaskIdentity(item.email || item.completeRaw || "Quiz participant"))}</span>
-            </div>
-            <div class="sv-lb-row-time">⏱ ${svFormatDuration(item.durationMs)}</div>
-            <div class="sv-lb-row-score">${svFormatNumber(item.score)}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function svPickValue(row, keys) {
-      if (!row) return "";
-      for (const key of keys) {
-        if (Object.prototype.hasOwnProperty.call(row, key) && row[key] !== "") return row[key];
+      if (svMusicToggle) {
+        svMusicToggle.innerHTML = "▶️ Putar Musik";
+        svMusicToggle.classList.add("need-click");
       }
+    }
+  }
 
-      const lookup = {};
-      Object.keys(row).forEach(key => {
-        lookup[String(key).trim().toLowerCase()] = row[key];
-      });
+  function svPauseMusic() {
+    if (!svBgMusic) return;
 
-      for (const key of keys) {
-        const value = lookup[String(key).trim().toLowerCase()];
-        if (value !== undefined && value !== "") return value;
+    svBgMusic.pause();
+    svMusicPlaying = false;
+
+    if (svMusicToggle) {
+      svMusicToggle.innerHTML = "🔇 Musik";
+      svMusicToggle.classList.remove("need-click");
+    }
+  }
+
+  function svToggleMusic() {
+    if (!svBgMusic) return;
+
+    if (svBgMusic.paused || !svMusicPlaying) {
+      svPlayMusic();
+    } else {
+      svPauseMusic();
+    }
+  }
+
+  svMusicToggle?.addEventListener("click", svToggleMusic);
+
+  ["click", "touchstart", "keydown"].forEach((eventName) => {
+    document.addEventListener(eventName, () => {
+      if (svBgMusic && svBgMusic.paused) {
+        svPlayMusic();
       }
+    }, { once: true, passive: true });
+  });
 
-      return "";
-    }
+  initTemplateImage();
+  initQuizQr();
+  setAppHeight();
+  syncOrientationMode();
 
-    function svToNumber(value) {
-      if (typeof value === "number") return value;
-      const clean = String(value ?? "0").replace(",", ".").replace(/[^\d.-]/g, "");
-      const parsed = Number(clean);
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
+  if (villageImg.complete && villageImg.naturalWidth > 0) {
+    hideLoading();
+    centerPortraitDefault(true);
+  } else {
+    villageImg.addEventListener("load", () => {
+      hideLoading();
+      centerPortraitDefault(true);
+    }, { once: true });
 
-    function svParseDate(value) {
-      if (!value) return null;
-      if (value instanceof Date && !isNaN(value)) return value;
+    villageImg.addEventListener("error", () => {
+      hideLoading();
+    }, { once: true });
+  }
 
-      const text = String(value).trim();
-      if (!text) return null;
+  setTimeout(hideLoading, 5000);
 
-      // Excel serial number
-      if (/^\d+(\.\d+)?$/.test(text)) {
-        const serial = Number(text);
-        if (serial > 25000) {
-          const utcDays = Math.floor(serial - 25569);
-          const utcValue = utcDays * 86400;
-          const date = new Date(utcValue * 1000);
-          const fractionalDay = serial - Math.floor(serial) + 0.0000001;
-          let totalSeconds = Math.floor(86400 * fractionalDay);
-          const seconds = totalSeconds % 60;
-          totalSeconds -= seconds;
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor(totalSeconds / 60) % 60;
-          date.setHours(hours, minutes, seconds);
-          return isNaN(date) ? null : date;
-        }
-      }
+  window.addEventListener("load", () => {
+    svPlayMusic();
+  });
 
-      // Format Microsoft Forms: 5/25/2026 14:13
-      const us = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-      if (us) {
-        const parsed = new Date(Number(us[3]), Number(us[1]) - 1, Number(us[2]), Number(us[4]), Number(us[5]), Number(us[6] || 0));
-        return isNaN(parsed) ? null : parsed;
-      }
+  window.addEventListener("resize", () => {
+    setAppHeight();
+    syncOrientationMode();
+    centerPortraitDefault(true);
+  }, { passive: true });
 
-      // Format Indonesia: 25/5/2026 14:13
-      const id = text.match(/^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-      if (id) {
-        const parsed = new Date(Number(id[3]), Number(id[2]) - 1, Number(id[1]), Number(id[4]), Number(id[5]), Number(id[6] || 0));
-        return isNaN(parsed) ? null : parsed;
-      }
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      setAppHeight();
+      syncOrientationMode();
+      centerPortraitDefault(true);
+    }, 250);
+  }, { passive: true });
 
-      const fallback = new Date(text);
-      return isNaN(fallback) ? null : fallback;
-    }
+  window.visualViewport?.addEventListener("resize", () => {
+    setAppHeight();
+    syncOrientationMode();
+  }, { passive: true });
 
-    function svFormatDuration(ms) {
-      if (!Number.isFinite(ms)) return "-";
-      const totalSeconds = Math.max(0, Math.round(ms / 1000));
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      if (hours > 0) return `${hours}j ${minutes}m`;
-      if (minutes > 0) return `${minutes}m ${seconds}s`;
-      return `${seconds}s`;
-    }
-
-    function svFormatNumber(value) {
-      return new Intl.NumberFormat("id-ID").format(value || 0);
-    }
-
-    function svMaskIdentity(value) {
-      const text = String(value || "").trim();
-      if (!text) return "";
-      if (text.includes("@")) {
-        const parts = text.split("@");
-        const name = parts[0];
-        const visible = name.length <= 3 ? name : name.slice(0, 3) + "***";
-        return visible + "@" + parts[1];
-      }
-      if (text.length <= 8) return text;
-      return text.slice(0, 8) + "**";
-    }
-
-    function svEscapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function svParseCsv(csvText) {
-      const text = String(csvText || "").replace(/^\uFEFF/, "");
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
-
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        const next = text[i + 1];
-
-        if (ch === '"' && inQuotes && next === '"') {
-          cell += '"';
-          i++;
-        } else if (ch === '"') {
-          inQuotes = !inQuotes;
-        } else if ((ch === "," || ch === ";") && !inQuotes) {
-          row.push(cell);
-          cell = "";
-        } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
-          if (ch === "\r" && next === "\n") i++;
-          row.push(cell);
-          if (row.some(v => String(v).trim() !== "")) rows.push(row);
-          row = [];
-          cell = "";
-        } else {
-          cell += ch;
-        }
-      }
-
-      if (cell || row.length) {
-        row.push(cell);
-        if (row.some(v => String(v).trim() !== "")) rows.push(row);
-      }
-
-      if (!rows.length) return [];
-      const headers = rows[0].map(h => String(h || "").trim());
-      return rows.slice(1).map(values => {
-        const obj = {};
-        headers.forEach((header, idx) => obj[header || ("Column " + idx)] = values[idx] ?? "");
-        return obj;
-      });
-    }
-
-    document.getElementById("svLbExcelLink")?.setAttribute("href", SV_LEADERBOARD_EXCEL_URL);
-    document.getElementById("svLbFile")?.addEventListener("change", svHandleLeaderboardFile);
-
-    document.getElementById("svLeaderboardBackdrop")?.addEventListener("click", (event) => {
-      if (event.target && event.target.id === "svLeaderboardBackdrop") svCloseLeaderboard();
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") svCloseLeaderboard();
-    });
-
-    svLbRows = svNormalizeLeaderboardRows(svLoadStoredLeaderboardRows());
-    svRenderLeaderboard();
-    svStartLeaderboardAutoRefresh();
-    svRefreshLeaderboard(false);
-
-  </script>
+  svRenderMiniLeaderboardRows([]);
+  svRefreshLeaderboard();
+  svStartLeaderboardAutoRefresh();
+</script>
 </body>
 </html>

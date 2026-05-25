@@ -58,6 +58,18 @@ public class PortalController {
         return "redirect:/townhall";
     }
 
+    @GetMapping("/quiz-booth3")
+    public String quizBooth3(Model model) {
+
+        model.addAttribute("pageTitle", "Interactive Quiz Booth 3");
+
+        return "quiz-booth3";
+
+    }
+
+
+
+
 
 
 //    @Autowired
