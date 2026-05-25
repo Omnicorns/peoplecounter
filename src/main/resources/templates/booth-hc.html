@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Booth HC - HC Townhall</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: #050505;
+        }
+
+        .page {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at top, #173b2f 0%, #050505 55%, #000 100%);
+            overflow: hidden;
+        }
+
+        .video-wrap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom, rgba(0,0,0,.35), transparent 35%, rgba(0,0,0,.55)),
+                linear-gradient(to right, rgba(0,0,0,.55), transparent 35%, rgba(0,0,0,.35));
+        }
+
+        .topbar {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            right: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, .42);
+            backdrop-filter: blur(12px);
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+
+        .brand img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            line-height: 1.1;
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            opacity: .82;
+            margin-top: 3px;
+        }
+
+        .badge {
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.13);
+            color: white;
+            backdrop-filter: blur(12px);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .back {
+            position: absolute;
+            top: 86px;
+            left: 18px;
+            z-index: 8;
+            pointer-events: auto;
+            text-decoration: none;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(12px);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .center-action {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 6;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            color: white;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .play-big {
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,.7);
+            background: rgba(0,0,0,.45);
+            color: white;
+            font-size: 42px;
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 18px 55px rgba(0,0,0,.45);
+        }
+
+        .play-big:hover {
+            transform: scale(1.04);
+        }
+
+        .hint {
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(0,0,0,.5);
+            font-size: 13px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            z-index: 7;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 22px;
+            background: rgba(0,0,0,.48);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 18px 55px rgba(0,0,0,.35);
+        }
+
+        .btn {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,.16);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,.26);
+        }
+
+        .progress {
+            flex: 1;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.28);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .bar {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #40e0a0, #22c8ff);
+        }
+
+        .time {
+            color: white;
+            font-size: 13px;
+            min-width: 92px;
+            text-align: right;
+            opacity: .9;
+        }
+
+        .volume {
+            width: 90px;
+            accent-color: #40e0a0;
+        }
+
+        .loading {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: rgba(0,0,0,.4);
+            font-size: 15px;
+        }
+
+        .spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,.25);
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 14px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                top: 12px;
+                left: 12px;
+                right: 12px;
+            }
+
+            .brand {
+                padding: 8px 12px;
+            }
+
+            .brand img {
+                width: 28px;
+                height: 28px;
+            }
+
+            .brand-title {
+                font-size: 12px;
+            }
+
+            .brand-subtitle {
+                display: none;
+            }
+
+            .badge {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+            .back {
+                top: 70px;
+                left: 12px;
+            }
+
+            .controls {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                padding: 10px;
+                border-radius: 18px;
+                gap: 8px;
+            }
+
+            .btn {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+
+            .volume {
+                display: none;
+            }
+
+            .time {
+                min-width: 72px;
+                font-size: 11px;
+            }
+        }
+
+        @media (orientation: portrait) {
+            video {
+                object-fit: contain;
+                background: #000;
+            }
+
+            .page {
+                background: #000;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="page">
+
+    <div class="video-wrap">
+        <video id="mainVideo"
+               autoplay
+               muted
+               loop
+               playsinline
+               preload="auto"
+               poster="/sarinah.png"
+               th:poster="@{/sarinah.png}">
+            <source src="/videos/HC-Townhall.mp4"
+                    th:src="@{/videos/HC-Townhall.mp4}"
+                    type="video/mp4">
+            Browser Anda tidak mendukung video.
+        </video>
+    </div>
+
+    <div class="loading" id="loading">
+        <div>
+            <div class="spinner"></div>
+            Memuat video HC Townhall...
+        </div>
+    </div>
+
+    <div class="overlay"></div>
+
+    <div class="topbar">
+        <div class="brand">
+            <img src="/sarinah.png" th:src="@{/sarinah.png}" alt="Sarinah">
+            <div class="brand-text">
+                <div class="brand-title">HC Townhall</div>
+                <div class="brand-subtitle">Human Capital Experience</div>
+            </div>
+        </div>
+
+        <div class="badge">HC Booth</div>
+    </div>
+
+    <a class="back" href="/townhall" th:href="@{/townhall}">
+        ← Kembali
+    </a>
+
+    <div class="center-action" id="centerAction">
+        <button class="play-big" id="centerPlay">▶</button>
+        <div class="hint">Klik untuk mulai video</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="playBtn">⏸</button>
+        <button class="btn" id="muteBtn">🔇</button>
+
+        <div class="progress" id="progress">
+            <div class="bar" id="bar"></div>
+        </div>
+
+        <div class="time" id="timeText">00:00 / 00:00</div>
+
+        <input class="volume" id="volume" type="range" min="0" max="1" step="0.01" value="0.8">
+
+        <button class="btn" id="fullBtn">⛶</button>
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById("mainVideo");
+    const playBtn = document.getElementById("playBtn");
+    const muteBtn = document.getElementById("muteBtn");
+    const fullBtn = document.getElementById("fullBtn");
+    const progress = document.getElementById("progress");
+    const bar = document.getElementById("bar");
+    const timeText = document.getElementById("timeText");
+    const volume = document.getElementById("volume");
+    const loading = document.getElementById("loading");
+    const centerAction = document.getElementById("centerAction");
+    const centerPlay = document.getElementById("centerPlay");
+
+    function formatTime(sec) {
+        if (!sec || isNaN(sec)) return "00:00";
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function updateUI() {
+        playBtn.textContent = video.paused ? "▶" : "⏸";
+        muteBtn.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
+
+        const percent = video.duration ? (video.currentTime / video.duration) * 100 : 0;
+        bar.style.width = percent + "%";
+        timeText.textContent = formatTime(video.currentTime) + " / " + formatTime(video.duration);
+    }
+
+    async function playVideo() {
+        try {
+            await video.play();
+            centerAction.style.display = "none";
+        } catch (e) {
+            centerAction.style.display = "flex";
+        }
+        updateUI();
+    }
+
+    playBtn.addEventListener("click", () => {
+        if (video.paused) {
+            playVideo();
+        } else {
+            video.pause();
+        }
+        updateUI();
+    });
+
+    centerPlay.addEventListener("click", () => {
+        video.muted = false;
+        video.volume = Number(volume.value || 0.8);
+        playVideo();
+    });
+
+    muteBtn.addEventListener("click", () => {
+        video.muted = !video.muted;
+        updateUI();
+    });
+
+    volume.addEventListener("input", () => {
+        video.volume = Number(volume.value);
+        video.muted = video.volume === 0;
+        updateUI();
+    });
+
+    progress.addEventListener("click", (e) => {
+        const rect = progress.getBoundingClientRect();
+        const ratio = (e.clientX - rect.left) / rect.width;
+        video.currentTime = ratio * video.duration;
+    });
+
+    fullBtn.addEventListener("click", () => {
+        const page = document.querySelector(".page");
+
+        if (!document.fullscreenElement) {
+            page.requestFullscreen?.();
+        } else {
+            document.exitFullscreen?.();
+        }
+    });
+
+    video.addEventListener("timeupdate", updateUI);
+    video.addEventListener("loadedmetadata", updateUI);
+
+    video.addEventListener("canplay", () => {
+        loading.style.display = "none";
+        playVideo();
+    });
+
+    video.addEventListener("waiting", () => {
+        loading.style.display = "grid";
+    });
+
+    video.addEventListener("playing", () => {
+        loading.style.display = "none";
+        centerAction.style.display = "none";
+        updateUI();
+    });
+
+    video.addEventListener("pause", updateUI);
+
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            e.preventDefault();
+            if (video.paused) playVideo();
+            else video.pause();
+        }
+
+        if (e.key.toLowerCase() === "m") {
+            video.muted = !video.muted;
+            updateUI();
+        }
+
+        if (e.key.toLowerCase() === "f") {
+            fullBtn.click();
+        }
+    });
+
+    window.addEventListener("load", () => {
+        video.volume = 0.8;
+        playVideo();
+    });
+</script>
+
+</body>
+</html>

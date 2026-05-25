@@ -7,6 +7,7 @@ import com.sarinah.peoplecounter.repository.QuizBooth3ResultRepository;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -128,12 +129,31 @@ public class QuizBooth3Controller {
     @PostMapping("/submit")
     public ResponseEntity<?> submit(@RequestBody SubmitRequest request) throws JsonProcessingException {
 
-        if (request.name() == null || request.name().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Nama lengkap wajib diisi"));
+        String cleanName = cleanText(request.name());
+        String cleanDivision = cleanText(request.division());
+
+        if (cleanName.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Nama lengkap wajib diisi"
+            ));
         }
 
-        if (request.division() == null || request.division().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Divisi wajib diisi"));
+        if (!isValidFullName(cleanName)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Nama lengkap minimal 2 huruf dan hanya boleh huruf, spasi, titik, petik, atau strip"
+            ));
+        }
+
+        if (repository.existsByNormalizedName(cleanName)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "message", "Nama lengkap sudah pernah submit quiz. Tidak boleh duplikat."
+            ));
+        }
+
+        if (cleanDivision.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Divisi wajib diisi"
+            ));
         }
 
         Map<String, String> answers = request.answers() == null
@@ -165,8 +185,8 @@ public class QuizBooth3Controller {
         int durationSeconds = Math.max(request.durationSeconds(), 0);
 
         QuizBooth3Result entity = new QuizBooth3Result();
-        entity.setName(request.name().trim());
-        entity.setDivision(request.division().trim());
+        entity.setName(cleanName);
+        entity.setDivision(cleanDivision);
         entity.setScore(score);
         entity.setMaxScore(100);
         entity.setDurationSeconds(durationSeconds);
@@ -183,6 +203,34 @@ public class QuizBooth3Controller {
                 100,
                 durationSeconds,
                 results
+        ));
+    }
+
+
+    @GetMapping("/check-name")
+    public ResponseEntity<?> checkName(@RequestParam(required = false) String name) {
+        String cleanName = cleanText(name);
+
+        if (cleanName.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Nama lengkap wajib diisi"
+            ));
+        }
+
+        if (!isValidFullName(cleanName)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Nama lengkap minimal 2 huruf dan hanya boleh huruf, spasi, titik, petik, atau strip"
+            ));
+        }
+
+        boolean duplicate = repository.existsByNormalizedName(cleanName);
+
+        return ResponseEntity.ok(Map.of(
+                "name", cleanName,
+                "duplicate", duplicate,
+                "message", duplicate
+                        ? "Nama lengkap sudah pernah submit quiz."
+                        : "Nama bisa digunakan."
         ));
     }
 
@@ -243,6 +291,27 @@ public class QuizBooth3Controller {
         int minutes = total / 60;
         int remainingSeconds = total % 60;
         return String.format("%02d:%02d", minutes, remainingSeconds);
+    }
+    private String cleanText(String value) {
+        if (value == null) return "";
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private boolean isValidFullName(String value) {
+        String clean = cleanText(value);
+
+        if (clean.length() < 2 || clean.length() > 120) {
+            return false;
+        }
+
+        // Boleh satu kata atau lebih.
+        // Contoh valid:
+        // Tanto
+        // Sukarno
+        // Aloysius Tanto Wibowo
+        // Jean-Luc
+        // O'Connor
+        return clean.matches("^[\\p{L}][\\p{L} .'-]*$");
     }
 
     public record QuizConfig(

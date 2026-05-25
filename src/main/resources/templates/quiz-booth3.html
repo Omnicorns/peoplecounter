@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Interactive Quiz Booth 3</title>
+    <title>Interactive Quiz Booth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
@@ -440,6 +440,28 @@
             box-shadow: 0 0 0 5px rgba(29,124,255,.12);
         }
 
+        .input.invalid {
+            border-color: rgba(180, 35, 24, .65);
+            box-shadow: 0 0 0 5px rgba(180, 35, 24, .10);
+        }
+
+        .name-error {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: #fff1f3;
+            color: #b42318;
+            font-size: 13px;
+            font-weight: 900;
+            display: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .name-error.show {
+            display: block;
+        }
+
         .section-label {
             display: flex;
             align-items: center;
@@ -461,7 +483,6 @@
             box-shadow: 0 7px 18px rgba(255,91,159,.22);
         }
 
-        /* === LAYOUT BARU: satu soal mendatar (full width) per baris === */
         .questions-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -516,7 +537,6 @@
             color: #1d2939;
         }
 
-        /* opsi jawaban tampil 2 kolom supaya tetap ringkas saat soal melebar */
         .option-list {
             padding: 18px 22px 22px;
             display: grid;
@@ -722,36 +742,6 @@
             font-size: 13px;
         }
 
-        .result-list {
-            max-width: 760px;
-            margin: 22px auto 0;
-            display: grid;
-            gap: 10px;
-            text-align: left;
-        }
-
-        .result-item {
-            padding: 14px 16px;
-            border-radius: 18px;
-            display: flex;
-            justify-content: space-between;
-            gap: 14px;
-            align-items: center;
-            font-weight: 900;
-            border: 1px solid var(--line);
-            background: white;
-        }
-
-        .result-item.correct {
-            color: #067647;
-            background: #ecfdf3;
-        }
-
-        .result-item.wrong {
-            color: #b42318;
-            background: #fff1f3;
-        }
-
         .hidden {
             display: none !important;
         }
@@ -835,7 +825,6 @@
                 padding: 16px;
             }
 
-            /* di layar kecil opsi kembali jadi 1 kolom */
             .option-list {
                 grid-template-columns: 1fr;
                 padding: 14px;
@@ -869,7 +858,7 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="brand-title">Interactive Quiz Booth 3</div>
+                    <div class="brand-title">Interactive Quiz Booth</div>
                     <div class="brand-subtitle">Driving Connection & Innovation</div>
                 </div>
             </div>
@@ -919,7 +908,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h2>Quiz Booth 3</h2>
+                        <h2>Quiz Booth</h2>
                         <p id="questionCountText">Memuat pertanyaan...</p>
                     </div>
                 </div>
@@ -986,6 +975,10 @@
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
+    }
+
+    function cleanTextClient(value) {
+        return String(value || "").trim().replace(/\s+/g, " ");
     }
 
     function formatTime(seconds) {
@@ -1073,6 +1066,9 @@
         identityGrid.innerHTML = identityQuestions.map(q => {
             const fieldName = q.number === 1 ? "name" : q.number === 2 ? "division" : ("text_" + q.number);
             const label = q.number === 1 ? "Nama Lengkap" : q.number === 2 ? "Divisi / Unit Kerja" : q.text;
+            const placeholder = q.number === 1
+                ? "Contoh: Tanto / Aloysius Tanto Wibowo"
+                : q.text;
 
             return `
                 <div class="identity-card">
@@ -1083,9 +1079,10 @@
                         data-question-number="${escapeHtml(q.number)}"
                         data-field="${escapeHtml(fieldName)}"
                         type="text"
-                        placeholder="${escapeHtml(q.text)}"
+                        placeholder="${escapeHtml(placeholder)}"
                         autocomplete="off"
                     >
+                    ${q.number === 1 ? `<div class="name-error" id="nameError"></div>` : ``}
                 </div>
             `;
         }).join("");
@@ -1125,11 +1122,24 @@
         document.querySelectorAll(".participant-input").forEach(input => {
             input.addEventListener("input", updateProgress);
         });
+
+        const nameInput = document.getElementById("name");
+
+        if (nameInput) {
+            nameInput.addEventListener("input", () => {
+                clearNameError();
+                updateProgress();
+            });
+
+            nameInput.addEventListener("blur", () => {
+                checkDuplicateName();
+            });
+        }
     }
 
     function getParticipantValue(field) {
         const el = document.getElementById(field);
-        return el ? el.value.trim() : "";
+        return el ? cleanTextClient(el.value) : "";
     }
 
     function getAnswerQuestions() {
@@ -1184,6 +1194,81 @@
         }
     }
 
+    function isValidFullNameClient(value) {
+        const clean = cleanTextClient(value);
+
+        if (clean.length < 2 || clean.length > 120) {
+            return false;
+        }
+
+        return /^[A-Za-zÀ-ÖØ-öø-ÿĀ-žḀ-ỿ\s.'-]+$/.test(clean);
+    }
+
+    function setNameError(message) {
+        const err = document.getElementById("nameError");
+        const nameInput = document.getElementById("name");
+
+        if (err) {
+            err.innerText = message;
+            err.classList.add("show");
+        }
+
+        if (nameInput) {
+            nameInput.classList.add("invalid");
+            nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+
+    function clearNameError() {
+        const err = document.getElementById("nameError");
+        const nameInput = document.getElementById("name");
+
+        if (err) {
+            err.innerText = "";
+            err.classList.remove("show");
+        }
+
+        if (nameInput) {
+            nameInput.classList.remove("invalid");
+        }
+    }
+
+    async function checkDuplicateName() {
+        clearNameError();
+
+        const name = getParticipantValue("name");
+
+        if (!name) {
+            return false;
+        }
+
+        if (!isValidFullNameClient(name)) {
+            setNameError("Nama lengkap minimal 2 huruf. Contoh: Tanto atau Aloysius Wibowo");
+            return true;
+        }
+
+        try {
+            const res = await fetch(API_BASE + "/check-name?name=" + encodeURIComponent(name));
+            const data = await res.json();
+
+            if (!res.ok) {
+                setNameError(data.message || "Nama lengkap tidak valid.");
+                return true;
+            }
+
+            if (data.duplicate) {
+                setNameError("Nama lengkap sudah pernah submit quiz. Tidak boleh duplikat.");
+                return true;
+            }
+
+            clearNameError();
+            return false;
+
+        } catch (e) {
+            return false;
+        }
+    }
+
     function validateAnswers(forceSubmit) {
         const identityQuestions = getIdentityQuestions();
         const answerQuestions = getAnswerQuestions();
@@ -1192,12 +1277,20 @@
             for (const q of identityQuestions) {
                 const fieldName = q.number === 1 ? "name" : q.number === 2 ? "division" : ("text_" + q.number);
                 const input = document.getElementById(fieldName);
-                if (!input || !input.value.trim()) {
+                const value = getParticipantValue(fieldName);
+
+                if (!input || !value) {
                     alert((q.number === 1 ? "Nama lengkap" : q.number === 2 ? "Divisi" : "Jawaban teks") + " wajib diisi.");
                     if (input) {
                         input.focus();
                         input.scrollIntoView({ behavior: "smooth", block: "center" });
                     }
+                    return false;
+                }
+
+                if (q.number === 1 && !isValidFullNameClient(value)) {
+                    setNameError("Nama lengkap minimal 2 huruf dan hanya boleh huruf, spasi, titik, petik, atau strip.");
+                    input.focus();
                     return false;
                 }
             }
@@ -1238,6 +1331,15 @@
 
         if (!validateAnswers(forceSubmit)) return;
 
+        if (!forceSubmit) {
+            const hasNameProblem = await checkDuplicateName();
+
+            if (hasNameProblem) {
+                updateProgress();
+                return;
+            }
+        }
+
         const payload = buildPayload(forceSubmit);
         const submitBtn = document.getElementById("submitBtn");
 
@@ -1260,7 +1362,12 @@
                     message = err.message || message;
                 } catch (ignore) {}
 
-                alert(message);
+                if (String(message).toLowerCase().includes("nama")) {
+                    setNameError(message);
+                } else {
+                    alert(message);
+                }
+
                 submitBtn.innerText = "Submit Quiz";
                 updateProgress();
                 return;
@@ -1289,11 +1396,13 @@
         const score = result.score ?? 0;
         const maxScore = result.maxScore ?? (getAnswerQuestions().length * 10);
 
-        let html = `
+        const html = `
             <div class="result-card">
                 <h2 class="state-title">${forceSubmit ? "Waktu Habis, Jawaban Terkirim" : "Quiz Selesai!"}</h2>
-                <p class="state-desc">Terima kasih sudah berpartisipasi di Interactive Quiz Booth 3.</p>
+                <p class="state-desc">Terima kasih sudah berpartisipasi di Interactive Quiz Booth.</p>
+
                 <div class="score-number">${escapeHtml(score)}/${escapeHtml(maxScore)}</div>
+
                 <div class="score-meta">
                     <span class="score-pill">Completion Time: ${escapeHtml(formatTime(duration))}</span>
                     <span class="score-pill">Nama: ${escapeHtml(buildPayload(true).name)}</span>
@@ -1301,19 +1410,6 @@
                 </div>
             </div>
         `;
-
-        if (result.results && result.results.length > 0) {
-            html += `<div class="result-list">`;
-            result.results.forEach(r => {
-                html += `
-                    <div class="result-item ${r.correct ? "correct" : "wrong"}">
-                        <span>Question ${escapeHtml(r.questionNumber)} — ${r.correct ? "Correct" : "Wrong"}</span>
-                        <span>${escapeHtml(r.points)}/10 Points</span>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
 
         document.getElementById("resultState").innerHTML = html;
         window.scrollTo({ top: 0, behavior: "smooth" });
