@@ -1,16 +1,18 @@
 package com.sarinah.peoplecounter.controller;
 
 
-import com.sarinah.peoplecounter.model.ApiContext;
+
 import com.sarinah.peoplecounter.request.ForgotPasswordRequest;
 import com.sarinah.peoplecounter.request.LoginRequest;
 import com.sarinah.peoplecounter.request.RegisterRequest;
 import com.sarinah.peoplecounter.response.AuthResponse;
 import com.sarinah.peoplecounter.response.UserResponse;
 import com.sarinah.peoplecounter.service.AuthService;
+import com.sarinah.peoplecounter.service.LdapUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final LdapUserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req){
@@ -56,5 +59,12 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "message", "Password berhasil diganti, silakan login dengan password baru."
         ));
+    }
+    @PostMapping("/signin")
+    public ResponseEntity<LdapUserService.LoginResponse> login(@RequestBody LdapUserService.LoginRequest req) {
+        LdapUserService.LoginResponse res = userService.authenticate(req.username(), req.password());
+        return res.success()
+                ? ResponseEntity.ok(res)
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
     }
 }
