@@ -37,6 +37,10 @@ public class SarinahGetModulAdaptor {
     @Value("${sarinah-portal.total-spender.url}")
     private String totalSpenderUrl;
 
+    @Value("${dev.sarinah-portal.barcode.url}")
+    private String devBarcodeUrl;
+
+
 
 
     private final CommonUtils commonUtils;
@@ -48,6 +52,19 @@ public class SarinahGetModulAdaptor {
         ObjectNode root = defaultPointRestClient
                 .post()
                 .uri(commonUtils.dynamicParamBuilder(request,barcodeUrl))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(ObjectNode.class);;                 // baca sebagai JsonNode
+
+        return root;
+    }
+
+    public ObjectNode getScanBarcodeDev(ObjectNode request) {
+
+        ObjectNode root = defaultPointRestClient
+                .post()
+                .uri(commonUtils.dynamicParamBuilder(request,devBarcodeUrl))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
