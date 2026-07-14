@@ -21,6 +21,7 @@ public class ScanBarcodeController {
     private final PostTopSpenderService postTopSpenderService;
     private final PostOrderRefferalService postOrderRefferalService;
     private final PostScanDevBarcodeService postScanDevBarcodeService;
+    private final PostLocLocationService postLocLocationService;
 
     @PostMapping(value = "/barcode")
     public ObjectNode postScanResponse(@RequestBody ObjectNode request) {
@@ -61,6 +62,11 @@ public class ScanBarcodeController {
     @PostMapping(value = "/dev/barcode")
     public ObjectNode postScanBarcode(@RequestBody ObjectNode request) {
         return postScanDevBarcodeService.execute(request);
+    }
+
+    @PostMapping(value = "/location")
+    public ArrayNode postLocation(@RequestBody ObjectNode request) {
+        return postLocLocationService.execute(request);
     }
 
 }

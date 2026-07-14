@@ -40,6 +40,10 @@ public class SarinahGetModulAdaptor {
     @Value("${dev.sarinah-portal.barcode.url}")
     private String devBarcodeUrl;
 
+    @Value("${sarinah-portal.query-select.url}")
+    private String queryUrl;
+
+
 
 
 
@@ -57,6 +61,18 @@ public class SarinahGetModulAdaptor {
                 .retrieve()
                 .body(ObjectNode.class);;                 // baca sebagai JsonNode
 
+        return root;
+    }
+
+    public ArrayNode getQuerySelect(ObjectNode request) {
+        ArrayNode root = defaultPointRestClient
+                .post()
+                .uri(queryUrl)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(commonUtils.dynamicFormDataBuilder(request)) // tanpa BodyInserters
+                .retrieve()
+                .body(ArrayNode.class); // ini valid untuk RestClient
         return root;
     }
 
