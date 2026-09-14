@@ -23,6 +23,7 @@ public class ScanBarcodeController {
     private final PostScanDevBarcodeService postScanDevBarcodeService;
     private final PostLocLocationService postLocLocationService;
     private final PostBrandService postBrandService;
+    private final PostPartnerService postPartnerService;
 
     @PostMapping(value = "/barcode")
     public ObjectNode postScanResponse(@RequestBody ObjectNode request) {
@@ -74,5 +75,11 @@ public class ScanBarcodeController {
     public ArrayNode postBrand(@RequestBody ObjectNode request) {
         return postBrandService.execute(request);
     }
+
+    @PostMapping(value = "/partner")
+    public ArrayNode postPartner(@RequestBody ObjectNode request) {
+        return postPartnerService.execute(request);
+    }
+
 
 }
