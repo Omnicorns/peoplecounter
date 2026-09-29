@@ -71,6 +71,8 @@ public class SecurityConfig {
             "/api/admin/users/pdf/**",
             "/api/admin/users/catalogs",
             "/api/admin/users/**",
+            "/dashboard-pos",
+            "/api/dashboard",
 
             // PWA & static root
             "/manifest.webmanifest",

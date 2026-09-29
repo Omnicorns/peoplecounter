@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Executive Dashboard &mdash; Sarinah POS</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div class="rangka">
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sisi">
+        <div class="sisi-merek">
+            <span class="sisi-logo">S</span>
+            <div>
+                <strong>Sarinah POS</strong>
+                <span>EXECUTIVE</span>
+            </div>
+        </div>
+
+        <nav class="sisi-menu" id="tabBar">
+            <a href="#" data-tab="ringkasan" class="aktif">Ringkasan</a>
+            <a href="#" data-tab="bank">Bank &amp; Pembayaran</a>
+            <a href="#" data-tab="lokasi">Lokasi &amp; Lantai</a>
+            <a href="#" data-tab="brand">Brand &amp; Produk</a>
+            <a href="#" data-tab="tabel">Tabel &amp; Unduhan</a>
+        </nav>
+
+        <div class="sisi-kaki">
+            <span class="titik" id="statusTitik"></span>
+            <div>
+                <small>Data terakhir diperbarui</small>
+                <span id="waktuAmbil">memuat&hellip;</span>
+                <small id="sumberData"></small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===================== KONTEN ===================== -->
+    <main class="utama">
+
+        <header class="kepala">
+            <div>
+                <h1>Executive Dashboard</h1>
+                <p class="kepala-sub">POS Performance Overview
+                   <span id="judulTahun">&mdash;</span></p>
+            </div>
+            <div class="kepala-kanan">
+                <div class="lencana">
+                    <span class="lencana-judul" id="tanggalHariIni">&mdash;</span>
+                    <span class="lencana-sub" id="jamHariIni">&mdash;</span>
+                </div>
+                <button class="btn" type="button" id="tombolMuatUlang">Ambil ulang</button>
+            </div>
+        </header>
+
+        <!-- ---------- FILTER ---------- -->
+        <form class="filter" id="formFilter">
+            <div class="f">
+                <label>Tahun</label>
+                <select name="tahun" id="fTahun"></select>
+            </div>
+            <div class="f">
+                <label>Bulan</label>
+                <select name="bulan" id="fBulan"></select>
+            </div>
+            <div class="f">
+                <label>Bank Issuer</label>
+                <select name="bank" id="fBank"></select>
+            </div>
+            <div class="f">
+                <label>Branch</label>
+                <select name="branch" id="fBranch"></select>
+            </div>
+            <div class="f">
+                <label>Lokasi</label>
+                <select name="lokasi" id="fLokasi"></select>
+            </div>
+            <div class="f">
+                <label>Metode Bayar</label>
+                <select name="metode" id="fMetode"></select>
+            </div>
+            <div class="f f-check">
+                <label class="chk">
+                    <input type="checkbox" name="hanyaKartu" id="fKartu"> Kartu saja (EDC)
+                </label>
+            </div>
+            <div class="f">
+                <button class="btn btn-ghost" type="button" id="tombolReset">Reset</button>
+            </div>
+        </form>
+
+        <!-- ---------- PESAN GAGAL ---------- -->
+        <section class="panel kotak-gagal tersembunyi" id="kotakGagal">
+            <h2 id="gagalJudul">Gagal memuat data</h2>
+            <p id="gagalPesan"></p>
+            <pre id="gagalRinci"></pre>
+        </section>
+
+        <!-- ---------- KPI ---------- -->
+        <section class="kpi-baris" id="kpiBaris"></section>
+
+        <!-- ---------- TAB: RINGKASAN ---------- -->
+        <div class="tab" data-panel="ringkasan">
+            <section class="panel panel-tren">
+                <div class="panel-head">
+                    <div>
+                        <h2>Tren Nilai Transaksi</h2>
+                        <p class="ket">Kolom dipecah menurut Card Type, garis menunjukkan totalnya.</p>
+                    </div>
+                    <div class="sorot-nilai">
+                        <span id="trenTotal" class="lompat">&mdash;</span>
+                        <span id="trenDelta" class="delta"></span>
+                    </div>
+                </div>
+                <div id="chart-bulan" class="wadah-chart"></div>
+            </section>
+
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Top Grup Brand</h2>
+                    <p class="ket">10 grup brand dengan nilai transaksi terbesar.</p>
+                    <div id="chart-grup" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Top Brand</h2>
+                    <p class="ket">Satu grup brand bisa berisi beberapa brand per lokasi.</p>
+                    <div id="chart-brandtop" class="bar-chart"></div>
+                </section>
+            </div>
+
+            <div class="grid-3">
+                <section class="panel">
+                    <h2>Komposisi Kategori</h2>
+                    <div id="chart-kategori" class="wadah-donut"></div>
+                </section>
+                <section class="panel">
+                    <h2>Metode Pembayaran</h2>
+                    <div id="chart-metode" class="wadah-donut"></div>
+                </section>
+                <section class="panel">
+                    <h2>Performa Lokasi</h2>
+                    <p class="ket">Diurutkan menurut jumlah transaksi.</p>
+                    <div class="tabel-bungkus"><table id="tabelLokasi"></table></div>
+                </section>
+            </div>
+
+            <section class="panel">
+                <h2>Insight Eksekutif</h2>
+                <div class="insight-baris" id="insightBaris"></div>
+            </section>
+        </div>
+
+        <!-- ---------- TAB: BANK ---------- -->
+        <div class="tab tersembunyi" data-panel="bank">
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Peringkat Bank</h2>
+                    <p class="ket">12 bank issuer terbesar pada periode terpilih.</p>
+                    <div id="chart-bank" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Basket Size per Tingkatan Kartu</h2>
+                    <p class="ket">Minimal 20 struk. Dasar untuk menentukan segmen kartu
+                       yang layak ditawari program khusus.</p>
+                    <div id="chart-kelas" class="bar-chart"></div>
+                </section>
+            </div>
+
+            <section class="panel">
+                <h2>Bank &times; Grup Brand</h2>
+                <p class="ket">Kombinasi terbesar, tanpa transaksi non-kartu.
+                   Inilah tabel utama untuk pembahasan kerjasama bank.</p>
+                <div class="tabel-bungkus"><table id="tabelBankBrand"></table></div>
+            </section>
+        </div>
+
+        <!-- ---------- TAB: LOKASI ---------- -->
+        <div class="tab tersembunyi" data-panel="lokasi">
+            <section class="sorot-baris" id="sorotBaris"></section>
+
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Jumlah Transaksi per Branch</h2>
+                    <p class="ket">Diurutkan menurut banyaknya transaksi, bukan nilai rupiah.</p>
+                    <div id="chart-branch-trx" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Jumlah Transaksi per Lantai</h2>
+                    <p class="ket">Lantai yang paling ramai belum tentu yang nilainya terbesar.</p>
+                    <div id="chart-lantai-trx" class="bar-chart"></div>
+                </section>
+            </div>
+
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Nilai Transaksi per Lokasi</h2>
+                    <div id="chart-lokasi" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Nilai Transaksi per Lantai</h2>
+                    <p class="ket">Lantai ditampilkan bersama branch-nya, supaya
+                       &ldquo;Lantai 3&rdquo; di gedung berbeda tidak tercampur.</p>
+                    <div id="chart-lantai" class="bar-chart"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ---------- TAB: BRAND ---------- -->
+        <div class="tab tersembunyi" data-panel="brand">
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Top Grup Brand</h2>
+                    <div id="chart-grup2" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Top Brand</h2>
+                    <div id="chart-brandtop2" class="bar-chart"></div>
+                </section>
+            </div>
+            <section class="panel">
+                <h2>Komposisi MD Category</h2>
+                <div id="chart-kategori2" class="wadah-donut"></div>
+            </section>
+        </div>
+
+        <!-- ---------- TAB: TABEL ---------- -->
+        <div class="tab tersembunyi" data-panel="tabel">
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Sum of Payment Amount</h2>
+                        <p class="ket">Baris: Bank Issuer &rarr; Payment Method &middot;
+                           Kolom: Bulan &rarr; Card Type. Sama persis dengan pivot di Excel.</p>
+                    </div>
+                    <div class="tombol-grup">
+                        <a class="btn btn-ghost" id="unduhPivot" href="#">Unduh pivot</a>
+                        <a class="btn btn-ghost" id="unduhData" href="#">Unduh data mentah</a>
+                        <a class="btn btn-ghost" id="unduhBrand" href="#">Unduh bank &times; brand</a>
+                    </div>
+                </div>
+                <div class="geser" id="wadahPivot"></div>
+            </section>
+        </div>
+
+        <footer>
+            <p>Angka di sini adalah nilai pembayaran dari <code>vw_POSPayment</code>,
+               sama dengan pivot payment yang selama ini dipakai.
+               Nilai yang kosong di database diberi keterangan sesuai artinya:
+               <strong>Non-kartu (Cash/QRIS/Voucher)</strong> untuk Bank Issuer,
+               <strong>Non-kartu</strong> untuk Card Type, <strong>Kelas tidak terdeteksi</strong>
+               untuk Card Class, dan <strong>Tidak tercatat</strong> untuk lokasi, branch, atau lantai.
+               <strong>Jumlah struk</strong> dihitung berbobot: satu struk yang dibayar
+               dua kartu memberi 0,5 ke masing-masing, sehingga totalnya tetap akurat.</p>
+        </footer>
+
+    </main>
+</div>
+
+<!-- ===================== TIRAI LOADING ===================== -->
+<div class="tirai" id="tirai">
+    <div class="tirai-isi">
+        <div class="tirai-logo">S</div>
+        <h2>Menyiapkan dashboard</h2>
+        <p id="tiraiLangkah">Menghubungi database&hellip;</p>
+
+        <div class="progres"><div class="progres-isi" id="progresIsi"></div></div>
+
+        <ul class="tahap" id="tahapDaftar">
+            <li data-tahap="0"><span class="bulat"></span> Menghubungi database</li>
+            <li data-tahap="1"><span class="bulat"></span> Membaca data pembayaran</li>
+            <li data-tahap="2"><span class="bulat"></span> Menghitung alokasi brand</li>
+            <li data-tahap="3"><span class="bulat"></span> Menyusun grafik</li>
+        </ul>
+
+        <small class="tirai-catatan">
+            Pengambilan pertama untuk satu tahun memang memakan waktu.
+            Setelah ini tersimpan di memori, dan ganti filter maupun ganti tab jadi instan.
+        </small>
+        <small class="tirai-waktu" id="tiraiWaktu">0 detik</small>
+
+        <div class="tirai-tips tersembunyi" id="tiraiTips">
+            <strong>Menunggu lebih dari satu menit?</strong>
+            Database sedang mengagregasi seluruh transaksi setahun dari nol.
+            Jalankan <code>src/main/resources/tabel-cepat.sql</code> sekali di SSMS &mdash;
+            aplikasi akan mendeteksinya sendiri dan pemuatan berikutnya jadi hitungan detik.
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/chart.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
