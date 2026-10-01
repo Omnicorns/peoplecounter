@@ -1,6 +1,5 @@
 package com.sarinah.peoplecounter.repository;
 
-
 import com.sarinah.peoplecounter.model.Fakta;
 import com.sarinah.peoplecounter.model.FaktaBrand;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,15 +12,16 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Satu query saja, hanya menyentuh dua view:
+ * Hanya menyentuh dua view:
  *   dbo.vw_POSOrder    -- tanggal dan lokasi
  *   dbo.vw_POSPayment  -- nilai bayar, bank, jenis & kelas kartu
  *
- * vw_POSOrderLine sengaja TIDAK dipakai. Itulah bagian terberat sebelumnya,
- * dan untuk laporan payment per bank memang tidak diperlukan.
+ * Setiap pengambilan punya dua bentuk:
+ *   ambil(tahun)         -- setahun penuh
+ *   ambil(tahun, bulan)  -- satu bulan saja, sekitar 1/12 bebannya
  *
- * Hasilnya setara dengan pivot payment: satu baris per
- * bulan x bank x metode x jenis kartu x kelas kartu x lokasi.
+ * Menyaring per bulan AMAN untuk angkanya: bobot struk dan alokasi brand
+ * dihitung per order_id, dan satu struk tidak pernah terbelah dua bulan.
  */
 @Repository
 public class DashboardRepository {
@@ -31,6 +31,24 @@ public class DashboardRepository {
     public DashboardRepository(@Qualifier("jdbcSqlServer") NamedParameterJdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
+
+    /* =====================================================================
+       RENTANG TANGGAL -- dipakai kedua query
+       ===================================================================== */
+
+    private MapSqlParameterSource rentang(int tahun, Integer bulan) {
+        LocalDate dari   = (bulan == null) ? LocalDate.of(tahun, 1, 1)
+                : LocalDate.of(tahun, bulan, 1);
+        LocalDate sampai = (bulan == null) ? LocalDate.of(tahun + 1, 1, 1)
+                : dari.plusMonths(1);
+        return new MapSqlParameterSource()
+                .addValue("dtFrom", dari)
+                .addValue("dtTo",   sampai);
+    }
+
+    /* =====================================================================
+       DATA PAYMENT
+       ===================================================================== */
 
     private static final String SQL = """
         WITH ord AS (
@@ -114,14 +132,15 @@ public class DashboardRepository {
             rs.getBigDecimal("trx"));
 
     public List<Fakta> ambil(int tahun) {
-        return jdbc.query(SQL, new MapSqlParameterSource()
-                .addValue("dtFrom", LocalDate.of(tahun, 1, 1))
-                .addValue("dtTo",   LocalDate.of(tahun + 1, 1, 1)), MAP);
+        return ambil(tahun, null);
+    }
+
+    public List<Fakta> ambil(int tahun, Integer bulan) {
+        return jdbc.query(SQL, rentang(tahun, bulan), MAP);
     }
 
     /* =====================================================================
        DATA BRAND -- memakai vw_POSOrderLine, jadi lebih berat.
-       Dipanggil terpisah, hanya saat halaman brand dibuka.
 
        Nilai payment dialokasikan proporsional ke tiap brand dalam satu struk.
        Order tanpa item, atau yang total barangnya nol, masuk 'TANPA ITEM'
@@ -216,17 +235,37 @@ public class DashboardRepository {
             rs.getBigDecimal("trx"));
 
     public List<FaktaBrand> ambilBrand(int tahun) {
-        return jdbc.query(SQL_BRAND, new MapSqlParameterSource()
-                .addValue("dtFrom", LocalDate.of(tahun, 1, 1))
-                .addValue("dtTo",   LocalDate.of(tahun + 1, 1, 1)), MAP_BRAND);
+        return ambilBrand(tahun, null);
     }
 
+    public List<FaktaBrand> ambilBrand(int tahun, Integer bulan) {
+        return jdbc.query(SQL_BRAND, rentang(tahun, bulan), MAP_BRAND);
+    }
+
+    /* =====================================================================
+       DAFTAR TAHUN
+
+       Dipanggil di setiap permintaan halaman, dan SELECT DISTINCT YEAR(...)
+       memindai seluruh view. Disimpan di memori: daftar tahun praktis tidak
+       pernah berubah selama aplikasi hidup.
+       ===================================================================== */
+
+    private volatile List<Integer> tahunCache;
+
     public List<Integer> daftarTahun() {
-        return jdbc.getJdbcTemplate().queryForList("""
-            SELECT DISTINCT YEAR([Order Date])
-            FROM dbo.vw_POSOrder
-            WHERE [Order Date] IS NOT NULL
-            ORDER BY 1 DESC
-            """, Integer.class);
+        List<Integer> ada = tahunCache;
+        if (ada != null) return ada;
+
+        synchronized (this) {
+            if (tahunCache == null) {
+                tahunCache = jdbc.getJdbcTemplate().queryForList("""
+                    SELECT DISTINCT YEAR([Order Date])
+                    FROM dbo.vw_POSOrder
+                    WHERE [Order Date] IS NOT NULL
+                    ORDER BY 1 DESC
+                    """, Integer.class);
+            }
+            return tahunCache;
+        }
     }
 }

@@ -15,24 +15,41 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Menyimpan data setahun di memori, lalu menghitung semua panel dari situ.
- * Database hanya disentuh sekali per tahun.
+ * Menyimpan data di memori, lalu menghitung semua panel dari situ.
+ *
+ * ATURAN POKOK: PERMINTAAN DARI BROWSER TIDAK PERNAH MENUNGGU DATABASE.
+ *
+ * Kalau data sudah ada di memori, langsung dilayani -- berapa pun umurnya.
+ * Kalau sudah lewat UMUR, penyegaran dijalankan di latar belakang sementara
+ * pengguna tetap menerima angka yang lama. Dengan begitu tidak ada permintaan
+ * HTTP yang menggantung, sehingga 504 Gateway Time-out dan "failed to fetch"
+ * tidak bisa terjadi.
+ *
+ * Satu-satunya saat pengguna menunggu adalah kalau memori benar-benar kosong,
+ * yaitu beberapa menit pertama setelah aplikasi start. Itu ditangani Pemanas,
+ * yang mengisi memori sebelum ada yang membuka halaman.
  */
 @Service
 public class DataService {
 
     private static final Logger log = LoggerFactory.getLogger(DataService.class);
 
-    /** Data dianggap basi setelah ini, lalu diambil ulang otomatis. */
+    /** Setelah ini data disegarkan di latar belakang -- bukan ditunggu pengguna. */
     private static final Duration UMUR = Duration.ofMinutes(30);
 
     private final DashboardRepository repo;
-    private final Map<Integer, Snapshot> cache = new ConcurrentHashMap<>();
+
+    /** Kunci cache: tahun + bulan. bulan null berarti setahun penuh. */
+    private record Kunci(int tahun, Integer bulan) {}
+
+    private final Map<Kunci, Snapshot> cache  = new ConcurrentHashMap<>();
+    private final Set<Kunci>           sedang = ConcurrentHashMap.newKeySet();
 
     public DataService(DashboardRepository repo) {
         this.repo = repo;
@@ -48,21 +65,74 @@ public class DataService {
         }
     }
 
-    public synchronized Snapshot snapshot(int tahun, boolean paksa) {
-        Snapshot ada = cache.get(tahun);
-        if (ada != null && !paksa && !ada.basi()) return ada;
+    /** Sudah ada di memori? */
+    public boolean tersedia(int tahun) {
+        return cache.containsKey(new Kunci(tahun, null));
+    }
+
+    /**
+     * Dipanggil controller. Selalu kembali seketika kalau memori sudah terisi.
+     *
+     * @param paksa tombol "Ambil ulang" -- memicu penyegaran di latar belakang,
+     *              bukan menahan pengguna sampai query selesai.
+     */
+    public Snapshot snapshot(int tahun, boolean paksa) {
+        return snapshot(tahun, null, paksa);
+    }
+
+    /** bulan null = setahun penuh. */
+    public Snapshot snapshot(int tahun, Integer bulan, boolean paksa) {
+        Kunci k = new Kunci(tahun, bulan);
+        Snapshot ada = cache.get(k);
+
+        if (ada == null) {
+            return muat(k);                 // memori kosong -- terpaksa menunggu
+        }
+        if (paksa || ada.basi()) {
+            segarkanDiLatar(k);             // perbarui tanpa menahan pengguna
+        }
+        return ada;
+    }
+
+    /** Mengambil dari database dan menunggu selesai. Dipakai Pemanas. */
+    public Snapshot muatSekarang(int tahun) {
+        return muat(new Kunci(tahun, null));
+    }
+
+    private synchronized Snapshot muat(Kunci k) {
+        Snapshot lagi = cache.get(k);
+        if (lagi != null && !lagi.basi()) return lagi;   // sudah diisi thread lain
 
         long t0 = System.currentTimeMillis();
-        log.info("Mengambil data tahun {} dari database...", tahun);
+        log.info("Mengambil data payment {}{}...", k.tahun(),
+                k.bulan() == null ? " (setahun)" : " bulan " + k.bulan());
 
-        List<Fakta> data = repo.ambil(tahun);
+        List<Fakta> data = repo.ambil(k.tahun(), k.bulan());
 
         long detik = (System.currentTimeMillis() - t0) / 1000;
         log.info("Selesai: {} baris, {} detik", data.size(), detik);
 
         Snapshot baru = new Snapshot(data, LocalDateTime.now(), detik);
-        cache.put(tahun, baru);
+        cache.put(k, baru);
         return baru;
+    }
+
+    private void segarkanDiLatar(Kunci k) {
+        if (!sedang.add(k)) return;                      // sudah ada yang mengerjakan
+        CompletableFuture.runAsync(() -> {
+            try {
+                long t0 = System.currentTimeMillis();
+                List<Fakta> data = repo.ambil(k.tahun(), k.bulan());
+                long detik = (System.currentTimeMillis() - t0) / 1000;
+                cache.put(k, new Snapshot(data, LocalDateTime.now(), detik));
+                log.info("Payment {} disegarkan: {} baris, {} detik",
+                        k.tahun(), data.size(), detik);
+            } catch (Exception e) {
+                log.warn("Penyegaran payment {} gagal: {}", k.tahun(), e.getMessage());
+            } finally {
+                sedang.remove(k);
+            }
+        });
     }
 
     /* ==========================================================
@@ -100,7 +170,7 @@ public class DataService {
             if (pakaiMetode) {
                 if (isi(metode) && !metode.equals(f.metode())) return false;
                 if (hanyaKartu  && !("EDC".equals(f.metode())
-                                  || "EDC JRF".equals(f.metode()))) return false;
+                        || "EDC JRF".equals(f.metode()))) return false;
             }
             return true;
         }
@@ -282,7 +352,7 @@ public class DataService {
             kartuAda.add(x.cardType());
             barisAda.add(x.bank() + "\u0000" + x.metode());
             sel.merge(x.bulanNo() + "\u0000" + x.cardType()
-                    + "\u0000" + x.bank() + "\u0000" + x.metode(),
+                            + "\u0000" + x.bank() + "\u0000" + x.metode(),
                     nz(x.nilai()), BigDecimal::add);
         }
 
@@ -314,7 +384,7 @@ public class DataService {
                 Matriks.Kolom k = kolom.get(i);
                 BigDecimal v = sel.getOrDefault(
                         k.bulanNo() + "\u0000" + kartuAsli.get(i)
-                      + "\u0000" + bank + "\u0000" + metode, BigDecimal.ZERO);
+                                + "\u0000" + bank + "\u0000" + metode, BigDecimal.ZERO);
                 isi.add(v);
                 totalBaris    = totalBaris.add(v);
                 totalKolom[i] = totalKolom[i].add(v);
@@ -381,8 +451,8 @@ public class DataService {
 
     private List<Baris> potong(List<Baris> daftar, int batas) {
         return daftar.size() > batas
-             ? new ArrayList<>(daftar.subList(0, batas))
-             : daftar;
+                ? new ArrayList<>(daftar.subList(0, batas))
+                : daftar;
     }
 
     private Baris baru(String label) {

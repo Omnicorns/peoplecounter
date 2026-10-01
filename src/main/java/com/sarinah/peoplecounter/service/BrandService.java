@@ -13,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -21,17 +22,24 @@ import java.util.function.Predicate;
  * Data brand -- dimuat terpisah dari dashboard utama karena butuh
  * vw_POSOrderLine yang jauh lebih besar.
  *
- * Polanya sama: satu query per tahun, disimpan di memori, semua panel
- * dihitung dari situ.
+ * Aturannya sama dengan DataService: permintaan dari browser tidak pernah
+ * menunggu database. Kalau data sudah ada di memori, langsung dilayani;
+ * penyegaran dikerjakan di latar belakang.
  */
 @Service
 public class BrandService {
 
     private static final Logger log = LoggerFactory.getLogger(BrandService.class);
+
+    /** Setelah ini data disegarkan di latar belakang -- bukan ditunggu pengguna. */
     private static final Duration UMUR = Duration.ofHours(2);
 
     private final DashboardRepository repo;
-    private final Map<Integer, Snapshot> cache = new ConcurrentHashMap<>();
+
+    private record Kunci(int tahun, Integer bulan) {}
+
+    private final Map<Kunci, Snapshot> cache  = new ConcurrentHashMap<>();
+    private final Set<Kunci>           sedang = ConcurrentHashMap.newKeySet();
 
     public BrandService(DashboardRepository repo) {
         this.repo = repo;
@@ -45,25 +53,65 @@ public class BrandService {
 
     /** Sudah ada di memori? Dipakai halaman untuk tahu perlu tombol muat atau tidak. */
     public boolean tersedia(int tahun) {
-        Snapshot s = cache.get(tahun);
-        return s != null && !s.basi();
+        return cache.containsKey(new Kunci(tahun, null));
     }
 
-    public synchronized Snapshot snapshot(int tahun, boolean paksa) {
-        Snapshot ada = cache.get(tahun);
-        if (ada != null && !paksa && !ada.basi()) return ada;
+    public Snapshot snapshot(int tahun, boolean paksa) {
+        return snapshot(tahun, null, paksa);
+    }
+
+    public Snapshot snapshot(int tahun, Integer bulan, boolean paksa) {
+        Kunci k = new Kunci(tahun, bulan);
+        Snapshot ada = cache.get(k);
+
+        if (ada == null) {
+            return muat(k);
+        }
+        if (paksa || ada.basi()) {
+            segarkanDiLatar(k);
+        }
+        return ada;
+    }
+
+    /** Mengambil dari database dan menunggu selesai. Dipakai Pemanas. */
+    public Snapshot muatSekarang(int tahun) {
+        return muat(new Kunci(tahun, null));
+    }
+
+    private synchronized Snapshot muat(Kunci k) {
+        Snapshot lagi = cache.get(k);
+        if (lagi != null && !lagi.basi()) return lagi;
 
         long t0 = System.currentTimeMillis();
-        log.info("Mengambil data brand tahun {}...", tahun);
+        log.info("Mengambil data brand {}{}...", k.tahun(),
+                k.bulan() == null ? " (setahun)" : " bulan " + k.bulan());
 
-        List<FaktaBrand> data = repo.ambilBrand(tahun);
+        List<FaktaBrand> data = repo.ambilBrand(k.tahun(), k.bulan());
 
         long detik = (System.currentTimeMillis() - t0) / 1000;
         log.info("Selesai: {} baris brand, {} detik", data.size(), detik);
 
         Snapshot baru = new Snapshot(data, LocalDateTime.now(), detik);
-        cache.put(tahun, baru);
+        cache.put(k, baru);
         return baru;
+    }
+
+    private void segarkanDiLatar(Kunci k) {
+        if (!sedang.add(k)) return;
+        CompletableFuture.runAsync(() -> {
+            try {
+                long t0 = System.currentTimeMillis();
+                List<FaktaBrand> data = repo.ambilBrand(k.tahun(), k.bulan());
+                long detik = (System.currentTimeMillis() - t0) / 1000;
+                cache.put(k, new Snapshot(data, LocalDateTime.now(), detik));
+                log.info("Brand {} disegarkan: {} baris, {} detik",
+                        k.tahun(), data.size(), detik);
+            } catch (Exception e) {
+                log.warn("Penyegaran brand {} gagal: {}", k.tahun(), e.getMessage());
+            } finally {
+                sedang.remove(k);
+            }
+        });
     }
 
     /* ==========================================================
@@ -83,7 +131,7 @@ public class BrandService {
             if (isi(branch)     && !branch.equals(f.branch()))         return false;
             if (isi(mdCategory) && !mdCategory.equals(f.mdCategory())) return false;
             if (hanyaKartu && !("EDC".equals(f.metode())
-                             || "EDC JRF".equals(f.metode())))         return false;
+                    || "EDC JRF".equals(f.metode())))         return false;
             return true;
         }
 
