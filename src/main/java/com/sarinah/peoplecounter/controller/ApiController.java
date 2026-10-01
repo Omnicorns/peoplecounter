@@ -27,8 +27,19 @@ import java.util.function.UnaryOperator;
  * Seluruh isi dashboard dikirim sebagai JSON.
  *
  * Halaman HTML-nya sendiri tampil seketika tanpa menunggu database; isinya
- * baru diisi setelah panggilan ke sini selesai. Dengan begitu pengguna melihat
- * kerangka halaman lengkap dengan efek loading, bukan layar kosong.
+ * baru diisi setelah panggilan ke sini selesai.
+ *
+ * PERBANDINGAN ANTAR BULAN
+ * Delta KPI dan insight pertumbuhan mengikuti filter bulan:
+ *   bulan dipilih -> bulan itu dibandingkan bulan sebelumnya yang ada datanya
+ *   bulan kosong  -> bulan terakhir dibandingkan bulan sebelumnya
+ * Kalau pembandingnya tidak ada -- misalnya Januari, yang bulan sebelumnya
+ * berada di tahun lain -- delta dan insight itu TIDAK ditampilkan sama sekali.
+ * Lebih baik kosong daripada angka yang tidak bisa dijelaskan di ruang rapat.
+ *
+ * Dasar perbandingannya selalu disebutkan dengan nama bulan yang sebenarnya
+ * ("Maret vs Februari"), bukan kalimat umum, supaya pembaca tahu persis angka
+ * mana yang sedang dibandingkan.
  */
 @RestController
 public class ApiController {
@@ -75,13 +86,13 @@ public class ApiController {
         } catch (Exception e) {
             log.error("Gagal konek database", e);
             return ResponseEntity.ok(gagal(
-                "Tidak bisa terhubung ke database. Periksa pengaturan koneksi di "
-              + "application.properties (server, username, password).", e.getMessage()));
+                    "Tidak bisa terhubung ke database. Periksa pengaturan koneksi di "
+                            + "application.properties (server, username, password).", e.getMessage()));
         }
 
         final int th = tahun != null ? tahun
-                     : daftarTahun.isEmpty() ? LocalDateTime.now().getYear()
-                     : daftarTahun.get(0);
+                : daftarTahun.isEmpty() ? LocalDateTime.now().getYear()
+                : daftarTahun.get(0);
         final boolean ulang = muatUlang;
 
         /* Dua query berat dijalankan bersamaan. */
@@ -97,8 +108,8 @@ public class ApiController {
             Throwable sebab = akar(e);
             log.error("Gagal mengambil data tahun {}", th, sebab);
             return ResponseEntity.ok(gagal(
-                "Query gagal dijalankan. Pastikan user punya izin SELECT ke "
-              + "vw_POSOrder dan vw_POSPayment.", sebab.getMessage()));
+                    "Query gagal dijalankan. Pastikan user punya izin SELECT ke "
+                            + "vw_POSOrder dan vw_POSPayment.", sebab.getMessage()));
         }
 
         boolean brandSiap = false;
@@ -202,9 +213,34 @@ public class ApiController {
         hasil.put("pivot", pivot);
 
         /* ---------- insight ---------- */
-        hasil.put("insight", susunInsight(perBulan, perMetode, grup, lokasiTrx, lantaiTrx));
+        hasil.put("insight", susunInsight(bulan, perBulan, perMetode, grup, lokasiTrx, lantaiTrx));
 
         return ResponseEntity.ok(hasil);
+    }
+
+    /* =====================================================================
+       PERBANDINGAN ANTAR BULAN
+
+       Satu tempat untuk menentukan "bulan mana vs bulan mana", dipakai KPI
+       maupun insight supaya keduanya tidak pernah bertentangan.
+       ===================================================================== */
+
+    /**
+     * Posisi bulan yang jadi acuan di dalam deret.
+     *   bulan null  -> entri terakhir
+     *   bulan diisi -> entri bulan itu, -1 kalau bulan itu tidak ada datanya
+     */
+    private static int indeks(List<Integer> deretBulan, Integer bulan) {
+        if (deretBulan.isEmpty()) return -1;
+        if (bulan == null)        return deretBulan.size() - 1;
+        return deretBulan.indexOf(bulan);
+    }
+
+    /** "Maret vs Februari". null kalau tidak ada bulan sebelumnya di deret. */
+    private static String dasar(List<Integer> deretBulan, int i) {
+        if (i < 1 || i >= deretBulan.size()) return null;
+        return NAMA_BULAN.get(deretBulan.get(i)     - 1) + " vs "
+                + NAMA_BULAN.get(deretBulan.get(i - 1) - 1);
     }
 
     /* =====================================================================
@@ -231,49 +267,62 @@ public class ApiController {
         List<Double> sGrup = brandBulan.stream().map(x -> (double) x.jmlGrup()).toList();
         List<Double> sBrn  = brandBulan.stream().map(x -> (double) x.jmlBrand()).toList();
 
+        /* Deret payment dan deret brand bisa berisi bulan yang berbeda,
+           jadi posisi acuannya dihitung sendiri-sendiri. */
+        List<Integer> blnPay = perBulan.stream()
+                .map(DataService.RingkasBulan::bulanNo).toList();
+        List<Integer> blnBrd = brandBulan.stream()
+                .map(BrandService.RingkasBulan::bulanNo).toList();
+
+        int    iPay = indeks(blnPay, bulan);
+        int    iBrd = indeks(blnBrd, bulan);
+        String dPay = dasar(blnPay, iPay);
+        String dBrd = dasar(blnBrd, iBrd);
+
         List<Map<String, Object>> kpi = new ArrayList<>();
-        kpi.add(tile("Nilai Transaksi", r.get("total_nilai"), "rupiah", sNilai,  bulan, true));
-        kpi.add(tile("Jumlah Struk",    r.get("total_struk"), "angka",  sStruk,  bulan, false));
-        kpi.add(tile("Basket Size",     r.get("basket"),      "rupiah", sBasket, bulan, false));
-        kpi.add(tile("Bank Aktif",      r.get("jml_bank"),    "angka",  sBank,   bulan, false));
-        kpi.add(tile("Lokasi",          r.get("jml_lokasi"),  "angka",  sLokasi, bulan, false));
+        kpi.add(tile("Nilai Transaksi", r.get("total_nilai"), "rupiah", sNilai,  iPay, dPay, true));
+        kpi.add(tile("Jumlah Struk",    r.get("total_struk"), "angka",  sStruk,  iPay, dPay, false));
+        kpi.add(tile("Basket Size",     r.get("basket"),      "rupiah", sBasket, iPay, dPay, false));
+        kpi.add(tile("Bank Aktif",      r.get("jml_bank"),    "angka",  sBank,   iPay, dPay, false));
+        kpi.add(tile("Lokasi",          r.get("jml_lokasi"),  "angka",  sLokasi, iPay, dPay, false));
         if (brandSiap) {
-            kpi.add(tile("Grup Brand", rb.get("jml_group"),  "angka", sGrup, bulan, false));
-            kpi.add(tile("Brand",      rb.get("jml_brand"),  "angka", sBrn,  bulan, false));
-            kpi.add(tile("Qty Terjual", rb.get("total_qty"), "angka", sQty,  bulan, false));
+            kpi.add(tile("Grup Brand",  rb.get("jml_group"),  "angka", sGrup, iBrd, dBrd, false));
+            kpi.add(tile("Brand",       rb.get("jml_brand"),  "angka", sBrn,  iBrd, dBrd, false));
+            kpi.add(tile("Qty Terjual", rb.get("total_qty"),  "angka", sQty,  iBrd, dBrd, false));
         }
         return kpi;
     }
 
     /**
-     * Satu kartu KPI. delta dihitung dari deret bulanan:
-     *   filter bulan aktif  -> bulan itu dibandingkan bulan sebelumnya
-     *   filter bulan kosong -> bulan terakhir dibandingkan bulan sebelumnya
-     * Null kalau pembandingnya tidak ada.
+     * Satu kartu KPI.
+     *
+     * @param idx   posisi bulan acuan di dalam spark; delta dihitung terhadap idx-1
+     * @param dasar keterangan perbandingan, mis. "Maret vs Februari"
+     *
+     * Kalau idx kurang dari 1 -- bulan pertama yang ada datanya, atau bulan yang
+     * dipilih memang kosong -- delta dibiarkan null dan tidak ditampilkan.
      */
     private Map<String, Object> tile(String judul, Object nilai, String format,
-                                     List<Double> spark, Integer bulan, boolean utama) {
+                                     List<Double> spark, int idx, String dasar,
+                                     boolean utama) {
         Map<String, Object> t = new LinkedHashMap<>();
         t.put("judul",  judul);
         t.put("nilai",  nilai instanceof BigDecimal b ? b.doubleValue()
-                      : nilai instanceof Number n ? n.doubleValue() : 0d);
+                : nilai instanceof Number n ? n.doubleValue() : 0d);
         t.put("format", format);
         t.put("spark",  spark);
         t.put("utama",  utama);
 
         Double delta = null;
-        String dasar = null;
-        if (spark.size() >= 2) {
-            int idx = spark.size() - 1;
+        if (idx >= 1 && idx < spark.size()) {
             double kini = spark.get(idx);
             double lalu = spark.get(idx - 1);
             if (lalu != 0) {
                 delta = (kini - lalu) / Math.abs(lalu) * 100;
-                dasar = bulan == null ? "bulan terakhir vs sebelumnya" : "vs bulan sebelumnya";
             }
         }
         t.put("delta", delta);
-        t.put("dasar", dasar);
+        t.put("dasar", delta == null ? null : dasar);
         return t;
     }
 
@@ -327,13 +376,14 @@ public class ApiController {
             satu.put("struk", b.getStruk());
             satu.put("kontribusi", total.signum() == 0 ? 0d
                     : b.getNilai().multiply(BigDecimal.valueOf(100))
-                       .divide(total, 2, RoundingMode.HALF_UP).doubleValue());
+                    .divide(total, 2, RoundingMode.HALF_UP).doubleValue());
             hasil.add(satu);
         }
         return hasil;
     }
 
     private List<Map<String, Object>> susunInsight(
+            Integer bulan,
             List<DataService.RingkasBulan> perBulan,
             List<Baris> perMetode,
             List<Baris> grup,
@@ -342,14 +392,20 @@ public class ApiController {
 
         List<Map<String, Object>> ins = new ArrayList<>();
 
-        if (perBulan.size() >= 2) {
-            double kini = perBulan.get(perBulan.size() - 1).nilai().doubleValue();
-            double lalu = perBulan.get(perBulan.size() - 2).nilai().doubleValue();
+        /* Pertumbuhan mengikuti filter bulan, dan dilewati kalau tidak ada
+           bulan pembanding -- bukan diisi angka yang menyesatkan. */
+        List<Integer> blnPay = perBulan.stream()
+                .map(DataService.RingkasBulan::bulanNo).toList();
+        int i = indeks(blnPay, bulan);
+        if (i >= 1) {
+            double kini = perBulan.get(i).nilai().doubleValue();
+            double lalu = perBulan.get(i - 1).nilai().doubleValue();
             if (lalu != 0) {
                 double d = (kini - lalu) / Math.abs(lalu) * 100;
                 ins.add(insight(d >= 0 ? "naik" : "turun", "Pertumbuhan Transaksi",
                         String.format("%+.1f%%", d),
-                        "Nilai transaksi bulan terakhir dibandingkan bulan sebelumnya."));
+                        "Nilai transaksi " + perBulan.get(i).bulan()
+                                + " dibandingkan " + perBulan.get(i - 1).bulan() + "."));
             }
         }
 
@@ -368,8 +424,8 @@ public class ApiController {
         if (!lantaiTrx.isEmpty()) {
             Baris b = lantaiTrx.get(0);
             String nama = Label.tempat(b.getLabel1())
-                        + (b.getLabel2() == null || b.getLabel2().isBlank()
-                           ? "" : " · " + Label.tempat(b.getLabel2()));
+                    + (b.getLabel2() == null || b.getLabel2().isBlank()
+                    ? "" : " · " + Label.tempat(b.getLabel2()));
             ins.add(insight("lantai", "Lantai Paling Ramai", nama,
                     String.format("%,d transaksi pada periode terpilih.", b.getStruk())
                             .replace(',', '.')));
@@ -488,7 +544,7 @@ public class ApiController {
     private Throwable akar(Throwable e) {
         Throwable x = e;
         while (x.getCause() != null && (x instanceof java.util.concurrent.CompletionException
-                                     || x instanceof java.util.concurrent.ExecutionException)) {
+                || x instanceof java.util.concurrent.ExecutionException)) {
             x = x.getCause();
         }
         return x;
