@@ -508,4 +508,16 @@
 
     /* ---------------- mulai ---------------- */
     ambil();
+
+     function ambilDiam() {
+            fetch('/api/dashboard?' + paramSekarang().toString(),
+                  { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (j) {
+                    if (j && !j.error) { data = j; gambarSemua(); }
+                })
+                .catch(function () { /* diam saja */ });
+        }
+
+    setInterval(ambilDiam, 10 * 60 * 1000);
 })();
