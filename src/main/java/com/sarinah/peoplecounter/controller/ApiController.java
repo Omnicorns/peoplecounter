@@ -176,9 +176,10 @@ public class ApiController {
         List<Baris> branchTrx = urutTrx(branchNil);
         List<Baris> lantaiTrx = urutTrx(lantaiNil);
 
-        hasil.put("bank",      ringkas(perBank, 12, false, Label::bank));
+        hasil.put("bank",      ringkasDua(perBank, 16, Label::bank, Label::kartu));
         hasil.put("metode",    komposisi(perMetode, Label::metode));
-        hasil.put("kelas",     ringkas(data.perCardClass(s, f), 10, true, Label::kelas));
+        hasil.put("kelas",     ringkasDua(data.perCardClass(s, f), 12,
+                Label::bank, UnaryOperator.identity()));
         hasil.put("lokasi",    ringkas(lokasiNil, 12, false, Label::tempat));
         hasil.put("lantai",    ringkas(lantaiNil, 12, true,  Label::tempat));
         hasil.put("branchtrx", ringkasTrx(branchTrx, 12, false, Label::tempat));
@@ -466,6 +467,36 @@ public class ApiController {
             if (hasil.size() >= batas) break;
             Map<String, Object> satu = new LinkedHashMap<>();
             satu.put("label",  label(b, gabung, pelabel));
+            satu.put("nilai",  b.getNilai().doubleValue());
+            satu.put("struk",  b.getStruk());
+            satu.put("basket", b.getBasket().doubleValue());
+            hasil.add(satu);
+        }
+        return hasil;
+    }
+
+    /**
+     * Seperti ringkas(), tapi label1 dan label2 dinamai dengan aturan berbeda.
+     * Nama bank dan jenis kartu tidak boleh melewati pelabel yang sama:
+     * Label.bank("(blank)") berarti "Non-kartu (Cash/QRIS/Voucher)", sedangkan
+     * untuk jenis kartu artinya cuma "Non-kartu".
+     *
+     * Label2 yang masih "(blank)" sengaja tidak ditempelkan, supaya baris
+     * non-kartu tampil apa adanya tanpa embel-embel jenis kartu.
+     */
+    private List<Map<String, Object>> ringkasDua(List<Baris> daftar, int batas,
+                                                 UnaryOperator<String> pelabel1,
+                                                 UnaryOperator<String> pelabel2) {
+        List<Map<String, Object>> hasil = new ArrayList<>();
+        for (Baris b : daftar) {
+            if (hasil.size() >= batas) break;
+            String nama = pelabel1.apply(b.getLabel1());
+            String dua  = b.getLabel2();
+            if (dua != null && !dua.isBlank() && !"(blank)".equals(dua)) {
+                nama = nama + " \u00b7 " + pelabel2.apply(dua);
+            }
+            Map<String, Object> satu = new LinkedHashMap<>();
+            satu.put("label",  nama);
             satu.put("nilai",  b.getNilai().doubleValue());
             satu.put("struk",  b.getStruk());
             satu.put("basket", b.getBasket().doubleValue());

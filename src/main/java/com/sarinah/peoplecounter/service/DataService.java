@@ -213,8 +213,13 @@ public class DataService {
        panel tabel
        ========================================================== */
 
+    /**
+     * Peringkat bank, DIPECAH PER JENIS KARTU: satu baris untuk Credit dan
+     * satu lagi untuk Debit, sehingga keduanya terbaca berdampingan.
+     * Transaksi non-kartu tetap satu baris -- memang tidak punya jenis kartu.
+     */
     public List<Baris> perBank(Snapshot s, Filter f) {
-        return kelompok(s, f::cocok, Fakta::bank, null, 25, true);
+        return kelompok(s, f::cocok, Fakta::bank, Fakta::cardType, 30, true);
     }
 
     public List<Baris> perMetode(Snapshot s, Filter f) {
@@ -234,11 +239,27 @@ public class DataService {
         return kelompok(s, f::cocok, Fakta::lantai, Fakta::branch, 99, true);
     }
 
+    /** Ambang jumlah struk agar basket size sebuah segmen layak ditampilkan. */
+    public static final int MIN_STRUK_SEGMEN = 20;
+
+    /**
+     * Basket size per BANK dan tingkatan kartu -- kombinasi inilah yang dipakai
+     * saat menawarkan program: "Platinum BCA", bukan sekadar "Platinum".
+     *
+     * Label kedua sudah dirangkai di sini (tingkatan + jenis kartu), karena
+     * Baris hanya punya dua label sementara yang dikelompokkan ada tiga hal.
+     * Di controller label kedua itu dilewatkan apa adanya.
+     *
+     * Segmen di bawah MIN_STRUK_SEGMEN dibuang: rata-ratanya terlalu mudah
+     * terguncang satu transaksi besar, jadi menyesatkan kalau dipakai memutuskan.
+     */
     public List<Baris> perCardClass(Snapshot s, Filter f) {
         List<Baris> hasil = kelompok(s,
                 x -> f.cocok(x) && !"(blank)".equals(x.cardClass()),
-                Fakta::cardClass, Fakta::cardType, 999, true);
-        hasil.removeIf(b -> b.getStruk() < 20);
+                Fakta::bank,
+                x -> Label.kelas(x.cardClass()) + " \u00b7 " + Label.kartu(x.cardType()),
+                999, true);
+        hasil.removeIf(b -> b.getStruk() < MIN_STRUK_SEGMEN);
         hasil.sort(Comparator.comparing(Baris::getBasket).reversed());
         return potong(hasil, 15);
     }
