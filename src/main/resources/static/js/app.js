@@ -361,15 +361,25 @@
         });
         t.innerHTML = h + '</tbody>';
 
-        var tb = document.getElementById('tabelBankBrand');
-        if (!data.bankBrand) {
-            tb.innerHTML = '<tbody><tr><td class="kosong">Data brand tidak tersedia</td></tr></tbody>';
+        tabelGabungan('tabelBankBrand', data.bankBrand, 'Bank Issuer',
+                      'Data brand tidak tersedia');
+        tabelGabungan('tabelQrBrand', data.qrBrand, 'Aplikasi QR',
+                      data.qrBrand ? 'Belum ada transaksi QR untuk filter ini'
+                                   : 'Data brand tidak tersedia');
+    }
+
+    /* Tabel "penerbit x grup brand": dipakai untuk bank maupun aplikasi QR. */
+    function tabelGabungan(id, isi, judulKolom, pesanKosong) {
+        var tb = document.getElementById(id);
+        if (!tb) return;
+        if (!isi || !isi.length) {
+            tb.innerHTML = '<tbody><tr><td class="kosong">' + pesanKosong + '</td></tr></tbody>';
             return;
         }
-        var hb = '<thead><tr><th>#</th><th>Bank Issuer</th><th>Grup Brand</th>'
+        var hb = '<thead><tr><th>#</th><th>' + judulKolom + '</th><th>Grup Brand</th>'
                + '<th class="ka">Nilai</th><th class="ka">Struk</th>'
                + '<th class="ka">Kontribusi</th></tr></thead><tbody>';
-        data.bankBrand.forEach(function (x, i) {
+        isi.forEach(function (x, i) {
             hb += '<tr><td class="urut">' + (i + 1) + '</td><td>' + x.bank + '</td>'
                 + '<td>' + x.brand + '</td>'
                 + '<td class="ka num">' + G.singkat(x.nilai) + '</td>'

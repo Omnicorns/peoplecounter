@@ -467,7 +467,23 @@ public class DataService {
         List<Baris> hasil = new ArrayList<>(per.values());
         selesaikan(hasil, hitungBasket);
         hasil.sort(Comparator.comparing(Baris::getNilai).reversed());
+        isiPersen(hasil);
         return potong(hasil, batas);
+    }
+
+    /**
+     * Porsi tiap baris terhadap total SEMUA baris, dihitung sebelum daftar
+     * dipotong -- supaya baris yang tampil tetap dibandingkan dengan total
+     * sebenarnya, bukan dengan total 8 atau 10 teratas saja.
+     */
+    private static void isiPersen(List<Baris> daftar) {
+        BigDecimal total = daftar.stream().map(Baris::getNilai)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (total.signum() == 0) return;
+        for (Baris b : daftar) {
+            b.setPersen(b.getNilai().multiply(BigDecimal.valueOf(100))
+                    .divide(total, 2, RoundingMode.HALF_UP).doubleValue());
+        }
     }
 
     private List<Baris> potong(List<Baris> daftar, int batas) {
