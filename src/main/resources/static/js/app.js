@@ -76,7 +76,10 @@
     function pasangSkeleton() {
         var kpi = document.getElementById('kpiBaris');
         kpi.innerHTML = '';
-        for (var i = 0; i < 6; i++) {
+        /* Rangka sebanyak kartu terakhir, supaya tata letak tidak meloncat saat isi datang. */
+        var n = data && data.kpi ? data.kpi.length : 7;
+        kpi.setAttribute('data-n', n);
+        for (var i = 0; i < n; i++) {
             kpi.insertAdjacentHTML('beforeend',
                 '<div class="kpi rangka-muat"><span class="sk sk-judul"></span>'
               + '<span class="sk sk-angka"></span><span class="sk sk-kecil"></span></div>');
@@ -184,6 +187,13 @@
     document.getElementById('formFilter').addEventListener('change', function (ev) {
         var t = ev.target;
         if (t.id) nilaiTersimpan[t.id] = t.type === 'checkbox' ? '' : t.value;
+        /* Ganti branch: lokasi lama bisa jadi bukan milik branch baru, jadi dikosongkan.
+           Daftar lokasi lalu diisi ulang dari server sesuai branch terpilih. */
+        if (t.id === 'fBranch') {
+            var lok = document.getElementById('fLokasi');
+            if (lok) lok.value = '';
+            nilaiTersimpan.fLokasi = '';
+        }
         ambil();
     });
 
@@ -246,6 +256,7 @@
     function isiKpi() {
         var wadah = document.getElementById('kpiBaris');
         wadah.innerHTML = '';
+        wadah.setAttribute('data-n', data.kpi.length);   // dipakai CSS untuk tata letak presisi
         data.kpi.forEach(function (k, i) {
             var nilai = k.format === 'rupiah' ? G.rupiah(k.nilai) : G.angka(k.nilai);
             var warna = k.utama ? '#ffffff' : '#2563EB';
@@ -363,9 +374,25 @@
 
         tabelGabungan('tabelBankBrand', data.bankBrand, 'Bank Issuer',
                       'Data brand tidak tersedia');
-        tabelGabungan('tabelQrBrand', data.qrBrand, 'Aplikasi QR',
-                      data.qrBrand ? 'Belum ada transaksi QR untuk filter ini'
-                                   : 'Data brand tidak tersedia');
+
+        var tq = document.getElementById('tabelQrApp');
+        if (tq) {
+            var qr = data.qrApp || [];
+            if (!qr.length) {
+                tq.innerHTML = '<tbody><tr><td class="kosong">'
+                             + 'Belum ada transaksi QR non-bank untuk filter ini</td></tr></tbody>';
+            } else {
+                var hq = '<thead><tr><th>#</th><th>Aplikasi QR</th><th class="ka">Nilai</th>'
+                       + '<th class="ka">Struk</th><th class="ka">Kontribusi</th></tr></thead><tbody>';
+                qr.forEach(function (x, i) {
+                    hq += '<tr><td class="urut">' + (i + 1) + '</td><td>' + x.label + '</td>'
+                        + '<td class="ka num">' + G.singkat(x.nilai) + '</td>'
+                        + '<td class="ka num">' + G.angka(x.struk) + '</td>'
+                        + '<td class="ka num">' + G.desimal(x.persen, 1) + '%</td></tr>';
+                });
+                tq.innerHTML = hq + '</tbody>';
+            }
+        }
     }
 
     /* Tabel "penerbit x grup brand": dipakai untuk bank maupun aplikasi QR. */

@@ -141,7 +141,7 @@ public class ApiController {
         pilihan.put("bulan",  NAMA_BULAN);
         pilihan.put("bank",   data.daftarBank(s));
         pilihan.put("branch", data.daftarBranch(s));
-        pilihan.put("lokasi", data.daftarLokasi(s));
+        pilihan.put("lokasi", data.daftarLokasi(s, branch));
         pilihan.put("metode", data.daftarMetode(s));
         hasil.put("pilihan", pilihan);
 
@@ -194,6 +194,9 @@ public class ApiController {
         hasil.put("tabelLokasi", tabelTempat(lokasiTrx, 8));
         hasil.put("tabelBranch", tabelTempat(branchTrx, 8));
 
+        /* ---------- top aplikasi QR (non-bank) ---------- */
+        hasil.put("qrApp", tabelQr(data.perAplikasiQr(s, f)));
+
         /* ---------- brand ---------- */
         List<Baris> grup = List.of();
         if (brandSiap) {
@@ -202,7 +205,6 @@ public class ApiController {
             hasil.put("brandTop", ringkas(brand.perBrand(bs, bf), 10, false, UnaryOperator.identity()));
             hasil.put("kategori", komposisi(brand.perKategori(bs, bf), UnaryOperator.identity()));
             hasil.put("bankBrand", tabelBankBrand(brand.bankBrand(bs, bf), 10));
-            hasil.put("qrBrand",   tabelBankBrand(brand.qrBrand(bs, bf), 10));
         }
 
         /* ---------- pivot ---------- */
@@ -355,6 +357,19 @@ public class ApiController {
             satu.put("nilai",  b.getNilai().doubleValue());
             satu.put("struk",  b.getStruk());
             satu.put("basket", b.getBasket().doubleValue());
+            satu.put("persen", b.getPersen());
+            hasil.add(satu);
+        }
+        return hasil;
+    }
+
+    private List<Map<String, Object>> tabelQr(List<Baris> daftar) {
+        List<Map<String, Object>> hasil = new ArrayList<>();
+        for (Baris b : daftar) {
+            Map<String, Object> satu = new LinkedHashMap<>();
+            satu.put("label",  b.getLabel1());
+            satu.put("nilai",  b.getNilai().doubleValue());
+            satu.put("struk",  b.getStruk());
             satu.put("persen", b.getPersen());
             hasil.add(satu);
         }

@@ -239,6 +239,17 @@ public class DataService {
         return kelompok(s, f::cocok, Fakta::lantai, Fakta::branch, 99, true);
     }
 
+    /**
+     * Peringkat aplikasi QR non-bank (GoPay, OVO, DANA, Alipay, ...).
+     * QR yang penerbitnya bank (mis. "Bank BCA") dan QR tanpa nama aplikasi
+     * tidak dihitung -- lihat Label.aplikasiQr. Porsi dihitung terhadap total
+     * seluruh aplikasi QR non-bank, bukan hanya 10 yang tampil.
+     */
+    public List<Baris> perAplikasiQr(Snapshot s, Filter f) {
+        return kelompok(s, x -> f.cocok(x) && Label.aplikasiQr(x.bank(), x.metode()),
+                Fakta::bank, null, 10, true);
+    }
+
     /** Ambang jumlah struk agar basket size sebuah segmen layak ditampilkan. */
     public static final int MIN_STRUK_SEGMEN = 20;
 
@@ -424,6 +435,18 @@ public class DataService {
 
     public List<String> daftarBank(Snapshot s)   { return unik(s, Fakta::bank); }
     public List<String> daftarLokasi(Snapshot s) { return unik(s, Fakta::lokasi); }
+
+    /** Lokasi milik satu branch saja, supaya dropdown lokasi mengikuti branch yang dipilih. */
+    public List<String> daftarLokasi(Snapshot s, String branch) {
+        if (branch == null || branch.isBlank()) return daftarLokasi(s);
+        return s.data().stream()
+                .filter(x -> branch.equals(x.branch()))
+                .map(Fakta::lokasi)
+                .filter(v -> v != null && !v.isBlank())
+                .distinct()
+                .sorted(URUT_KARTU)
+                .toList();
+    }
     public List<String> daftarMetode(Snapshot s) { return unik(s, Fakta::metode); }
     public List<String> daftarBranch(Snapshot s) { return unik(s, Fakta::branch); }
 
