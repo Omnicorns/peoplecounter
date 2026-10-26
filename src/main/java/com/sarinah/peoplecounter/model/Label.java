@@ -5,6 +5,8 @@ package com.sarinah.peoplecounter.model;
  *
  * Di data POS, kolom yang kosong punya arti berbeda tergantung konteksnya:
  *   Bank Issuer kosong  -> transaksi non-kartu (Cash, QRIS, Voucher, TMII BANK)
+ *                          QRIS yang nama aplikasinya tercatat (GoPay, OVO, ...)
+ *                          sudah diisi di DashboardRepository, jadi tidak kosong.
  *   Card Type kosong    -> tidak memakai kartu sama sekali
  *   Card Class kosong   -> kartu terbaca, tapi tingkatannya tidak terdeteksi
  *   Lokasi/Branch/Floor -> tidak tercatat di header order

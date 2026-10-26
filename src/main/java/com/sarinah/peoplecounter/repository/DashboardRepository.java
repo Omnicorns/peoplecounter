@@ -47,10 +47,53 @@ public class DashboardRepository {
     }
 
     /* =====================================================================
+       ISSUER E-WALLET (GoPay, OVO, DANA, ShopeePay, ...)
+
+       Di vw_POSPayment, [Bank Issuer] diambil dari tabel bin_code, jadi
+       hanya terisi untuk kartu. Transaksi QRIS tidak punya BIN, sehingga
+       Bank Issuer-nya kosong dan jatuh ke "Non-kartu" -- padahal nama
+       aplikasinya tersimpan di pos_payment.bank_name.
+
+       Fragmen di bawah mengisi Bank Issuer yang kosong dengan bank_name
+       mentah tersebut. Hanya MEMBACA SARINAH_ODOO; tidak ada view atau
+       tabel yang diubah. Dicocokkan per order + metode bayar, supaya pada
+       split bayar (mis. Cash + QRIS) bagian Cash tidak ikut berlabel GoPay.
+       Bank Issuer yang sudah terisi (kartu, Contactless) tidak disentuh.
+       ===================================================================== */
+
+    private static final String CTE_WALLET = """
+        wallet AS (
+                SELECT
+                    pp.pos_order_id AS order_id,
+                    pm.[name]       AS metode,
+                    MAX(LTRIM(RTRIM(pp.bank_name))) AS issuer
+                FROM SARINAH_ODOO.dbo.pos_payment pp
+                JOIN SARINAH_ODOO.dbo.pos_payment_method pm ON pm.id = pp.payment_method_id
+                WHERE pp.bin_code_id IS NULL
+                  AND NULLIF(LTRIM(RTRIM(pp.bank_name)), '') IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM ord WHERE ord.order_id = pp.pos_order_id)
+                GROUP BY pp.pos_order_id, pm.[name]
+            ),""";
+
+    private static final String JOIN_WALLET = """
+        LEFT JOIN wallet w
+                   ON w.order_id = p.order_id
+                  AND w.metode   = p.[Payment Method]""";
+
+    private static final String ISSUER =
+        "COALESCE(NULLIF(LTRIM(RTRIM(p.[Bank Issuer])), ''), w.issuer)";
+
+    private static String rakit(String sql) {
+        return sql.replace("{CTE_WALLET}", CTE_WALLET)
+                  .replace("{JOIN_WALLET}", JOIN_WALLET)
+                  .replace("{ISSUER}", ISSUER);
+    }
+
+    /* =====================================================================
        DATA PAYMENT
        ===================================================================== */
 
-    private static final String SQL = """
+    private static final String SQL = rakit("""
         WITH ord AS (
             SELECT
                 o.order_id,
@@ -62,19 +105,21 @@ public class DashboardRepository {
             WHERE o.[Order Date] >= :dtFrom
               AND o.[Order Date] <  :dtTo
         ),
+        {CTE_WALLET}
         pay AS (
             /* 1 baris per order + bank + kartu -- menangani split bayar */
             SELECT
                 p.order_id,
                 p.[Payment Method],
-                p.[Bank Issuer],
+                {ISSUER} AS [Bank Issuer],
                 p.[Card Type],
                 p.[Card Class],
                 SUM(p.[Payment Amount]) AS nilai
             FROM dbo.vw_POSPayment p
+            {JOIN_WALLET}
             WHERE EXISTS (SELECT 1 FROM ord WHERE ord.order_id = p.order_id)
             GROUP BY
-                p.order_id, p.[Payment Method], p.[Bank Issuer],
+                p.order_id, p.[Payment Method], {ISSUER},
                 p.[Card Type], p.[Card Class]
         ),
         gabung AS (
@@ -116,7 +161,7 @@ public class DashboardRepository {
         GROUP BY
             g.bulan_no, g.bulan, g.bank, g.metode,
             g.card_type, g.card_class, g.lokasi, g.branch, g.lantai
-        """;
+        """);
 
     private static final RowMapper<Fakta> MAP = (rs, i) -> new Fakta(
             rs.getInt("bulan_no"),
@@ -147,7 +192,7 @@ public class DashboardRepository {
        dengan nilai utuh supaya totalnya tetap rekonsiliasi.
        ===================================================================== */
 
-    private static final String SQL_BRAND = """
+    private static final String SQL_BRAND = rakit("""
         WITH ord AS (
             SELECT
                 o.order_id,
@@ -157,15 +202,17 @@ public class DashboardRepository {
             WHERE o.[Order Date] >= :dtFrom
               AND o.[Order Date] <  :dtTo
         ),
+        {CTE_WALLET}
         pay AS (
             SELECT
                 p.order_id,
                 p.[Payment Method],
-                p.[Bank Issuer],
+                {ISSUER} AS [Bank Issuer],
                 SUM(p.[Payment Amount]) AS Payment_Amount
             FROM dbo.vw_POSPayment p
+            {JOIN_WALLET}
             WHERE EXISTS (SELECT 1 FROM ord WHERE ord.order_id = p.order_id)
-            GROUP BY p.order_id, p.[Payment Method], p.[Bank Issuer]
+            GROUP BY p.order_id, p.[Payment Method], {ISSUER}
         ),
         line AS (
             SELECT
@@ -219,7 +266,7 @@ public class DashboardRepository {
         GROUP BY
             g.bulan_no, g.bulan, g.bank, g.metode, g.branch,
             g.group_brand, g.brand, g.md_category
-        """;
+        """);
 
     private static final RowMapper<FaktaBrand> MAP_BRAND = (rs, i) -> new FaktaBrand(
             rs.getInt("bulan_no"),
