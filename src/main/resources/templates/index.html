@@ -85,12 +85,10 @@
                 <label>Metode Bayar</label>
                 <select name="metode" id="fMetode"></select>
             </div>
-            <div class="f f-check">
+            <div class="f f-aksi">
                 <label class="chk">
                     <input type="checkbox" name="hanyaKartu" id="fKartu"> Kartu saja (EDC)
                 </label>
-            </div>
-            <div class="f">
                 <button class="btn btn-ghost" type="button" id="tombolReset">Reset</button>
             </div>
         </form>
@@ -182,9 +180,9 @@
                 </section>
                 <section class="panel">
                     <h2>Top 10 Transaksi QR</h2>
-                    <p class="ket">Pembayaran QR yang nama aplikasinya tercatat
-                       (GoPay, OVO, DANA, dll.), per grup brand. QR tanpa nama aplikasi tidak dihitung.</p>
-                    <div class="tabel-bungkus"><table id="tabelQrBrand"></table></div>
+                    <p class="ket">Aplikasi QR non-bank (GoPay, OVO, DANA, Alipay, dll.).
+                       QR dari bank dan QR tanpa nama aplikasi tidak dihitung.</p>
+                    <div class="tabel-bungkus"><table id="tabelQrApp"></table></div>
                 </section>
             </div>
         </div>

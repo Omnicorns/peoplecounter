@@ -187,24 +187,6 @@ public class BrandService {
         return kelompok(s, x -> f.cocok(x) && !"(blank)".equals(x.bank()),
                 FaktaBrand::bank, FaktaBrand::groupBrand, 150);
     }
-
-    /**
-     * Kombinasi aplikasi QR x group brand terbesar.
-     *
-     * Transaksi QR dikenali dari nama metode bayar yang mengandung "QR"
-     * (mis. QRIS). Hanya yang nama aplikasinya tercatat (GoPay, OVO, DANA, ...);
-     * QR dengan Bank Issuer kosong dibuang karena tidak bisa dikaitkan ke aplikasi mana pun.
-     */
-    public List<Baris> qrBrand(Snapshot s, Filter f) {
-        return kelompok(s,
-                x -> f.cocok(x) && !"(blank)".equals(x.bank()) && metodeQr(x.metode()),
-                FaktaBrand::bank, FaktaBrand::groupBrand, 150);
-    }
-
-    static boolean metodeQr(String metode) {
-        return metode != null && metode.toUpperCase(java.util.Locale.ROOT).contains("QR");
-    }
-
     /** Ringkasan per bulan untuk sparkline KPI brand. Filter bulan diabaikan. */
     public record RingkasBulan(int bulanNo, BigDecimal qty, int jmlGrup, int jmlBrand) {}
 

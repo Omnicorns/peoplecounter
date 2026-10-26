@@ -135,29 +135,78 @@ body {
 .btn-ghost:hover { background: var(--bg); color: var(--teks); }
 
 /* ===================== FILTER ===================== */
+/*
+ * Filter juga presisi: 6 pilihan + satu kelompok aksi (Kartu saja + Reset).
+ *   Layar lebar : satu baris            [ 1 2 3 4 5 6 | aksi ]
+ *   Layar sedang: 2 baris x 4 kolom     [ 1 2 3 4 ] [ 5 6 | aksi aksi ]
+ *   Layar kecil : 2 kolom               [ 1 2 ] [ 3 4 ] [ 5 6 ] [ aksi aksi ]
+ */
 .filter {
-    display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
+    gap: 14px; align-items: end;
     padding: 16px 26px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     margin-bottom: 18px;
 }
-.f { display: flex; flex-direction: column; gap: 5px; }
+.f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.f select { width: 100%; }
+.f-aksi { flex-direction: row; align-items: center; justify-content: flex-end; gap: 14px; }
+.f-aksi .chk { white-space: nowrap; }
+@media (max-width: 1439px) {
+    .filter { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .f-aksi { grid-column: span 2; }
+}
 .f label { font-size: 11px; color: var(--teks-2); font-weight: 500; }
 .f select {
-    min-width: 152px; padding: 8px 11px;
+    min-width: 0; padding: 8px 11px;
     border: 1px solid var(--border); border-radius: 9px;
     background: #fff; font-size: 13px; color: var(--teks); font-family: inherit;
 }
-.f-check { justify-content: center; }
 .chk { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
 
 /* ===================== KPI ===================== */
+/*
+ * Tata letak KPI dibuat presisi: setiap baris selalu penuh, tidak ada kartu
+ * yang menggantung sendirian. Kartu utama (Nilai Transaksi) selalu dua kali
+ * lebar kartu lain. Jumlah kartu dibaca dari atribut data-n yang diisi app.js
+ * (7 kartu saat data brand siap, 4 kartu bila belum).
+ *
+ *   Layar lebar  : satu baris            [ U U | a | b | c | d | e | f ]
+ *   Layar sedang : dua baris  x 4 kolom  [ U U | a | b ] [ c | d | e | f ]
+ *   Layar kecil  : 2 kolom               [ U U ] [ a | b ] [ c | d ] [ e | f ]
+ *   Ponsel       : 1 kolom
+ */
 .kpi-baris {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 14px;
     padding: 0 26px 18px;
+}
+.kpi-baris[data-n="4"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.kpi-baris[data-n="6"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.kpi-baris > .kpi:first-child { grid-column: span 2; }
+
+/* sedang: sidebar masih tampil, ruang tidak cukup untuk satu baris */
+@media (max-width: 1599px) {
+    .kpi-baris[data-n="7"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi-baris[data-n="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-baris[data-n="6"] > .kpi:first-child { grid-column: span 3; }
+}
+/* kecil: lebar layar 900-1149 (sidebar tampil) atau di bawah 760 (sidebar di atas) */
+@media (min-width: 900px) and (max-width: 1149px), (max-width: 759px) {
+    .kpi-baris,
+    .kpi-baris[data-n="7"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi-baris > .kpi:first-child { grid-column: span 2; }
+    .kpi-baris[data-n="4"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-baris[data-n="4"] > .kpi:first-child { grid-column: span 3; }
+}
+/* ponsel: satu kolom */
+@media (max-width: 479px) {
+    .kpi-baris,
+    .kpi-baris[data-n] { grid-template-columns: minmax(0, 1fr); }
+    .kpi-baris > .kpi:first-child,
+    .kpi-baris[data-n] > .kpi:first-child { grid-column: auto; }
 }
 .kpi {
     background: var(--panel);
@@ -170,7 +219,9 @@ body {
 .kpi-utama { background: var(--biru); border-color: var(--biru); }
 .kpi-utama .kpi-judul { color: rgba(255,255,255,.85); }
 .kpi-utama .kpi-angka { color: #fff; }
-.kpi-utama .kpi-delta { color: #d6ffe8; }
+.kpi-utama .kpi-delta,
+.kpi-utama .kpi-delta.naik,
+.kpi-utama .kpi-delta.turun { color: #fff; }   /* merah/hijau di atas biru sulit dibaca */
 .kpi-utama .kpi-dasar { color: rgba(255,255,255,.7); }
 
 .kpi-judul { font-size: 12px; color: var(--teks-2); font-weight: 500; }
@@ -180,7 +231,8 @@ body {
 .kpi-delta.naik  { color: var(--hijau); }
 .kpi-delta.turun { color: var(--merah); }
 .kpi-dasar { display: block; font-size: 10.5px; color: var(--teks-3); font-weight: 400; }
-.spark { display: block; flex-shrink: 0; }
+/* boleh menyusut di kartu sempit supaya tidak keluar dari kartu (SVG punya viewBox) */
+.spark { display: block; flex: 0 1 88px; min-width: 40px; width: 88px; height: 28px; }
 
 /* ===================== PANEL ===================== */
 .panel {
@@ -196,8 +248,9 @@ body {
 .tombol-grup { display: flex; gap: 8px; flex-shrink: 0; }
 
 .grid-2, .grid-3 { display: grid; gap: 16px; padding: 0 26px 16px; }
-.grid-2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
-.grid-3 { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+/* min(..., 100%) mencegah panel memaksa layar ponsel bergeser ke samping */
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); }
 .grid-2 .panel, .grid-3 .panel { margin: 0; }
 
 .sorot-nilai { text-align: right; }
@@ -280,7 +333,7 @@ table.pivot tfoot td { background: var(--bg); border-top: 1px solid var(--garis-
 
 /* ===================== SOROTAN & INSIGHT ===================== */
 .sorot-baris {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 14px; padding: 0 26px 16px;
 }
 .sorot {
@@ -293,7 +346,7 @@ table.pivot tfoot td { background: var(--bg); border-top: 1px solid var(--garis-
 .sorot-angka { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--teks-2); }
 .sorot-angka b { color: var(--teks); font-variant-numeric: tabular-nums; }
 
-.insight-baris { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 13px; }
+.insight-baris { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 13px; }
 .insight {
     display: flex; gap: 11px;
     background: var(--bg); border-radius: 10px; padding: 14px 15px;
@@ -428,7 +481,22 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 1
     .sisi { width: auto; height: auto; position: static; flex-direction: row;
             align-items: center; gap: 16px; padding: 12px 16px; }
     .sisi-menu { flex-direction: row; overflow-x: auto; }
+    .sisi-menu a { white-space: nowrap; }
     .sisi-kaki { display: none; }
+}
+
+/* ponsel & tablet kecil: jarak tepi dirapatkan, filter jadi 2 kolom */
+@media (max-width: 759px) {
+    .kepala, .filter { padding-left: 14px; padding-right: 14px; }
+    .kpi-baris, .grid-2, .grid-3, .sorot-baris { padding-left: 14px; padding-right: 14px; }
+    .panel { margin-left: 14px; margin-right: 14px; padding: 15px 14px; }
+    .grid-2 .panel, .grid-3 .panel { margin: 0; }
+    footer { padding-left: 14px; padding-right: 14px; }
+    .filter { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .f-aksi { grid-column: span 2; justify-content: space-between; }
+    .bc-item { grid-template-columns: 104px 1fr 86px; gap: 8px; }
+    .kepala-kanan { width: 100%; justify-content: space-between; }
+    .tombol-grup { flex-wrap: wrap; }
 }
 
 /* ---------- petunjuk di tirai & penanda sumber data ---------- */
