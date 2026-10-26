@@ -201,7 +201,8 @@ public class ApiController {
             hasil.put("grup",     ringkas(grup, 10, false, UnaryOperator.identity()));
             hasil.put("brandTop", ringkas(brand.perBrand(bs, bf), 10, false, UnaryOperator.identity()));
             hasil.put("kategori", komposisi(brand.perKategori(bs, bf), UnaryOperator.identity()));
-            hasil.put("bankBrand", tabelBankBrand(brand.bankBrand(bs, bf), 15));
+            hasil.put("bankBrand", tabelBankBrand(brand.bankBrand(bs, bf), 10));
+            hasil.put("qrBrand",   tabelBankBrand(brand.qrBrand(bs, bf), 10));
         }
 
         /* ---------- pivot ---------- */
@@ -258,9 +259,6 @@ public class ApiController {
 
         List<Double> sNilai  = perBulan.stream().map(x -> x.nilai().doubleValue()).toList();
         List<Double> sStruk  = perBulan.stream().map(x -> x.trx().doubleValue()).toList();
-        List<Double> sBasket = perBulan.stream()
-                .map(x -> x.trx().signum() == 0 ? 0d
-                        : x.nilai().doubleValue() / x.trx().doubleValue()).toList();
         List<Double> sBank   = perBulan.stream().map(x -> (double) x.jmlBank()).toList();
         List<Double> sLokasi = perBulan.stream().map(x -> (double) x.jmlLokasi()).toList();
 
@@ -283,7 +281,6 @@ public class ApiController {
         List<Map<String, Object>> kpi = new ArrayList<>();
         kpi.add(tile("Nilai Transaksi", r.get("total_nilai"), "rupiah", sNilai,  iPay, dPay, true));
         kpi.add(tile("Jumlah Struk",    r.get("total_struk"), "angka",  sStruk,  iPay, dPay, false));
-        kpi.add(tile("Basket Size",     r.get("basket"),      "rupiah", sBasket, iPay, dPay, false));
         kpi.add(tile("Bank Aktif",      r.get("jml_bank"),    "angka",  sBank,   iPay, dPay, false));
         kpi.add(tile("Lokasi",          r.get("jml_lokasi"),  "angka",  sLokasi, iPay, dPay, false));
         if (brandSiap) {
