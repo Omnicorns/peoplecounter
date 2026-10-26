@@ -71,7 +71,7 @@ public class SecurityConfig {
             "/api/admin/users/pdf/**",
             "/api/admin/users/catalogs",
             "/api/admin/users/**",
-            "/dashboard-pos",
+            "/sales",
             "/api/dashboard",
             "/css/**",
             "/js/**",
