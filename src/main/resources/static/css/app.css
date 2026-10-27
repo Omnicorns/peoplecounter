@@ -167,46 +167,16 @@ body {
 
 /* ===================== KPI ===================== */
 /*
- * Tata letak KPI dibuat presisi: setiap baris selalu penuh, tidak ada kartu
- * yang menggantung sendirian. Kartu utama (Nilai Transaksi) selalu dua kali
- * lebar kartu lain. Jumlah kartu dibaca dari atribut data-n yang diisi app.js
- * (7 kartu saat data brand siap, 4 kartu bila belum).
- *
- *   Layar lebar  : satu baris            [ U U | a | b | c | d | e | f ]
- *   Layar sedang : dua baris  x 4 kolom  [ U U | a | b ] [ c | d | e | f ]
- *   Layar kecil  : 2 kolom               [ U U ] [ a | b ] [ c | d ] [ e | f ]
- *   Ponsel       : 1 kolom
+ * Jumlah kolom dan lebar kartu utama dihitung app.js (tataKpi) dari lebar
+ * yang tersedia dan jumlah kartu, supaya setiap baris SELALU penuh --
+ * berapa pun kartu yang aktif. Aturan di bawah hanya cadangan sebelum
+ * JavaScript berjalan.
  */
 .kpi-baris {
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 14px;
     padding: 0 26px 18px;
-}
-.kpi-baris[data-n="4"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.kpi-baris[data-n="6"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.kpi-baris > .kpi:first-child { grid-column: span 2; }
-
-/* sedang: sidebar masih tampil, ruang tidak cukup untuk satu baris */
-@media (max-width: 1599px) {
-    .kpi-baris[data-n="7"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .kpi-baris[data-n="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .kpi-baris[data-n="6"] > .kpi:first-child { grid-column: span 3; }
-}
-/* kecil: lebar layar 900-1149 (sidebar tampil) atau di bawah 760 (sidebar di atas) */
-@media (min-width: 900px) and (max-width: 1149px), (max-width: 759px) {
-    .kpi-baris,
-    .kpi-baris[data-n="7"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpi-baris > .kpi:first-child { grid-column: span 2; }
-    .kpi-baris[data-n="4"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .kpi-baris[data-n="4"] > .kpi:first-child { grid-column: span 3; }
-}
-/* ponsel: satu kolom */
-@media (max-width: 479px) {
-    .kpi-baris,
-    .kpi-baris[data-n] { grid-template-columns: minmax(0, 1fr); }
-    .kpi-baris > .kpi:first-child,
-    .kpi-baris[data-n] > .kpi:first-child { grid-column: auto; }
 }
 .kpi {
     background: var(--panel);
@@ -225,7 +195,8 @@ body {
 .kpi-utama .kpi-dasar { color: rgba(255,255,255,.7); }
 
 .kpi-judul { font-size: 12px; color: var(--teks-2); font-weight: 500; }
-.kpi-angka { font-size: 21px; font-weight: 700; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+.kpi-angka { display: block; font-size: 21px; font-weight: 700; letter-spacing: -.4px; font-variant-numeric: tabular-nums;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi-kaki { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; }
 .kpi-delta { font-size: 12px; font-weight: 600; }
 .kpi-delta.naik  { color: var(--hijau); }

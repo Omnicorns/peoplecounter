@@ -77,13 +77,13 @@
         var kpi = document.getElementById('kpiBaris');
         kpi.innerHTML = '';
         /* Rangka sebanyak kartu terakhir, supaya tata letak tidak meloncat saat isi datang. */
-        var n = data && data.kpi ? data.kpi.length : 7;
-        kpi.setAttribute('data-n', n);
+        var n = data && data.kpi ? data.kpi.length : 6;
         for (var i = 0; i < n; i++) {
             kpi.insertAdjacentHTML('beforeend',
                 '<div class="kpi rangka-muat"><span class="sk sk-judul"></span>'
               + '<span class="sk sk-angka"></span><span class="sk sk-kecil"></span></div>');
         }
+        tataKpi();
         document.querySelectorAll('.bar-chart').forEach(function (w) {
             var h = '';
             for (var i = 0; i < 7; i++) {
@@ -256,7 +256,6 @@
     function isiKpi() {
         var wadah = document.getElementById('kpiBaris');
         wadah.innerHTML = '';
-        wadah.setAttribute('data-n', data.kpi.length);   // dipakai CSS untuk tata letak presisi
         data.kpi.forEach(function (k, i) {
             var nilai = k.format === 'rupiah' ? G.rupiah(k.nilai) : G.angka(k.nilai);
             var warna = k.utama ? '#ffffff' : '#2563EB';
@@ -277,6 +276,79 @@
               +   '<div class="kpi-kaki">' + delta + G.sparkline(k.spark, warna) + '</div>'
               + '</div>');
         });
+        tataKpi();
+    }
+
+    /* =====================================================================
+       Tata letak KPI presisi
+
+       Setiap baris kartu harus PENUH -- tidak ada kartu yang menggantung
+       sendirian di baris terakhir -- berapa pun jumlah kartu yang aktif dan
+       berapa pun lebar layar. Kartu pertama (Nilai Transaksi) diberi ruang
+       lebih bila memungkinkan. Pilihan dicoba berurutan, yang pertama muat dipakai:
+
+         1. satu baris, kartu utama 2x lebar        [ U U | a | b | c | d | e ]
+         2. beberapa baris, kartu utama 2x lebar    [ U U | a | b ] [ c | d | e | f ]
+         3. kartu utama satu baris penuh,
+            sisanya satu baris                      [ U U U U U ] [ a | b | c | d | e ]
+         4. kartu utama satu baris penuh,
+            sisanya beberapa baris rata             [ U U ] [ a | b ] [ c | d ]
+         5. semua kartu sama lebar, baris rata      [ U | a | b ] [ c | d | e ]
+         6. satu kolom
+       ===================================================================== */
+
+    var KPI_MIN = 170;   // lebar minimum satu kartu (px) agar angka & grafik mini tetap terbaca
+    var KPI_GAP = 14;
+
+    function tataKpi() {
+        var w = document.getElementById('kpiBaris');
+        if (!w) return;
+        var kartu = w.children;
+        var n = kartu.length;
+        if (!n) return;
+
+        var gaya  = getComputedStyle(w);
+        var lebar = w.clientWidth - parseFloat(gaya.paddingLeft) - parseFloat(gaya.paddingRight);
+        var maks  = Math.max(1, Math.floor((lebar + KPI_GAP) / (KPI_MIN + KPI_GAP)));
+        var sisa  = n - 1;   // kartu selain kartu utama
+
+        function terbesar(jumlah, batas) {           // kolom terbanyak (>=2) yang membagi habis
+            for (var c = Math.min(batas, jumlah); c >= 2; c--) if (jumlah % c === 0) return c;
+            return 0;
+        }
+
+        var kolom, lebarUtama, c;
+        if (n === 1)                                { kolom = 1; lebarUtama = 1; }
+        else if (n + 1 <= maks)                     { kolom = n + 1; lebarUtama = 2; }
+        else if ((c = terbesar(n + 1, maks)) > 2)   { kolom = c; lebarUtama = 2; }
+        else if (sisa >= 2 && sisa <= maks)         { kolom = sisa; lebarUtama = sisa; }
+        else if ((c = terbesar(sisa, maks)))        { kolom = c; lebarUtama = c; }
+        else if ((c = terbesar(n + 1, maks)))       { kolom = c; lebarUtama = 2; }
+        else if ((c = terbesar(n, maks)))           { kolom = c; lebarUtama = 1; }
+        else                                        { kolom = 1; lebarUtama = 1; }
+
+        w.style.gridTemplateColumns = 'repeat(' + kolom + ', minmax(0, 1fr))';
+        for (var i = 0; i < n; i++) {
+            kartu[i].style.gridColumn = (i === 0 && lebarUtama > 1) ? 'span ' + lebarUtama : '';
+        }
+
+        /* Angka besar selalu satu baris: kecilkan huruf seperlunya bila kartu sempit. */
+        var angka = w.querySelectorAll('.kpi-angka');
+        for (var j = 0; j < angka.length; j++) {
+            var a = angka[j];
+            a.style.fontSize = '';
+            var ukuran = parseFloat(getComputedStyle(a).fontSize);
+            while (a.scrollWidth > a.clientWidth && ukuran > 13) {
+                ukuran -= 1;
+                a.style.fontSize = ukuran + 'px';
+            }
+        }
+    }
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(function () { tataKpi(); }).observe(document.getElementById('kpiBaris'));
+    } else {
+        window.addEventListener('resize', tataKpi);
     }
 
     function isiTren() {
