@@ -39,7 +39,6 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             // Health & web
             "/api/health/**",
-            "/",
             "/catalogue",
             "/SarinahForSEAGames2025",
 
