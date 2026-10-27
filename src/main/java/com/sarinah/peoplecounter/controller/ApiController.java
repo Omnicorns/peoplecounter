@@ -283,7 +283,7 @@ public class ApiController {
         List<Map<String, Object>> kpi = new ArrayList<>();
         kpi.add(tile("Nilai Transaksi", r.get("total_nilai"), "rupiah", sNilai,  iPay, dPay, true));
         kpi.add(tile("Jumlah Struk",    r.get("total_struk"), "angka",  sStruk,  iPay, dPay, false));
-        kpi.add(tile("Bank Aktif",      r.get("jml_bank"),    "angka",  sBank,   iPay, dPay, false));
+     //   kpi.add(tile("Bank Aktif",      r.get("jml_bank"),    "angka",  sBank,   iPay, dPay, false));
         kpi.add(tile("Lokasi",          r.get("jml_lokasi"),  "angka",  sLokasi, iPay, dPay, false));
         if (brandSiap) {
             kpi.add(tile("Grup Brand",  rb.get("jml_group"),  "angka", sGrup, iBrd, dBrd, false));
