@@ -1,6 +1,6 @@
 package com.sarinah.peoplecounter.adaptor;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +23,8 @@ public class InjourneyGetModulAdaptor {
 
     public ObjectNode getEmployeeLogin(ObjectNode request) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("username", request.get("username").asText());
-        form.add("password", request.get("password").asText());
+        form.add("username", request.get("username").asString());
+        form.add("password", request.get("password").asString());
 
 
         ObjectNode root = defaultPointRestClient
@@ -42,7 +42,7 @@ public class InjourneyGetModulAdaptor {
     public ObjectNode getDataKaryawan(ObjectNode request) {
         return defaultPointRestClient.get()
                 .uri(dataKaryawanUrl)
-                .headers(h -> h.setBearerAuth(request.get("token").asText()))
+                .headers(h -> h.setBearerAuth(request.get("token").asString()))
                 .retrieve()
                 .body(ObjectNode.class);
     }

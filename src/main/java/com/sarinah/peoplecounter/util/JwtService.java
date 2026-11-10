@@ -30,17 +30,17 @@ public class JwtService {
         Instant now = Instant.now();
         Instant exp = now.plus(accessTtl);
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuer(issuer)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(exp))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .claims(claims)
+                .subject(subject)
+                .issuer(issuer)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
     public Jws<Claims> parse(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).requireIssuer(issuer).build().parseClaimsJws(token);
+        return Jwts.parser().verifyWith(key).requireIssuer(issuer).build().parseSignedClaims(token);
     }
 
     public long getAccessTtlSeconds(){

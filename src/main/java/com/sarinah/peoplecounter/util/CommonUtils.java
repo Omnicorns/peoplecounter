@@ -1,7 +1,7 @@
 package com.sarinah.peoplecounter.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -18,11 +18,11 @@ public class CommonUtils {
 
     public URI dynamicParamBuilder (ObjectNode request, String url) {
         UriComponentsBuilder param = UriComponentsBuilder.fromUriString(url);
-        Iterator<Map.Entry<String, JsonNode>> requestIterator = request.fields();
+        Iterator<Map.Entry<String, JsonNode>> requestIterator = request.properties().iterator();
 
         while (requestIterator.hasNext()) {
             Map.Entry<String, JsonNode> requestEntry = requestIterator.next();
-            param.queryParam(requestEntry.getKey(), requestEntry.getValue().asText());
+            param.queryParam(requestEntry.getKey(), requestEntry.getValue().asString());
         }
         return param.build().encode().toUri();
     }
@@ -30,10 +30,10 @@ public class CommonUtils {
 
     public MultiValueMap<String, String> dynamicFormDataBuilder(ObjectNode request) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        Iterator<Map.Entry<String, JsonNode>> requestIterator = request.fields();
+        Iterator<Map.Entry<String, JsonNode>> requestIterator = request.properties().iterator();
         while (requestIterator.hasNext()) {
             Map.Entry<String, JsonNode> entry = requestIterator.next();
-            formData.add(entry.getKey(), entry.getValue().asText());
+            formData.add(entry.getKey(), entry.getValue().asString());
         }
         return formData;
     }

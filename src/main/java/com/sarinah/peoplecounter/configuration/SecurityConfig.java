@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,7 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -207,11 +207,11 @@ public class SecurityConfig {
         public ApiKeyAuthFilter(String apiKey, String[]... skipPatternGroups) {
             this.apiKey = apiKey;
 
+            PathPatternRequestMatcher.Builder matchers = PathPatternRequestMatcher.withDefaults();
             this.skipMatchers = Arrays.stream(skipPatternGroups)
                     .flatMap(Arrays::stream)
                     .distinct()
-                    .map(AntPathRequestMatcher::new)
-                    .map(matcher -> (RequestMatcher) matcher)
+                    .<RequestMatcher>map(matchers::matcher)
                     .toList();
         }
 

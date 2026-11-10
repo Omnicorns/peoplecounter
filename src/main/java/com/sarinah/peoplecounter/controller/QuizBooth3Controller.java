@@ -1,7 +1,6 @@
 package com.sarinah.peoplecounter.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.sarinah.peoplecounter.entity.QuizBooth3Result;
 import com.sarinah.peoplecounter.repository.QuizBooth3ResultRepository;
 
@@ -127,7 +126,7 @@ public class QuizBooth3Controller {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<?> submit(@RequestBody SubmitRequest request) throws JsonProcessingException {
+    public ResponseEntity<?> submit(@RequestBody SubmitRequest request) {
 
         String cleanName = cleanText(request.name());
         String cleanDivision = cleanText(request.division());

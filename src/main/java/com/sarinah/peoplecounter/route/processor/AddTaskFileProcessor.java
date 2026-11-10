@@ -3,8 +3,6 @@ package com.sarinah.peoplecounter.route.processor;
 import com.sarinah.peoplecounter.entity.PeopleCount;
 import com.sarinah.peoplecounter.repository.PeopleCountRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,7 +18,7 @@ import java.util.regex.Pattern;
 
 @Component
 @Slf4j
-public class AddTaskFileProcessor implements Processor {
+public class AddTaskFileProcessor {
 
     @Autowired
     PeopleCountRepository peopleCountRepository;
@@ -29,10 +27,8 @@ public class AddTaskFileProcessor implements Processor {
 
 
 
-    @Override
-    public void process(Exchange exchange) throws Exception {
-        String filename = exchange.getIn().getHeader(Exchange.FILE_NAME, String.class);
-        String body     = exchange.getMessage().getBody(String.class);
+    /** Memproses isi satu file CSV people counter. Melempar exception bila file tidak valid. */
+    public void process(String filename, String body) {
 
 
         if (body == null || body.isBlank()) {
