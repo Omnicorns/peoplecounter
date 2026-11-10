@@ -99,13 +99,13 @@ public class ForwarderAdaptorConfiguration {
                 // Percobaan terakhir
                 if (lastIo != null) {
                     String msg = "Retry gagal: " + lastIo.getMessage();
-                    return new ByteArrayClientHttpResponse(HttpStatus.BAD_GATEWAY, new HttpHeaders(),
+                    return new ByteArrayClientHttpResponse(HttpStatus.BAD_GATEWAY, textHeaders(),
                             msg.getBytes(StandardCharsets.UTF_8));
                 }
                 if (lastResp != null) {
                     return lastResp;
                 }
-                return new ByteArrayClientHttpResponse(HttpStatus.BAD_GATEWAY, new HttpHeaders(),
+                return new ByteArrayClientHttpResponse(HttpStatus.BAD_GATEWAY, textHeaders(),
                         "Retry gagal tanpa response".getBytes(StandardCharsets.UTF_8));
             }
 
@@ -113,8 +113,14 @@ public class ForwarderAdaptorConfiguration {
             return execution.execute(request, body);
         }
 
+        private static HttpHeaders textHeaders() {
+            HttpHeaders h = new HttpHeaders();
+            h.setContentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8));
+            return h;
+        }
+
         private boolean isBlockedByAV(ClientHttpResponse resp) throws IOException {
-            int code = resp.getRawStatusCode(); // <-- PERBAIKAN: aman utk 499/non-standar
+            int code = resp.getStatusCode().value(); // <-- PERBAIKAN: aman utk 499/non-standar
             if (AV_STATUS.contains(code)) return true;
 
             MediaType ct = resp.getHeaders().getContentType();
@@ -146,8 +152,7 @@ public class ForwarderAdaptorConfiguration {
             }
 
             @Override public HttpStatusCode getStatusCode() { return status; }
-            @Override public int getRawStatusCode() { return status.value(); }
-            @Override public String getStatusText() { return status.toString(); }
+            public String getStatusText() { return status.toString(); }
             @Override public HttpHeaders getHeaders() { return headers; }
             @Override public InputStream getBody() { return new ByteArrayInputStream(body); }
             @Override public void close() { /* no-op */ }

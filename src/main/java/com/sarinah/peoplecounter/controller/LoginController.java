@@ -1,8 +1,8 @@
 package com.sarinah.peoplecounter.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.adaptor.SarinahGetModulAdaptor;
 import com.sarinah.peoplecounter.entity.ProductScanLog;
 import com.sarinah.peoplecounter.entity.ScanSource;
@@ -174,7 +174,7 @@ public class LoginController {
             List<String> promos = new ArrayList<>();
             AtomicReference<Double> maxDisc = new AtomicReference<>(Double.NEGATIVE_INFINITY);
 
-            promoNode.fields().forEachRemaining(e -> {
+            promoNode.properties().forEach(e -> {
                 JsonNode v = e.getValue();
 
                 // Kumpulkan nama promo
@@ -184,7 +184,7 @@ public class LoginController {
                 // Cari diskon produk (hanya dari products_discount) yang match SKU di setiap condition
                 JsonNode conditions = v.path("conditions");
                 if (conditions.isObject() && conditions.size() > 0) {
-                    conditions.fields().forEachRemaining(condEntry -> {
+                    conditions.properties().forEach(condEntry -> {
                         JsonNode cond = condEntry.getValue();
 
                         JsonNode productIds = cond.path("product_ids");
@@ -193,7 +193,7 @@ public class LoginController {
                         // product_ids berformat: "[<SKU>] Nama Produk ..."
                         boolean matched = false;
                         for (JsonNode pidNode : productIds) {
-                            String pid = pidNode.asText("");
+                            String pid = pidNode.asString("");
                             if (pid.startsWith("[" + matchingSku + "]") || pid.contains("[" + matchingSku + "]")) {
                                 matched = true;
                                 break;
@@ -222,7 +222,7 @@ public class LoginController {
         List<Map<String, Object>> rows = new ArrayList<>();
         JsonNode stockMap = root.get("stock_by_location");
         if (stockMap != null && stockMap.isObject()) {
-            stockMap.fields().forEachRemaining(e -> {
+            stockMap.properties().forEach(e -> {
                 JsonNode n = e.getValue();
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("location", textOrDefault(n.get("location"), "-"));
@@ -292,11 +292,11 @@ public class LoginController {
 
     // helpers
     private static String textOrNull(JsonNode n) {
-        return (n == null || n.isMissingNode() || n.isNull()) ? null : n.asText(null);
+        return (n == null || n.isMissingNode() || n.isNull()) ? null : n.asString(null);
     }
 
     private static String textOrDefault(JsonNode n, String def) {
-        return (n == null || n.isMissingNode() || n.isNull()) ? def : n.asText(def);
+        return (n == null || n.isMissingNode() || n.isNull()) ? def : n.asString(def);
     }
 
     private static int intOrZero(JsonNode n) {
@@ -306,7 +306,7 @@ public class LoginController {
     private static BigDecimal decimalOrZero(JsonNode n) {
         if (n == null || n.isMissingNode() || n.isNull()) return BigDecimal.ZERO;
         try {
-            return new BigDecimal(n.asText());
+            return new BigDecimal(n.asString());
         } catch (Exception e) {
             return BigDecimal.ZERO;
         }

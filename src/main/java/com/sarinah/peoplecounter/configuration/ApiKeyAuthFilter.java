@@ -1,6 +1,7 @@
 package com.sarinah.peoplecounter.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +25,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     private final String expectedApiKey;
     private final String[] publicEndpoints;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonMapper.builder().build();
 
     public ApiKeyAuthFilter(String expectedApiKey, String... publicEndpoints) {
         this.expectedApiKey = expectedApiKey;
