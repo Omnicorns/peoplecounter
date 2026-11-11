@@ -30,10 +30,10 @@ public class DashboardController {
         this.data = data;
     }
 
-    @GetMapping("/sales")
-    public String halaman() {
-        return "index";
-    }
+//    @GetMapping("/sales")
+//    public String halaman() {
+//        return "index";
+//    }
 
     /* =====================================================================
        Unduhan
