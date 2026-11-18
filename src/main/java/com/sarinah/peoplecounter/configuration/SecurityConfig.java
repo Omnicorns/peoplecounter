@@ -124,6 +124,7 @@ public class SecurityConfig {
             "/haverst.mpeg",
             "/SARINAH_WASTRA_5.mp4",
             "/videos/**",
+            "/",
 
             // Swagger
             "/v3/api-docs/**",
