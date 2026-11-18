@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Portal Aplikasi Internal Sarinah</title>
     <meta name="description" content="Sarinah Digital Workspace — akses seluruh aplikasi internal Sarinah dari satu halaman.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,7 +70,7 @@
         /* =========================================================
            HERO + COMMAND SEARCH
            ========================================================= */
-        .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 0 6px;gap:10px}
+        .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:26px;padding-bottom:6px;gap:10px}
         .hero h1{margin:0;font-weight:800;letter-spacing:-.025em;line-height:1.12;font-size:clamp(1.65rem,1.1rem + 1.9vw,2.6rem);color:var(--navy)}
         .hero h1 .accent{color:var(--teal-ink)}
         .hero p{margin:0;font-size:clamp(.95rem,.9rem + .25vw,1.06rem);line-height:1.55;color:var(--muted);max-width:40rem}
@@ -153,7 +153,7 @@
         .card:not(.is-active) .btn-open{pointer-events:none}
 
         /* controls */
-        .controls{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 0 4px}
+        .controls{display:flex;align-items:center;justify-content:center;gap:16px;padding-top:8px;padding-bottom:4px}
         .nav-btn{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface);color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-1);transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
         .nav-btn:hover{border-color:var(--teal);color:var(--teal-ink);transform:translateY(-1px)}
         .nav-btn:active{transform:scale(.94)}
@@ -162,7 +162,7 @@
         .counter .nm{display:block;font-size:13px;font-weight:600;color:var(--teal-ink);white-space:nowrap}
 
         /* pill navigation */
-        .pillbar{display:flex;justify-content:center;padding:6px 0 14px}
+        .pillbar{display:flex;justify-content:center;padding-top:6px;padding-bottom:14px}
         .pills-wrap{position:relative;max-width:100%;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);box-shadow:var(--shadow-1)}
         .pills-wrap::before,.pills-wrap::after{content:"";position:absolute;top:1px;bottom:1px;width:36px;pointer-events:none;z-index:3;opacity:0;transition:opacity var(--t-fast) var(--ease)}
         .pills-wrap::before{left:1px;border-radius:999px 0 0 999px;background:linear-gradient(90deg,#FFFFFF,rgba(255,255,255,0))}
@@ -179,7 +179,7 @@
 
         /* footer */
         .site-footer{border-top:1px solid var(--line)}
-        .footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding:14px 0;font-size:13px;color:var(--dim)}
+        .footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding-top:14px;padding-bottom:14px;font-size:13px;color:var(--dim)}
         .footer-inner .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);margin:0 8px;vertical-align:middle}
         .footer-inner a{color:var(--teal-ink);font-weight:600;text-decoration:none}
         .footer-inner a:hover{text-decoration:underline}
@@ -226,26 +226,71 @@
           .container{padding:0 22px}
           .brand-text span{display:none}
         }
+        /* ---------- MOBILE (≤640px): semua muat dalam satu layar ---------- */
         @media (max-width:640px){
           .container{padding:0 16px}
-          .header-inner{height:58px;gap:10px}
+          .header-inner{height:56px;gap:10px}
           .brand{gap:10px}
-          .brand-logo{height:32px;padding:0 10px;font-size:11.5px;letter-spacing:.16em}
-          .brand-sep{height:24px}
-          .brand-text b{font-size:14px}
-          .greet span{display:none}
-          .greet b{font-size:14px}
-          .hero{padding-top:20px}
-          .cmd{max-width:none}
-          .cmd-hint{display:none}
-          .cmd-field input{padding-right:16px}
-          .carousel{flex:none;min-height:0;max-height:none}
-          .stage{flex:none;height:420px;min-height:0}
-          .counter{min-width:96px}
-          .footer-inner{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0 16px}
+          .brand-logo{height:30px;padding:0 9px;font-size:11px;letter-spacing:.16em}
+          .brand-sep{height:22px}
+          .brand-text b{font-size:13.5px}
+          .greet{display:none}
+          .brand{flex:1;min-width:0}
+          .brand-text{min-width:0}
+          .brand-text b{overflow:hidden;text-overflow:ellipsis}
+          main{justify-content:center}
+          /* kartu samping: hanya tepi kartu yang mengintip, isinya disembunyikan agar rapi */
+          .card .card-body > *{transition:opacity var(--t-mid) var(--ease)}
+          .card:not(.is-active) .card-body > *{opacity:0}
+          .card:not(.is-active) .card-body{box-shadow:0 8px 20px rgba(20,33,61,.08)}
+          .hero{padding-top:14px;padding-bottom:4px;gap:6px}
+          .hero h1{font-size:clamp(1.3rem,5.6vw,1.6rem)}
+          .hero p{font-size:14px;line-height:1.45}
+          .cmd{max-width:none;margin-top:6px}
+          .cmd-field{height:48px;border-radius:14px}
+          .cmd-field svg{left:15px}
+          .cmd-field input{font-size:16px;padding:0 14px 0 44px;border-radius:14px}
+          .cmd-hint,.cmd-foot{display:none}
+          .cmd-list{max-height:min(42dvh,320px)}
+          .carousel{min-height:0;max-height:420px}
+          .stage{min-height:270px}
+          .card-body{padding:18px;gap:8px;border-radius:18px}
+          .tile{width:46px;height:46px;font-size:16px;border-radius:12px}
+          .card-name{font-size:19px;margin-top:2px}
+          .card-desc{font-size:14px}
+          .btn-open{min-height:44px;font-size:14.5px}
+          .controls{padding-top:4px;padding-bottom:2px;gap:12px}
+          .nav-btn{width:44px;height:44px}
+          .counter{min-width:110px;font-size:13px}
+          .pillbar{padding-top:4px;padding-bottom:8px}
+          .pill{min-height:36px;padding:0 13px;font-size:13.5px}
+          .footer-inner{justify-content:center;text-align:center;gap:2px 12px;padding-top:8px;padding-bottom:calc(10px + env(safe-area-inset-bottom));font-size:12px}
+          /* submenu jadi bottom sheet */
+          dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:22px 22px 0 0;max-height:88dvh}
+          dialog[open]{animation:sheetIn var(--t-slow) var(--ease)}
+          .dlg{padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+          .menu-item{min-height:54px}
+        }
+        @keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+        @media (max-width:640px) and (max-height:720px){
+          .hero p{display:none}
         }
         @media (max-width:380px){
-          .brand-sep,.brand-text{display:none}
+          .brand-text b{font-size:13px}
+          .brand-logo{padding:0 8px;letter-spacing:.14em}
+        }
+        /* ---------- HP posisi landscape ---------- */
+        @media (max-height:500px) and (orientation:landscape){
+          .page{min-height:0}
+          .header-inner{height:50px}
+          .greet span{display:none}
+          .hero{padding-top:8px;padding-bottom:0;gap:6px}
+          .hero p{display:none}
+          .hero h1{font-size:1.3rem}
+          .cmd{max-width:480px;margin-top:4px}
+          .cmd-field{height:44px}
+          .carousel{max-height:none}
+          .stage{flex:none;height:340px;min-height:0}
         }
         @media (prefers-reduced-motion: reduce){
           *,*::before,*::after{animation-duration:1ms !important;animation-iteration-count:1 !important;transition-duration:1ms !important;scroll-behavior:auto !important}
@@ -497,17 +542,21 @@
       function layout(){
         const sw = stage.clientWidth, sh = stage.clientHeight;
         isMobile = sw < 640;
-        ch = Math.round(Math.max(312, Math.min(390, sh * 0.84)));
-        cw = Math.round(Math.max(250, Math.min(310, ch * 0.8)));
-        if (isMobile) { cw = Math.min(cw, sw - 92); ch = Math.max(ch, 340); }
-        stage.style.setProperty('--cw', cw + 'px'); stage.style.setProperty('--ch', ch + 'px');
-        cards.forEach(c => { c.style.setProperty('--cw', cw + 'px'); c.style.setProperty('--ch', ch + 'px'); });
-        if (isMobile) { spread = 0.66; maxVis = 1.55; }
-        else {
+        if (isMobile) {
+          // kartu aktif hampir selebar layar; kartu samping hanya mengintip ±20px di tepi
+          cw = Math.round(Math.min(sw - 64, 340));
+          ch = Math.round(Math.max(270, Math.min(sh * 0.92, cw * 0.9, 310)));
+          spread = (0.9 * cw + 12) / (G.X[1] * cw);
+          maxVis = 1.55;
+        } else {
+          ch = Math.round(Math.max(300, Math.min(390, sh * 0.86)));
+          cw = Math.round(Math.max(250, Math.min(310, ch * 0.8)));
           // pastikan kartu ke-3 tetap di dalam layar → tidak ada horizontal overflow
           spread = Math.max(0.55, Math.min(1, (sw / 2 - cw * 0.42) / (G.X[3] * cw)));
           maxVis = sw < 1000 ? 2.6 : 3.6;
         }
+        stage.style.setProperty('--cw', cw + 'px'); stage.style.setProperty('--ch', ch + 'px');
+        cards.forEach(c => { c.style.setProperty('--cw', cw + 'px'); c.style.setProperty('--ch', ch + 'px'); });
         render(true);
         movePillIndicator(false);
       }
@@ -525,7 +574,7 @@
           if (a > maxVis - 0.6) op *= Math.max(0, (maxVis - a) / 0.6);
           c.style.transform = `translate(-50%,-50%) translate3d(${Math.round(x)}px,0,${Math.round(z)}px) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
           c.style.opacity = op.toFixed(3);
-          c.style.setProperty('--veil', lerpT(G.V, a).toFixed(3));
+          c.style.setProperty('--veil', Math.min(0.6, lerpT(G.V, a) * (isMobile ? 2.8 : 1)).toFixed(3));
           c.style.zIndex = String(100 - Math.round(a * 10));
           const hidden = op < 0.02;
           c.style.visibility = hidden ? 'hidden' : 'visible';
