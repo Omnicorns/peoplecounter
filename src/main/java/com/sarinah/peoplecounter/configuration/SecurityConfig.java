@@ -114,6 +114,7 @@ public class SecurityConfig {
             "/portal/**",
             "/booth/**",
             "/boothIT.pdf",
+            "/portal-sarinah",
 
             // Quiz Booth 3
             "/quiz-booth3",
