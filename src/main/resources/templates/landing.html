@@ -1,286 +1,771 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Portal Aplikasi Internal Sarinah</title>
+    <meta name="description" content="Sarinah Digital Workspace — akses seluruh aplikasi internal Sarinah dari satu halaman.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* =========================================================
+           DESIGN TOKENS
+           ========================================================= */
         :root{
-          --bg:#F6F4EF; --panel:#FFFFFF; --line:#E3DFD6; --line2:#D2CCBF;
-          --text:#1C2433; --muted:#4A5468; --dim:#5F6878;
-          --primary:#0F5C63; --primary-hover:#0B474D; --gold:#B08A3E;
-          --head:'Source Serif 4', Georgia, 'Times New Roman', serif;
+          --ivory:#F6F2EA; --ivory-2:#FBF9F4; --surface:#FFFFFF;
+          --line:#E6E0D3; --line-2:#D8D0BF;
+          --navy:#14213D; --navy-2:#22335A; --navy-soft:#E6EAF2;
+          --teal:#0E7C7B; --teal-ink:#0A5F5E; --teal-soft:#E2F0EF;
+          --gold:#B8975A; --gold-soft:#F4ECDD; --gold-ink:#6E5323;
+          --text:#14213D; --muted:#4A5468; --dim:#5E6779;
+          --font:'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+          --r-lg:22px; --r-md:14px; --r-sm:10px;
+          --ease:cubic-bezier(.22,1,.36,1);
+          --t-fast:200ms; --t-mid:320ms; --t-slow:450ms;
+          --shadow-1:0 1px 2px rgba(20,33,61,.04),0 6px 16px rgba(20,33,61,.05);
+          --shadow-card:0 1px 2px rgba(20,33,61,.05),0 10px 24px rgba(20,33,61,.07),0 30px 60px -18px rgba(20,33,61,.18);
+          --shadow-active:0 2px 4px rgba(20,33,61,.06),0 18px 36px rgba(20,33,61,.10),0 44px 80px -24px rgba(14,124,123,.30);
         }
         *{box-sizing:border-box}
-        html{scroll-behavior:smooth}
-        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;min-height:100vh;overflow-x:hidden}
-        a{color:var(--primary)}
-        .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
-        :focus-visible{outline:3px solid var(--primary);outline-offset:3px}
-
-        /* header */
-        header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;border-bottom:1px solid var(--line)}
-        .brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text)}
-        .brand-logo{height:42px;padding:0 16px;border-radius:8px;border:1.5px solid var(--text);display:flex;align-items:center;font-family:var(--head);font-weight:700;letter-spacing:.14em;font-size:15px}
-        .brand-text{display:flex;flex-direction:column;line-height:1.25;padding-left:16px;border-left:1px solid var(--line2)}
-        .brand-text b{font-size:17px;font-weight:600}
-        .brand-text span{font-size:14px;color:var(--dim)}
-        .clock{font-size:15px;color:var(--dim);text-align:right}
-        .clock b{display:block;color:var(--text);font-weight:600;font-size:17px}
-
-        /* hero */
-        .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;padding:56px 0 8px}
-        .eyebrow{font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
-        h1{margin:0;font-family:var(--head);font-weight:700;font-size:clamp(2.2rem,4.6vw,3.6rem);line-height:1.12;letter-spacing:-.01em;max-width:20ch}
-        .lead{margin:0;font-size:19px;line-height:1.6;color:var(--muted);max-width:38rem}
-        .search{position:relative;width:100%;max-width:540px;margin-top:10px}
-        .search label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-        .search input{width:100%;height:58px;border-radius:12px;border:1px solid var(--line2);background:var(--panel);color:var(--text);font:inherit;font-size:17px;padding:0 20px 0 54px;box-shadow:0 1px 2px rgba(28,36,51,.05)}
-        .search input::placeholder{color:var(--dim)}
-        .search input:focus{border-color:var(--primary)}
-        .search svg{position:absolute;left:19px;top:50%;transform:translateY(-50%)}
-
-        /* 3D stage */
-        .stage{position:relative;height:540px;perspective:1900px;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:grab;margin-top:4px}
-        .stage.dragging{cursor:grabbing}
-        .shadow-floor{position:absolute;bottom:38px;width:760px;max-width:95%;height:120px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(28,36,51,.14),rgba(28,36,51,0) 70%);pointer-events:none}
-        .ring{position:relative;width:var(--cw,270px);height:var(--ch,340px);transform-style:preserve-3d;will-change:transform}
-        .card{position:absolute;inset:0;border-radius:18px;background:var(--panel);border:1px solid var(--line);padding:28px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--text);transform-style:preserve-3d;box-shadow:0 18px 40px rgba(28,36,51,.10),0 2px 6px rgba(28,36,51,.06);transition:border-color .3s}
-        .card.front{border-color:var(--primary)}
-        .card .tile{width:68px;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:center;transform:translateZ(36px);font-family:var(--head);font-weight:700;font-size:28px;box-shadow:0 10px 20px rgba(28,36,51,.10)}
-        .card h2{margin:12px 0 0;font-family:var(--head);font-size:26px;line-height:1.15;transform:translateZ(20px)}
-        .card p{margin:0;font-size:16px;line-height:1.55;color:var(--muted);transform:translateZ(12px)}
-        .card .host{margin-top:auto;font-size:13px;color:var(--dim);word-break:break-all}
-        .card .go{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:16px;color:var(--primary);transform:translateZ(24px)}
-
-        .controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:-6px;flex-wrap:wrap}
-        .btn-round{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);background:var(--panel);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer}
-        .btn-round:hover{border-color:var(--primary);color:var(--primary)}
-        .open-front{display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 28px;border-radius:10px;background:var(--primary);color:#FFFFFF;font-weight:600;text-decoration:none;font-size:17px}
-        .open-front:hover{background:var(--primary-hover);color:#FFFFFF}
-        .dots{display:flex;gap:10px;justify-content:center;margin-top:20px}
-        .dots button{width:12px;height:12px;border-radius:999px;border:none;background:var(--line2);padding:0;cursor:pointer;transition:width .3s,background .3s}
-        .dots button[aria-current="true"]{width:30px;background:var(--primary)}
-        .hint{text-align:center;font-size:15px;color:var(--dim);margin:14px 0 0}
-
-        /* list */
-        .list{padding:72px 0 64px}
-        .list h3{margin:0 0 8px;font-family:var(--head);font-size:clamp(1.6rem,3vw,2.1rem)}
-        .list .sub{margin:0 0 24px;color:var(--muted)}
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
-        .row{display:flex;gap:16px;align-items:center;padding:20px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--text);transition:transform .25s,border-color .25s,box-shadow .25s;transform:perspective(800px) rotateX(0) rotateY(0)}
-        .row:hover,.row:focus-visible{border-color:var(--primary);transform:perspective(800px) rotateX(4deg) rotateY(-5deg) translateY(-3px);box-shadow:0 14px 28px rgba(28,36,51,.10)}
-        .row .mini{flex:none;width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:22px}
-        .row b{display:block;font-size:18px;font-weight:600}
-        .row span{display:block;font-size:14px;color:var(--dim);margin-top:2px}
-        .row .arrow{margin-left:auto;flex:none;color:var(--primary)}
-        .empty{color:var(--muted);display:none}
-
-        footer{border-top:1px solid var(--line);padding:28px 0 40px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:15px;color:var(--dim)}
-
-        @media (max-width:640px){
-          .stage{height:460px}
-          .card{padding:22px}
-          .card h2{font-size:23px}
-          .brand-text{display:none}
+        html{overflow-x:hidden}
+        @supports (overflow:clip){ html{overflow-x:clip} }
+        body{
+          margin:0;font-family:var(--font);font-size:16px;color:var(--text);-webkit-font-smoothing:antialiased;
+          background:
+            radial-gradient(1100px 520px at 50% -8%, #FFFDF8 0%, rgba(255,253,248,0) 70%),
+            radial-gradient(800px 480px at 92% 105%, rgba(184,151,90,.10) 0%, rgba(184,151,90,0) 70%),
+            radial-gradient(700px 420px at 4% 60%, rgba(14,124,123,.06) 0%, rgba(14,124,123,0) 70%),
+            var(--ivory);
+          background-attachment:fixed;
         }
-        @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .row,.row:hover{transition:none} }
+        a{color:var(--teal-ink)}
+        :focus-visible{outline:3px solid var(--teal);outline-offset:3px;border-radius:6px}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 32px}
+        kbd{font-family:var(--font);font-size:12px;font-weight:600;color:var(--dim);background:var(--ivory-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 7px;line-height:1.4}
+
+        /* page = satu layar penuh di desktop */
+        .page{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+        main{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;min-height:0}
+
+        /* =========================================================
+           HEADER — sticky + translucent saat scroll
+           ========================================================= */
+        .site-header{position:sticky;top:0;z-index:60;border-bottom:1px solid transparent;transition:background var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease),box-shadow var(--t-mid) var(--ease)}
+        .site-header.is-scrolled{background:rgba(246,242,234,.78);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom-color:var(--line);box-shadow:0 6px 20px rgba(20,33,61,.05)}
+        .header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:72px;border-bottom:1px solid var(--line)}
+        .site-header.is-scrolled .header-inner{border-bottom-color:transparent}
+        .brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text);min-width:0}
+        /* Ganti .brand-logo dengan <img> logo resmi bila tersedia (tinggi 36px) */
+        .brand-logo{flex:none;height:36px;padding:0 14px;border-radius:9px;border:1.5px solid var(--navy);display:flex;align-items:center;font-weight:800;letter-spacing:.2em;font-size:13px;color:var(--navy);background:var(--surface)}
+        .brand-sep{flex:none;width:1px;height:30px;background:var(--line-2)}
+        .brand-text{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+        .brand-text b{font-size:15px;font-weight:700;white-space:nowrap}
+        .brand-text span{font-size:13px;color:var(--dim);white-space:nowrap}
+        .greet{text-align:right;line-height:1.3;white-space:nowrap}
+        .greet b{display:block;font-size:15px;font-weight:700}
+        .greet span{font-size:13px;color:var(--dim)}
+
+        /* =========================================================
+           HERO + COMMAND SEARCH
+           ========================================================= */
+        .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 0 6px;gap:10px}
+        .hero h1{margin:0;font-weight:800;letter-spacing:-.025em;line-height:1.12;font-size:clamp(1.65rem,1.1rem + 1.9vw,2.6rem);color:var(--navy)}
+        .hero h1 .accent{color:var(--teal-ink)}
+        .hero p{margin:0;font-size:clamp(.95rem,.9rem + .25vw,1.06rem);line-height:1.55;color:var(--muted);max-width:40rem}
+
+        .cmd{position:relative;width:100%;max-width:560px;margin-top:10px;z-index:40}
+        .cmd-field{position:relative;display:flex;align-items:center;height:54px;border-radius:16px;background:var(--surface);border:1px solid var(--line-2);box-shadow:var(--shadow-1);transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-mid) var(--ease),transform var(--t-mid) var(--ease)}
+        .cmd-field:focus-within{border-color:var(--teal);box-shadow:0 0 0 4px rgba(14,124,123,.12),0 10px 28px rgba(20,33,61,.08);transform:translateY(-1px)}
+        .cmd-field svg{position:absolute;left:18px;color:var(--dim);pointer-events:none}
+        .cmd-field input{flex:1;height:100%;border:0;background:transparent;font:inherit;font-size:16px;color:var(--text);padding:0 96px 0 50px;border-radius:16px;outline:none}
+        .cmd-field input::placeholder{color:var(--dim)}
+        .cmd-field input::-webkit-search-cancel-button{display:none}
+        .cmd-hint{position:absolute;right:14px;display:flex;gap:4px;pointer-events:none}
+        .cmd-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(20,33,61,.18),0 2px 6px rgba(20,33,61,.06);overflow:hidden;text-align:left;transform-origin:top center;animation:panelIn var(--t-fast) var(--ease)}
+        .cmd-panel[hidden]{display:none}
+        @keyframes panelIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+        .cmd-label{padding:12px 16px 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+        .cmd-list{list-style:none;margin:0;padding:4px 8px 8px;max-height:min(46vh,360px);overflow-y:auto;overscroll-behavior:contain}
+        .cmd-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;cursor:pointer;transition:background var(--t-fast) var(--ease)}
+        .cmd-item[aria-selected="true"]{background:var(--teal-soft)}
+        .cmd-item .ico{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+        .cmd-item .txt{flex:1;min-width:0}
+        .cmd-item .nm{display:block;font-weight:700;font-size:15px}
+        .cmd-item .ds{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .cmd-item .sub{display:block;font-size:12px;color:var(--teal-ink);margin-top:2px}
+        .cmd-item .end{flex:none;font-size:12px;color:var(--dim)}
+        .cmd-item.is-soon .nm,.cmd-item.is-soon .ds{color:var(--dim)}
+        .cmd-item mark{background:rgba(184,151,90,.28);color:inherit;border-radius:3px;padding:0 1px}
+        .cmd-empty{padding:28px 20px 30px;text-align:center}
+        .cmd-empty[hidden]{display:none}
+        .cmd-empty .eico{width:52px;height:52px;margin:0 auto 12px;border-radius:14px;background:var(--gold-soft);color:var(--gold-ink);display:flex;align-items:center;justify-content:center}
+        .cmd-empty b{display:block;font-size:15px}
+        .cmd-empty span{display:block;margin-top:4px;font-size:14px;color:var(--muted)}
+        .cmd-foot{display:flex;flex-wrap:wrap;gap:14px;padding:10px 16px;border-top:1px solid var(--line);background:var(--ivory-2);font-size:12px;color:var(--dim)}
+        .cmd-foot span{display:inline-flex;align-items:center;gap:5px}
+
+        /* =========================================================
+           3D CAROUSEL
+           ========================================================= */
+        .carousel{position:relative;flex:1 1 auto;min-height:350px;max-height:560px;display:flex;flex-direction:column}
+        .stage{position:relative;flex:1 1 auto;min-height:340px;overflow:hidden;perspective:1600px;perspective-origin:50% 45%;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;outline:none}
+        .stage.is-dragging{cursor:grabbing}
+        .stage:focus-visible{box-shadow:inset 0 0 0 3px rgba(14,124,123,.35)}
+        .ambient{position:absolute;left:50%;top:48%;width:720px;height:460px;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(14,124,123,.13),rgba(14,124,123,0) 72%),radial-gradient(closest-side at 60% 70%,rgba(184,151,90,.10),rgba(184,151,90,0) 70%);pointer-events:none}
+        .orbit{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:1400px;height:700px;pointer-events:none;opacity:.55}
+        .floor{position:absolute;left:50%;bottom:4%;width:min(980px,92%);height:90px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(20,33,61,.16),rgba(20,33,61,0));pointer-events:none}
+
+        #track{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+        .card{position:absolute;left:50%;top:50%;width:var(--cw,290px);height:var(--ch,340px);will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+        .float{width:100%;height:100%}
+        .card.is-active .float{animation:floaty 6.5s ease-in-out infinite}
+        @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        .card-body{position:relative;width:100%;height:100%;display:flex;flex-direction:column;gap:10px;padding:22px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-card);transition:transform var(--t-mid) var(--ease),box-shadow var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);cursor:pointer;overflow:hidden}
+        .card-body::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--ivory);opacity:var(--veil,0);pointer-events:none;transition:opacity var(--t-fast) linear}
+        .card-body::before{content:"";position:absolute;inset:0 0 auto 0;height:90px;background:linear-gradient(180deg,rgba(246,242,234,.65),rgba(246,242,234,0));pointer-events:none}
+        .card.is-active .card-body{border-color:var(--teal);box-shadow:var(--shadow-active),0 0 0 1px rgba(14,124,123,.35)}
+        @media (hover:hover){
+          .card.is-active .card-body:hover{transform:translateY(-4px);box-shadow:var(--shadow-active),0 0 0 1px rgba(14,124,123,.5),0 50px 90px -30px rgba(14,124,123,.35)}
+          .card:not(.is-active) .card-body:hover{border-color:var(--line-2)}
+        }
+        .card.is-soon .card-body{background:var(--ivory-2)}
+        .card.is-soon.is-active .card-body{border-color:var(--line-2);box-shadow:var(--shadow-card)}
+        .card-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+        .tile{flex:none;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(20,33,61,.05),0 6px 14px rgba(20,33,61,.08)}
+        .card.is-soon .tile{filter:grayscale(.7);opacity:.8}
+        .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
+        .status.menu{background:var(--teal-soft);color:var(--teal-ink)}
+        .status.soon{background:var(--gold-soft);color:var(--gold-ink)}
+        .card-name{position:relative;margin:6px 0 0;font-size:21px;line-height:1.2;font-weight:800;letter-spacing:-.01em;color:var(--navy)}
+        .card-desc{margin:0;font-size:14.5px;line-height:1.5;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+        .card-meta{margin-top:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);min-width:0}
+        .card-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .card-meta svg{flex:none}
+        .btn-open{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;border-radius:12px;border:0;background:var(--navy);color:#FFFFFF;font:inherit;font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;transition:background var(--t-fast) var(--ease),transform var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+        .btn-open svg{transition:transform var(--t-fast) var(--ease)}
+        .btn-open:hover{background:var(--navy-2);color:#FFFFFF}
+        .btn-open:hover svg{transform:translateX(3px)}
+        .btn-open:active{transform:scale(.97)}
+        .btn-open:disabled{background:#ECE6DA;color:var(--gold-ink);cursor:not-allowed;transform:none}
+        .card.is-active .btn-open:not(:disabled){box-shadow:0 8px 18px -6px rgba(20,33,61,.45)}
+        .card:not(.is-active) .btn-open{pointer-events:none}
+
+        /* controls */
+        .controls{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 0 4px}
+        .nav-btn{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface);color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-1);transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+        .nav-btn:hover{border-color:var(--teal);color:var(--teal-ink);transform:translateY(-1px)}
+        .nav-btn:active{transform:scale(.94)}
+        .counter{min-width:120px;text-align:center;font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums}
+        .counter b{color:var(--navy);font-weight:800}
+        .counter .nm{display:block;font-size:13px;font-weight:600;color:var(--teal-ink);white-space:nowrap}
+
+        /* pill navigation */
+        .pillbar{display:flex;justify-content:center;padding:6px 0 14px}
+        .pills-wrap{position:relative;max-width:100%;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);box-shadow:var(--shadow-1)}
+        .pills-wrap::before,.pills-wrap::after{content:"";position:absolute;top:1px;bottom:1px;width:36px;pointer-events:none;z-index:3;opacity:0;transition:opacity var(--t-fast) var(--ease)}
+        .pills-wrap::before{left:1px;border-radius:999px 0 0 999px;background:linear-gradient(90deg,#FFFFFF,rgba(255,255,255,0))}
+        .pills-wrap::after{right:1px;border-radius:0 999px 999px 0;background:linear-gradient(270deg,#FFFFFF,rgba(255,255,255,0))}
+        .pills-wrap.fade-l::before,.pills-wrap.fade-r::after{opacity:1}
+        .pills{position:relative;display:flex;gap:2px;padding:5px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+        .pills::-webkit-scrollbar{display:none}
+        .pill-ind{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:999px;background:var(--navy);box-shadow:0 6px 14px -4px rgba(20,33,61,.45);transition:transform var(--t-slow) var(--ease),width var(--t-slow) var(--ease);z-index:0}
+        .pill{position:relative;z-index:1;flex:none;font:inherit;font-size:14px;font-weight:600;min-height:38px;padding:0 15px;border-radius:999px;border:0;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:color var(--t-mid) var(--ease),background var(--t-fast) var(--ease)}
+        .pill:hover{color:var(--navy);background:rgba(20,33,61,.05)}
+        .pill[aria-current="true"]{color:#FFFFFF;background:transparent}
+        .pill.is-soon:not([aria-current="true"]){color:var(--dim)}
+        .pill:focus-visible{outline-offset:-2px}
+
+        /* footer */
+        .site-footer{border-top:1px solid var(--line)}
+        .footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding:14px 0;font-size:13px;color:var(--dim)}
+        .footer-inner .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);margin:0 8px;vertical-align:middle}
+        .footer-inner a{color:var(--teal-ink);font-weight:600;text-decoration:none}
+        .footer-inner a:hover{text-decoration:underline}
+
+        /* =========================================================
+           SUBMENU DIALOG (SIAP)
+           ========================================================= */
+        dialog{border:none;border-radius:22px;padding:0;width:min(520px,calc(100% - 32px));background:var(--surface);color:var(--text);box-shadow:0 40px 100px rgba(20,33,61,.30)}
+        dialog::backdrop{background:rgba(20,33,61,.40);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+        dialog[open]{animation:dlgIn var(--t-slow) var(--ease)}
+        @keyframes dlgIn{from{opacity:0;transform:perspective(900px) rotateX(10deg) translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+        .dlg{padding:26px;display:flex;flex-direction:column;gap:18px}
+        .dlg-head{display:flex;align-items:flex-start;gap:14px}
+        .dlg-head .tile{width:50px;height:50px}
+        .dlg-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+        .dlg-head p{margin:3px 0 0;color:var(--muted);font-size:14.5px}
+        .dlg-close{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface);color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color var(--t-fast) var(--ease)}
+        .dlg-close:hover{border-color:var(--teal);color:var(--teal-ink)}
+        .menu-list{display:grid;gap:10px}
+        .menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--ivory-2);text-decoration:none;color:var(--navy);font-weight:700;font-size:15.5px;transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+        .menu-item:hover,.menu-item:focus-visible{border-color:var(--teal);background:var(--teal-soft);transform:translateX(3px)}
+        .menu-item svg{color:var(--teal-ink)}
+        .menu-item.is-disabled{color:var(--dim);cursor:not-allowed}
+        .menu-item.is-disabled:hover{transform:none;border-color:var(--line);background:var(--ivory-2)}
+        .menu-item small{font-size:12.5px;font-weight:500}
+
+        /* =========================================================
+           ENTRANCE ANIMATION
+           ========================================================= */
+        .reveal{animation:fadeUp 700ms var(--ease) both}
+        .d1{animation-delay:80ms}.d2{animation-delay:140ms}.d3{animation-delay:200ms}.d4{animation-delay:260ms}.d5{animation-delay:320ms}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+        @media (max-height:780px) and (min-width:641px){
+          .hero{padding-top:16px;gap:8px}
+          .hero p{display:none}
+          .header-inner{height:64px}
+          .pillbar{padding-bottom:10px}
+        }
+        @media (max-width:900px){
+          .container{padding:0 22px}
+          .brand-text span{display:none}
+        }
+        @media (max-width:640px){
+          .container{padding:0 16px}
+          .header-inner{height:58px;gap:10px}
+          .brand{gap:10px}
+          .brand-logo{height:32px;padding:0 10px;font-size:11.5px;letter-spacing:.16em}
+          .brand-sep{height:24px}
+          .brand-text b{font-size:14px}
+          .greet span{display:none}
+          .greet b{font-size:14px}
+          .hero{padding-top:20px}
+          .cmd{max-width:none}
+          .cmd-hint{display:none}
+          .cmd-field input{padding-right:16px}
+          .carousel{flex:none;min-height:0;max-height:none}
+          .stage{flex:none;height:420px;min-height:0}
+          .counter{min-width:96px}
+          .footer-inner{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0 16px}
+        }
+        @media (max-width:380px){
+          .brand-sep,.brand-text{display:none}
+        }
+        @media (prefers-reduced-motion: reduce){
+          *,*::before,*::after{animation-duration:1ms !important;animation-iteration-count:1 !important;transition-duration:1ms !important;scroll-behavior:auto !important}
+          .card.is-active .float{animation:none}
+        }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <header>
-        <a class="brand" href="#">
-            <!-- Ganti dengan logo resmi: <img src="logo-sarinah.svg" alt="Sarinah" height="42"> -->
-            <span class="brand-logo" aria-hidden="true">SARINAH</span>
-            <span class="brand-text"><b>Portal Aplikasi Internal</b><span>Khusus karyawan</span></span>
-        </a>
-        <div class="clock"><b id="greet">Selamat datang</b><span id="date"></span></div>
+<div class="page">
+
+    <!-- ================= HEADER ================= -->
+    <header class="site-header" id="siteHeader">
+        <div class="container">
+            <div class="header-inner reveal d0">
+                <a class="brand" href="#" aria-label="Sarinah — Portal Aplikasi Internal">
+                    <!-- Logo resmi: ganti span di bawah dengan <img src="logo-sarinah.svg" alt="Sarinah" height="36"> -->
+                    <span class="brand-logo" aria-hidden="true">SARINAH</span>
+                    <span class="brand-sep" aria-hidden="true"></span>
+                    <span class="brand-text"><b>Portal Aplikasi Internal</b><span>Sarinah Digital Workspace</span></span>
+                </a>
+                <div class="greet" aria-live="off">
+                    <b id="greet">Selamat datang</b>
+                    <span id="date"></span>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <section class="hero">
-        <span class="eyebrow">Satu pintu aplikasi kerja</span>
-        <h1>Akses seluruh aplikasi kerja dari satu halaman.</h1>
-        <p class="lead">Pilih aplikasi yang Anda butuhkan, dan Anda akan langsung diarahkan ke halamannya.</p>
-        <div class="search">
-            <label for="q">Cari aplikasi</label>
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F6878" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-            <input id="q" type="search" placeholder="Cari nama aplikasi, lalu tekan Enter" autocomplete="off">
-        </div>
-    </section>
+    <main id="main">
+        <!-- ================= HERO + SEARCH ================= -->
+        <section class="container hero" aria-labelledby="heroTitle">
+            <h1 id="heroTitle" class="reveal d1">Semua aplikasi kerja. <span class="accent">Satu ruang digital.</span></h1>
+            <p class="reveal d2">Akses seluruh ekosistem aplikasi Sarinah dengan lebih cepat, mudah, dan terintegrasi.</p>
 
-    <section aria-label="Pilihan aplikasi 3D">
-        <div class="stage" id="stage" tabindex="0" aria-roledescription="carousel" aria-label="Geser atau gunakan tombol panah kiri dan kanan untuk memilih aplikasi">
-            <div class="shadow-floor" aria-hidden="true"></div>
-            <div class="ring" id="ring"></div>
-        </div>
-        <div class="controls">
-            <button class="btn-round" id="prev" type="button" aria-label="Aplikasi sebelumnya"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
-            <a class="open-front" id="openFront" href="#"><span id="openLabel">Buka aplikasi</span>
-                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
-            <button class="btn-round" id="next" type="button" aria-label="Aplikasi berikutnya"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
-        </div>
-        <div class="dots" id="dots" role="group" aria-label="Pilih aplikasi"></div>
-        <p class="hint">Klik kartu untuk langsung membuka aplikasi · Gunakan tombol panah untuk melihat aplikasi lain</p>
-    </section>
+            <div class="cmd reveal d3" id="cmd">
+                <div class="cmd-field">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+                    <label for="q" class="sr-only">Cari aplikasi</label>
+                    <input id="q" type="search" autocomplete="off" spellcheck="false"
+                           placeholder="Cari aplikasi, fungsi, atau menu…"
+                           role="combobox" aria-expanded="false" aria-controls="cmdList" aria-autocomplete="list">
+                    <span class="cmd-hint" id="cmdHint" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+                </div>
+                <div class="cmd-panel" id="cmdPanel" hidden>
+                    <div class="cmd-label" id="cmdLabel">Aplikasi</div>
+                    <ul class="cmd-list" id="cmdList" role="listbox" aria-labelledby="cmdLabel"></ul>
+                    <div class="cmd-empty" id="cmdEmpty" hidden>
+                        <div class="eico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5M8.5 11h5"></path></svg></div>
+                        <b id="cmdEmptyTitle">Aplikasi tidak ditemukan</b>
+                        <span>Coba nama aplikasi atau fungsinya, misalnya “anggaran”, “tanda tangan”, atau “legal”.</span>
+                    </div>
+                    <div class="cmd-foot" aria-hidden="true">
+                        <span><kbd>↑</kbd><kbd>↓</kbd> pilih</span>
+                        <span><kbd>Enter</kbd> buka</span>
+                        <span><kbd>Esc</kbd> tutup</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <section class="list" aria-labelledby="allApps">
-        <h3 id="allApps">Daftar aplikasi</h3>
-        <p class="sub">Semua aplikasi internal yang tersedia untuk Anda.</p>
-        <div class="grid" id="grid"></div>
-        <p class="empty" id="empty">Aplikasi tidak ditemukan. Silakan coba kata kunci lain.</p>
-    </section>
+        <!-- ================= 3D CAROUSEL ================= -->
+        <section class="carousel reveal d4" aria-roledescription="carousel" aria-label="Daftar aplikasi Sarinah">
+            <div class="stage" id="stage" tabindex="0" aria-label="Carousel aplikasi. Gunakan panah kiri dan kanan untuk berpindah, Enter untuk membuka.">
+                <div class="ambient" aria-hidden="true"></div>
+                <svg class="orbit" aria-hidden="true" viewBox="0 0 1400 700" fill="none">
+                    <ellipse cx="700" cy="350" rx="660" ry="300" stroke="#E2D9C6" stroke-width="1"/>
+                    <ellipse cx="700" cy="350" rx="520" ry="236" stroke="#E2D9C6" stroke-width="1" stroke-dasharray="2 8"/>
+                    <ellipse cx="700" cy="350" rx="380" ry="172" stroke="#E2D9C6" stroke-width="1"/>
+                    <circle cx="1240" cy="232" r="3" fill="#B8975A" opacity=".5"/>
+                    <circle cx="186" cy="470" r="3" fill="#0E7C7B" opacity=".4"/>
+                </svg>
+                <div class="floor" aria-hidden="true"></div>
+                <div id="track"></div>
+            </div>
+            <div class="controls container">
+                <button class="nav-btn" id="prev" type="button" aria-label="Aplikasi sebelumnya" aria-controls="stage">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+                </button>
+                <div class="counter" aria-hidden="true"><b id="cntNow">01</b> / <span id="cntAll">12</span><span class="nm" id="cntName"></span></div>
+                <button class="nav-btn" id="next" type="button" aria-label="Aplikasi berikutnya" aria-controls="stage">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+                </button>
+            </div>
+            <p class="sr-only" aria-live="polite" id="live"></p>
+        </section>
 
-    <footer>
-        <span>© Sarinah · Hanya untuk penggunaan internal</span>
-        <span>Kendala akses? Hubungi Team IT</span>
+        <!-- ================= PILL NAV ================= -->
+        <nav class="pillbar container reveal d5" aria-label="Pilih aplikasi">
+            <div class="pills-wrap" id="pillsWrap">
+                <div class="pills" id="pills">
+                    <span class="pill-ind" id="pillInd" aria-hidden="true"></span>
+                </div>
+            </div>
+        </nav>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <span>© Sarinah — Portal Aplikasi Internal<span class="dot" aria-hidden="true"></span>Khusus penggunaan internal</span>
+            <a id="helpLink" href="#">Kendala akses? Hubungi Team IT</a>
+        </div>
     </footer>
 </div>
 
+<!-- ================= SUBMENU (SIAP) ================= -->
+<dialog id="menuDlg" aria-labelledby="dlgTitle" aria-describedby="dlgDesc">
+    <div class="dlg">
+        <div class="dlg-head">
+            <span class="tile" id="dlgMark" aria-hidden="true"></span>
+            <div>
+                <h2 id="dlgTitle">Menu</h2>
+                <p id="dlgDesc"></p>
+            </div>
+            <button class="dlg-close" id="dlgClose" type="button" aria-label="Tutup">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </button>
+        </div>
+        <div class="menu-list" id="dlgList"></div>
+    </div>
+</dialog>
+
 <script>
-    /* ============================================================
-       DAFTAR APLIKASI — edit di sini.
-       name : nama aplikasi        desc : deskripsi singkat
-       url  : tujuan redirect      mark : huruf/simbol di ikon
-       bg   : warna latar ikon     fg   : warna huruf ikon
-       ============================================================ */
-    const APPS = [
-      { name: "PROMIS", desc: "Web untuk cek promosi dan stok", url: "https://satudata.sarinah.com/web/login", mark: "PR", bg: "#DCEBEA", fg: "#0F5C63" },
-      { name: "Dashboard Sales",     desc: "Coming Soon",                                   url: "",     mark: "S",  bg: "#F1E7D3", fg: "#7A5A1E" },
-      { name: "SIPRO",     desc: "VMS Sarinah E-Procurement Sarinah",                                     url: "https://satudata.sarinah.com/sipro",     mark: "P",  bg: "#E3E7EF", fg: "#2C3A55" },
-      { name: "SIGMA",     desc: "Akses pengelolaan air, efluen, dan listrik Gedung Sarinah",url: "https://satudata.sarinah.com/sigma/",    mark: "Σ",  bg: "#DCEBEA", fg: "#0F5C63" },
-      { name: "SURL",      desc: "Pemendek tautan (short URL).",                                  url: "https://surl.co.id/",                    mark: "↗",  bg: "#F1E7D3", fg: "#7A5A1E" }
-    ];
-    const OPEN_IN_NEW_TAB = false; // true = buka di tab baru
-    const AUTO_ROTATE = true;      // false = kartu tidak berputar sendiri
+    (() => {
+      'use strict';
 
-    /* ---------- helpers ---------- */
-    const $ = (s) => document.querySelector(s);
-    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const hostOf = (u) => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ''); } catch { return u; } };
-    const target = OPEN_IN_NEW_TAB ? ' target="_blank" rel="noopener"' : '';
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const arrowSvg = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>';
+      /* ============================================================
+         DAFTAR APLIKASI — edit di sini (data & URL tidak diubah).
+         name     : nama aplikasi          desc : deskripsi singkat
+         url      : tujuan redirect ("" = tautan belum diisi)
+         mark     : huruf di ikon          bg/fg: warna latar & huruf ikon
+         soon     : true = "Segera Hadir" (tidak bisa dibuka)
+         menu     : submenu; jika ada, aplikasi membuka pilihan menu
+         keywords : kata kunci tambahan untuk pencarian
+         ============================================================ */
+      const C1 = { bg: "#E2F0EF", fg: "#0A5F5E" }, C2 = { bg: "#F4ECDD", fg: "#6E5323" }, C3 = { bg: "#E6EAF2", fg: "#14213D" };
+      const APPS = [
+        { name: "SIAP", desc: "Sistem Informasi Aduan dan Pelayanan", url: "https://siap.sarinah.com/home.html", mark: "SI", ...C1,
+          keywords: ["aduan", "pelayanan", "layanan", "komplain"],
+          menu: [
+            { label: "General Affairs", url: "" },   // isi URL masing-masing menu
+            { label: "Legal",           url: "" },
+            { label: "Tenant Relation", url: "" },
+            { label: "Masterdata",      url: "" }
+          ] },
+        { name: "Sarinah Portal",   desc: "ERP Sarinah",                                          url: "https://sarinahportal.co.id/",              mark: "SP", ...C2, keywords: ["erp"] },
+        { name: "SATRIA",           desc: "Sarinah Tracking Realisasi dan Informasi Anggaran",    url: "https://satudata.sarinah.com/satria",       mark: "ST", ...C3, keywords: ["anggaran", "budget", "realisasi"] },
+        { name: "Dashboard Sales",  desc: "Dashboard data dan laporan penjualan.",                url: "",                                          mark: "DS", ...C1, soon: true, keywords: ["penjualan", "sales", "laporan"] },
+        { name: "SOBAT",            desc: "Sistem Operasional Bantuan Teknologi",                 url: "https://sobat.sarinah.com/",                mark: "SB", ...C2, keywords: ["it", "bantuan", "teknologi"] },
+        { name: "MBO",              desc: "Management Business Operation",                        url: "https://mbo.sarinah.com/",                  mark: "MB", ...C3, keywords: ["operasional", "bisnis"] },
+        { name: "Mekari E-Sign",    desc: "Tanda tangan elektronik untuk dokumen.",               url: "https://account.mekari.com/users/sign_in",  mark: "ES", ...C1, keywords: ["tanda tangan", "esign", "dokumen"] },
+        { name: "E-Office Sarinah", desc: "Administrasi dan persuratan kantor secara digital.",   url: "",                                          mark: "EO", ...C2, soon: true, keywords: ["surat", "persuratan", "administrasi"] },
+        { name: "PROMIS",           desc: "Web untuk cek promosi dan stok.",                      url: "https://satudata.sarinah.com/web/login",    mark: "PM", ...C3, keywords: ["promo", "promosi", "stok"] },
+        { name: "SIPRO",            desc: "VMS dan E-Procurement Sarinah.",                       url: "https://satudata.sarinah.com/sipro",        mark: "PR", ...C1, keywords: ["vendor", "pengadaan", "procurement"] },
+        { name: "SIGMA",            desc: "Pengelolaan air, efluen, dan listrik Gedung Sarinah.", url: "https://satudata.sarinah.com/sigma/",       mark: "Σ",  ...C2, keywords: ["utilitas", "energi", "gedung"] },
+        { name: "SURL",             desc: "Pemendek tautan (short URL).",                         url: "https://surl.co.id/",                       mark: "↗",  ...C3, keywords: ["link", "tautan", "shortlink"] }
+      ];
+      const OPEN_IN_NEW_TAB = false; // true = buka di tab baru
+      const AUTO_ROTATE     = false; // true = carousel berputar sendiri (default mati)
+      const HELP_APP        = "SOBAT"; // tujuan tautan "Hubungi Team IT" di footer
 
-    /* ---------- greeting ---------- */
-    (function clock(){
-      const now = new Date(), h = now.getHours();
-      $('#greet').textContent = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
-      $('#date').textContent = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-      setTimeout(clock, 60000);
-    })();
+      /* ---------------- helpers ---------------- */
+      const $  = (s, r = document) => r.querySelector(s);
+      const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+      const hostOf = (u) => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ''); } catch { return u; } };
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+      const N = APPS.length;
+      const mod = (n) => ((n % N) + N) % N;
+      const circ = (x) => { let d = ((x % N) + N) % N; if (d > N / 2) d -= N; return d; }; // jarak melingkar terdekat
+      const kindOf = (a) => a.soon ? 'soon' : (a.menu && a.menu.length) ? 'menu' : a.url ? 'link' : 'none';
+      const ICON = {
+        arrow: '<svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>',
+        globe: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>',
+        clock: '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>',
+        grid:  '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></svg>',
+        enter: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4"></path></svg>'
+      };
 
-    /* ---------- build ---------- */
-    const ring = $('#ring'), stage = $('#stage'), dots = $('#dots'), grid = $('#grid');
-    const N = APPS.length, STEP = 360 / N;
-    ring.innerHTML = APPS.map((a, i) => `
-      <a class="card" href="${esc(a.url)}"${target} data-i="${i}" aria-label="Buka ${esc(a.name)}">
-        <span class="tile" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
-        <h2>${esc(a.name)}</h2>
-        <p>${esc(a.desc)}</p>
-        <span class="host">${esc(hostOf(a.url))}</span>
-        <span class="go">Buka aplikasi ${arrowSvg}</span>
-      </a>`).join('');
-    dots.innerHTML = APPS.map((a, i) => `<button type="button" data-i="${i}" aria-label="${esc(a.name)}"></button>`).join('');
-    grid.innerHTML = APPS.map((a, i) => `
-      <a class="row" href="${esc(a.url)}"${target} data-i="${i}">
-        <span class="mini" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
-        <span><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></span>
-        <span class="arrow">${arrowSvg}</span>
-      </a>`).join('');
-    const cards = [...ring.querySelectorAll('.card')];
+      function go(url){ if (OPEN_IN_NEW_TAB) window.open(url, '_blank', 'noopener'); else window.location.href = url; }
+      function openApp(i){
+        const a = APPS[i], k = kindOf(a);
+        if (k === 'menu') openMenu(a);
+        else if (k === 'link') go(a.url);
+      }
 
-    /* ---------- geometry ---------- */
-    let R = 400;
-    function layout(){
-      const w = innerWidth;
-      const cw = w < 640 ? 220 : 270, ch = w < 640 ? 300 : 340;
-      ring.style.setProperty('--cw', cw + 'px'); ring.style.setProperty('--ch', ch + 'px');
-      R = Math.max(cw / (2 * Math.tan(Math.PI / N)) + 50, w < 640 ? 210 : 400);
-      cards.forEach((c, i) => c.style.transform = `rotateY(${i * STEP}deg) translateZ(${R}px)`);
-    }
-    addEventListener('resize', layout); layout();
+      /* ---------------- header: greeting, tanggal, sticky blur ---------------- */
+      (function clock(){
+        const now = new Date(), h = now.getHours();
+        $('#greet').textContent = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
+        $('#date').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        setTimeout(clock, 60000);
+      })();
+      const header = $('#siteHeader');
+      const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 4);
+      addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
-    /* ---------- motion ---------- */
-    let angle = 0, targetA = 0, tiltX = -6, hover = false, drag = null, lastInteract = 0, frontIdx = -1;
-    const norm = (a) => ((a % 360) + 540) % 360 - 180;
+      const help = APPS.find(a => a.name === HELP_APP && a.url);
+      if (help) $('#helpLink').href = help.url;
 
-    function frame(){
-      if (AUTO_ROTATE && !reduced && !hover && !drag && performance.now() - lastInteract > 5000) targetA += 0.03;
-      angle += (targetA - angle) * (reduced ? 1 : 0.08);
-      ring.style.transform = `translateZ(${-R}px) rotateX(${tiltX}deg) rotateY(${-angle}deg)`;
-      let best = 0, bestD = 999;
-      cards.forEach((c, i) => {
-        const d = norm(i * STEP - angle), ad = Math.abs(d);
-        c.style.opacity = (0.15 + 0.85 * Math.max(0, Math.cos(d * Math.PI / 180))).toFixed(3);
-        c.style.pointerEvents = ad < 70 ? 'auto' : 'none';
-        c.tabIndex = ad < STEP / 2 ? 0 : -1;
-        if (ad < bestD) { bestD = ad; best = i; }
+      /* ---------------- build cards ---------------- */
+      const stage = $('#stage'), track = $('#track');
+      track.innerHTML = APPS.map((a, i) => {
+        const k = kindOf(a);
+        const status = k === 'soon' ? `<span class="status soon">${ICON.clock} Segera Hadir</span>`
+                     : k === 'menu' ? `<span class="status menu">${ICON.grid} ${a.menu.length} Menu</span>` : '';
+        const meta = a.url && k !== 'soon' ? hostOf(a.url) : (k === 'soon' ? 'Dalam pengembangan' : 'Tautan belum diatur');
+        const action = k === 'link' ? `<a class="btn-open" href="${esc(a.url)}"${OPEN_IN_NEW_TAB ? ' target="_blank" rel="noopener"' : ''} tabindex="-1">Buka Aplikasi ${ICON.arrow}</a>`
+                     : k === 'menu' ? `<button class="btn-open" type="button" data-menu tabindex="-1" aria-haspopup="dialog">Pilih Menu ${ICON.arrow}</button>`
+                     : k === 'soon' ? `<button class="btn-open" type="button" disabled>Segera Hadir</button>`
+                     :                `<button class="btn-open" type="button" disabled>Tautan belum diatur</button>`;
+        return `
+          <article class="card${k === 'soon' ? ' is-soon' : ''}" data-i="${i}" role="group" aria-roledescription="slide" aria-label="${i + 1} dari ${N}: ${esc(a.name)}${k === 'soon' ? ', segera hadir' : ''}">
+            <div class="float"><div class="card-body">
+              <div class="card-top">
+                <span class="tile" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+                ${status}
+              </div>
+              <h2 class="card-name">${esc(a.name)}</h2>
+              <p class="card-desc">${esc(a.desc)}</p>
+              <div class="card-meta" title="${esc(a.url || '')}">${ICON.globe}<span>${esc(meta)}</span></div>
+              ${action}
+            </div></div>
+          </article>`;
+      }).join('');
+      const cards = [...track.querySelectorAll('.card')];
+      $('#cntAll').textContent = pad2(N);
+
+      /* ---------------- build pills ---------------- */
+      const pills = $('#pills'), pillsWrap = $('#pillsWrap'), pillInd = $('#pillInd');
+      pills.insertAdjacentHTML('beforeend', APPS.map((a, i) =>
+        `<button class="pill${a.soon ? ' is-soon' : ''}" type="button" data-i="${i}" aria-current="false">${esc(a.name)}</button>`).join(''));
+      const pillEls = [...pills.querySelectorAll('.pill')];
+
+      /* ---------------- geometry ----------------
+         posisi tiap kartu dihitung dari jarak (o) ke kartu aktif:
+         |o| = 0 (aktif), 1, 2, 3, 4 → nilai di-interpolasi agar drag terasa halus */
+      const G = {
+        X:  [0, 0.80, 1.42, 1.92, 2.30],   // × lebar kartu
+        RY: [0, 26,   33,   39,   44  ],   // derajat
+        Z:  [0, -130, -230, -320, -400],   // px
+        S:  [1, 0.9, 0.83, 0.76, 0.7],
+        O:  [1, 1, 1, 0.9, 0],             // opasitas hanya untuk fade-out di tepi (kartu tetap solid, tidak tembus)
+        V:  [0, 0.16, 0.34, 0.5, 0.6]      // lapisan ivory agar kartu jauh terlihat mundur
+      };
+      const lerpT = (t, a) => { const k = Math.min(Math.floor(a), t.length - 2); const f = Math.min(a - k, 1); return t[k] + (t[k + 1] - t[k]) * f; };
+      let cw = 290, ch = 340, spread = 1, maxVis = 3.6, isMobile = false;
+
+      function layout(){
+        const sw = stage.clientWidth, sh = stage.clientHeight;
+        isMobile = sw < 640;
+        ch = Math.round(Math.max(312, Math.min(390, sh * 0.84)));
+        cw = Math.round(Math.max(250, Math.min(310, ch * 0.8)));
+        if (isMobile) { cw = Math.min(cw, sw - 92); ch = Math.max(ch, 340); }
+        stage.style.setProperty('--cw', cw + 'px'); stage.style.setProperty('--ch', ch + 'px');
+        cards.forEach(c => { c.style.setProperty('--cw', cw + 'px'); c.style.setProperty('--ch', ch + 'px'); });
+        if (isMobile) { spread = 0.66; maxVis = 1.55; }
+        else {
+          // pastikan kartu ke-3 tetap di dalam layar → tidak ada horizontal overflow
+          spread = Math.max(0.55, Math.min(1, (sw / 2 - cw * 0.42) / (G.X[3] * cw)));
+          maxVis = sw < 1000 ? 2.6 : 3.6;
+        }
+        render(true);
+        movePillIndicator(false);
+      }
+
+      /* ---------------- motion (spring) ---------------- */
+      let pos = 0, vel = 0, target = 0, raf = 0, active = -1, dragging = false;
+      function render(force){
+        cards.forEach((c, i) => {
+          const o = circ(i - pos), a = Math.abs(o), s = o < 0 ? -1 : 1;
+          const x  = s * lerpT(G.X, a) * cw * spread;
+          const ry = -s * lerpT(G.RY, a);
+          const z  = lerpT(G.Z, a);
+          const sc = lerpT(G.S, a);
+          let op = lerpT(G.O, a);
+          if (a > maxVis - 0.6) op *= Math.max(0, (maxVis - a) / 0.6);
+          c.style.transform = `translate(-50%,-50%) translate3d(${Math.round(x)}px,0,${Math.round(z)}px) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+          c.style.opacity = op.toFixed(3);
+          c.style.setProperty('--veil', lerpT(G.V, a).toFixed(3));
+          c.style.zIndex = String(100 - Math.round(a * 10));
+          const hidden = op < 0.02;
+          c.style.visibility = hidden ? 'hidden' : 'visible';
+          c.style.pointerEvents = (a < 2.5 && !hidden) ? 'auto' : 'none';
+        });
+        const now = mod(Math.round(pos));
+        if (now !== active || force === 'active') setActive(now);
+      }
+      function tick(){
+        if (mqReduce.matches) { pos = target; vel = 0; }
+        else if (!dragging) {
+          vel = (vel + (target - pos) * 0.085) * 0.76;
+          pos += vel;
+          if (Math.abs(target - pos) < 0.0008 && Math.abs(vel) < 0.0008) { pos = target; vel = 0; }
+        }
+        render();
+        raf = (pos !== target || dragging) ? requestAnimationFrame(tick) : 0;
+      }
+      const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
+      function goTo(i){ target = Math.round(target) + circ(i - Math.round(target)); kick(); }
+      const step = (d) => goTo(mod(Math.round(target) + d));
+
+      function setActive(i){
+        active = i;
+        const a = APPS[i];
+        cards.forEach((c, k) => {
+          const on = k === i;
+          c.classList.toggle('is-active', on);
+          c.setAttribute('aria-hidden', on ? 'false' : 'true');
+          const b = c.querySelector('.btn-open'); if (b && !b.disabled) b.tabIndex = on ? 0 : -1;
+        });
+        pillEls.forEach((p, k) => p.setAttribute('aria-current', k === i ? 'true' : 'false'));
+        $('#cntNow').textContent = pad2(i + 1);
+        $('#cntName').textContent = a.name;
+        $('#live').textContent = `${a.name}, aplikasi ${i + 1} dari ${N}${a.soon ? ', segera hadir' : ''}`;
+        movePillIndicator(true);
+      }
+
+      /* ---------------- pill indicator + auto-scroll ---------------- */
+      function movePillIndicator(smooth){
+        const p = pillEls[active]; if (!p) return;
+        if (!smooth) pillInd.style.transition = 'none';
+        pillInd.style.width = p.offsetWidth + 'px';
+        pillInd.style.transform = `translateX(${p.offsetLeft}px)`;
+        if (!smooth) { void pillInd.offsetWidth; pillInd.style.transition = ''; }
+        const left = p.offsetLeft - (pills.clientWidth - p.offsetWidth) / 2;
+        if (pills.scrollWidth > pills.clientWidth) pills.scrollTo({ left, behavior: (smooth && !mqReduce.matches) ? 'smooth' : 'auto' });
+      }
+      function updatePillFades(){
+        const max = pills.scrollWidth - pills.clientWidth;
+        pillsWrap.classList.toggle('fade-l', pills.scrollLeft > 4);
+        pillsWrap.classList.toggle('fade-r', pills.scrollLeft < max - 4);
+      }
+      pills.addEventListener('scroll', updatePillFades, { passive: true });
+      pills.addEventListener('click', (e) => { const b = e.target.closest('.pill'); if (b) goTo(+b.dataset.i); });
+
+      /* ---------------- klik kartu ---------------- */
+      let moved = false;
+      track.addEventListener('click', (e) => {
+        const card = e.target.closest('.card'); if (!card) return;
+        if (moved) { e.preventDefault(); return; }
+        const i = +card.dataset.i;
+        if (i !== active) { e.preventDefault(); goTo(i); return; }        // kartu samping → jadikan aktif
+        const k = kindOf(APPS[i]);
+        if (e.target.closest('.btn-open')) {                               // tombol kartu aktif
+          if (k === 'menu') { e.preventDefault(); openMenu(APPS[i]); }
+          return;                                                          // link → navigasi bawaan <a>
+        }
+        if (k === 'link' || k === 'menu') openApp(i);                      // klik badan kartu aktif
       });
-      if (best !== frontIdx) setFront(best);
-      requestAnimationFrame(frame);
-    }
-    function setFront(i){
-      frontIdx = i;
-      cards.forEach((c, k) => c.classList.toggle('front', k === i));
-      [...dots.children].forEach((d, k) => d.setAttribute('aria-current', k === i ? 'true' : 'false'));
-      const a = APPS[i], btn = $('#openFront');
-      btn.href = a.url; $('#openLabel').textContent = 'Buka ' + a.name;
-      if (OPEN_IN_NEW_TAB) { btn.target = '_blank'; btn.rel = 'noopener'; }
-    }
-    function goTo(i){ targetA = targetA + norm(i * STEP - targetA); lastInteract = performance.now(); }
-    function step(dir){ goTo(((frontIdx + dir) % N + N) % N); }
-    requestAnimationFrame(frame);
 
-    /* ---------- interaction ---------- */
-    stage.addEventListener('pointerenter', () => hover = true);
-    stage.addEventListener('pointerleave', () => { hover = false; tiltX = -6; });
-    stage.addEventListener('pointermove', (e) => {
-      if (drag) return;
-      const r = stage.getBoundingClientRect();
-      tiltX = -6 - ((e.clientY - r.top) / r.height - .5) * 6;
-    });
-    let moved = false;
-    stage.addEventListener('pointerdown', (e) => { if (e.button === 0) { drag = { x: e.clientX, start: targetA }; moved = false; } });
-    addEventListener('pointermove', (e) => {
-      if (!drag) return;
-      const dx = e.clientX - drag.x;
-      if (Math.abs(dx) > 6) { moved = true; stage.classList.add('dragging'); }
-      if (moved) targetA = drag.start - dx * 0.3;
-    });
-    addEventListener('pointerup', () => {
-      if (!drag) return;
-      if (moved) targetA = Math.round(targetA / STEP) * STEP;
-      drag = null; stage.classList.remove('dragging'); lastInteract = performance.now();
-      setTimeout(() => moved = false, 0);
-    });
-    ring.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
-    stage.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
-    });
-    cards.forEach((c, i) => c.addEventListener('focus', () => goTo(i)));
-    $('#prev').onclick = () => step(-1);
-    $('#next').onclick = () => step(1);
-    dots.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goTo(+b.dataset.i); });
+      /* ---------------- drag / swipe ---------------- */
+      let dStart = null;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.target.closest('.btn-open:not(:disabled)') && e.pointerType === 'mouse') return;
+        dStart = { x: e.clientX, y: e.clientY, pos, t: performance.now(), lx: e.clientX, lt: performance.now(), vx: 0 };
+        moved = false;
+      });
+      addEventListener('pointermove', (e) => {
+        if (!dStart) return;
+        const dx = e.clientX - dStart.x;
+        if (!moved) {
+          if (Math.abs(dx) < 7 || Math.abs(dx) < Math.abs(e.clientY - dStart.y)) return;
+          moved = true; dragging = true; stage.classList.add('is-dragging'); kick();
+        }
+        const now = performance.now();
+        dStart.vx = (e.clientX - dStart.lx) / Math.max(1, now - dStart.lt);
+        dStart.lx = e.clientX; dStart.lt = now;
+        pos = target = dStart.pos - dx / (G.X[1] * cw * spread);
+        vel = 0;
+      });
+      const endDrag = () => {
+        if (!dStart) return;
+        if (moved) {
+          const fling = -dStart.vx * 120 / (G.X[1] * cw * spread);
+          target = Math.round(pos + Math.max(-0.45, Math.min(0.45, fling)));
+          dragging = false; stage.classList.remove('is-dragging'); kick();
+          setTimeout(() => { moved = false; }, 0);
+        }
+        dStart = null;
+      };
+      addEventListener('pointerup', endDrag);
+      addEventListener('pointercancel', endDrag);
+      stage.addEventListener('wheel', (e) => {                    // trackpad geser horizontal
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 8) return;
+        e.preventDefault();
+        const t = performance.now(); if (t - (stage._w || 0) < 320) return; stage._w = t;
+        step(e.deltaX > 0 ? 1 : -1);
+      }, { passive: false });
 
-    /* ---------- search ---------- */
-    const q = $('#q'), rows = [...grid.children];
-    const match = (a, s) => (a.name + ' ' + a.desc + ' ' + a.url).toLowerCase().includes(s);
-    q.addEventListener('input', () => {
-      const s = q.value.trim().toLowerCase();
-      const hits = APPS.map((a, i) => (!s || match(a, s)) ? i : -1).filter(i => i >= 0);
-      rows.forEach((r, i) => r.style.display = hits.includes(i) ? '' : 'none');
-      $('#empty').style.display = hits.length ? 'none' : 'block';
-      if (s && hits.length) goTo(hits[0]);
-    });
-    q.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const s = q.value.trim().toLowerCase(), hit = s && APPS.find(a => match(a, s));
-      if (hit) { if (OPEN_IN_NEW_TAB) open(hit.url, '_blank', 'noopener'); else location.href = hit.url; }
-    });
+      $('#prev').addEventListener('click', () => step(-1));
+      $('#next').addEventListener('click', () => step(1));
+
+      /* ---------------- keyboard global ---------------- */
+      const dlg = $('#menuDlg');
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (!dlg.open) { q.focus(); q.select(); openPanel(); } return; }
+        if (dlg.open) return;
+        const t = e.target, typing = t.matches && t.matches('input, textarea, select, [contenteditable="true"]');
+        if (typing) return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+        else if (e.key === 'Enter' && t === stage) { e.preventDefault(); openApp(active); }
+      });
+
+      /* ---------------- submenu dialog ---------------- */
+      function openMenu(a){
+        const mk = $('#dlgMark');
+        mk.textContent = a.mark; mk.style.background = a.bg; mk.style.color = a.fg;
+        $('#dlgTitle').textContent = a.name;
+        $('#dlgDesc').textContent = a.desc;
+        $('#dlgList').innerHTML = a.menu.map(m => m.url
+          ? `<a class="menu-item" href="${esc(m.url)}"${OPEN_IN_NEW_TAB ? ' target="_blank" rel="noopener"' : ''}>${esc(m.label)} ${ICON.arrow}</a>`
+          : `<a class="menu-item is-disabled" href="#" aria-disabled="true">${esc(m.label)} <small>Tautan belum diatur</small></a>`).join('');
+        closePanel();
+        dlg.showModal();
+      }
+      $('#dlgClose').addEventListener('click', () => dlg.close());
+      dlg.addEventListener('click', (e) => {
+        if (e.target === dlg) dlg.close();
+        if (e.target.closest('.menu-item.is-disabled')) e.preventDefault();
+      });
+
+      /* ---------------- command search ---------------- */
+      const q = $('#q'), panel = $('#cmdPanel'), list = $('#cmdList'), empty = $('#cmdEmpty');
+      const isMac = /Mac|iPhone|iPad|iPod/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
+      if (isMac) $('#cmdHint').innerHTML = '<kbd>⌘</kbd><kbd>K</kbd>';
+      let results = [], sel = 0;
+
+      const hay = (a) => [a.name, a.desc, a.url ? hostOf(a.url) : '', ...(a.keywords || []), ...((a.menu || []).map(m => m.label))].join(' ').toLowerCase();
+      function hl(text, tokens){
+        const lower = text.toLowerCase(), on = new Array(text.length).fill(false);
+        tokens.forEach(t => { let k = lower.indexOf(t); while (t && k >= 0) { for (let j = k; j < k + t.length; j++) on[j] = true; k = lower.indexOf(t, k + t.length); } });
+        let out = '', open = false;
+        for (let j = 0; j < text.length; j++) {
+          if (on[j] && !open) { out += '<mark>'; open = true; }
+          if (!on[j] && open) { out += '</mark>'; open = false; }
+          out += esc(text[j]);
+        }
+        return open ? out + '</mark>' : out;
+      }
+      function search(){
+        const raw = q.value.trim().toLowerCase();
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        results = APPS.map((a, i) => {
+          if (!tokens.length) return { i, score: 0 };
+          const h = hay(a); if (!tokens.every(t => h.includes(t))) return null;
+          const n = a.name.toLowerCase();
+          const score = n.startsWith(raw) ? 3 : n.includes(raw) ? 2 : tokens.some(t => n.includes(t)) ? 1 : 0;
+          return { i, score };
+        }).filter(Boolean).sort((x, y) => y.score - x.score || x.i - y.i);
+        sel = 0;
+        list.innerHTML = results.map((r, k) => {
+          const a = APPS[r.i], kd = kindOf(a);
+          const menuHit = tokens.length && a.menu ? a.menu.filter(m => tokens.some(t => m.label.toLowerCase().includes(t))) : [];
+          const end = kd === 'soon' ? 'Segera Hadir' : kd === 'menu' ? 'Pilih menu' : ICON.enter;
+          return `<li class="cmd-item${kd === 'soon' ? ' is-soon' : ''}" id="opt-${k}" role="option" aria-selected="${k === 0}" data-k="${k}"${kd === 'soon' ? ' aria-disabled="true"' : ''}>
+              <span class="ico" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+              <span class="txt"><span class="nm">${hl(a.name, tokens)}</span><span class="ds">${hl(a.desc, tokens)}</span>${menuHit.length ? `<span class="sub">Menu: ${menuHit.map(m => hl(m.label, tokens)).join(', ')}</span>` : ''}</span>
+              <span class="end">${end}</span>
+            </li>`;
+        }).join('');
+        $('#cmdLabel').textContent = tokens.length ? `${results.length} hasil` : 'Semua aplikasi';
+        list.hidden = !results.length;
+        $('#cmdLabel').hidden = !results.length;
+        empty.hidden = !!results.length;
+        if (!results.length) $('#cmdEmptyTitle').textContent = `Tidak ada aplikasi untuk “${q.value.trim()}”`;
+        q.setAttribute('aria-activedescendant', results.length ? 'opt-0' : '');
+        if (tokens.length && results.length) goTo(results[0].i);          // sinkron dengan carousel
+      }
+      function setSel(k){
+        if (!results.length) return;
+        sel = (k + results.length) % results.length;
+        [...list.children].forEach((li, j) => li.setAttribute('aria-selected', j === sel ? 'true' : 'false'));
+        const li = list.children[sel];
+        q.setAttribute('aria-activedescendant', li.id);
+        const top = li.offsetTop, bottom = top + li.offsetHeight;
+        if (top < list.scrollTop) list.scrollTop = top - 4;
+        else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight + 4;
+      }
+      function choose(k){
+        const r = results[k]; if (!r) return;
+        const a = APPS[r.i];
+        goTo(r.i);
+        if (kindOf(a) === 'soon' || kindOf(a) === 'none') { closePanel(); return; }
+        closePanel(); q.blur();
+        openApp(r.i);
+      }
+      function openPanel(){ if (panel.hidden) { search(); panel.hidden = false; q.setAttribute('aria-expanded', 'true'); } }
+      function closePanel(){ if (!panel.hidden) { panel.hidden = true; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); } }
+
+      q.addEventListener('focus', openPanel);
+      q.addEventListener('input', () => { panel.hidden ? openPanel() : search(); });
+      q.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); openPanel(); setSel(sel + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); openPanel(); setSel(sel - 1); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (!panel.hidden) choose(sel); }
+        else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (!panel.hidden) closePanel(); else if (q.value) { q.value = ''; } else q.blur();
+        }
+      });
+      list.addEventListener('mousemove', (e) => { const li = e.target.closest('.cmd-item'); if (li && +li.dataset.k !== sel) setSel(+li.dataset.k); });
+      list.addEventListener('mousedown', (e) => e.preventDefault());       // fokus tetap di input
+      list.addEventListener('click', (e) => { const li = e.target.closest('.cmd-item'); if (li) choose(+li.dataset.k); });
+      document.addEventListener('pointerdown', (e) => { if (!e.target.closest('#cmd')) closePanel(); });
+
+      /* ---------------- start ---------------- */
+      addEventListener('resize', layout);
+      if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => { layout(); updatePillFades(); }); ro.observe(stage); ro.observe(pills); }
+      layout(); updatePillFades();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { movePillIndicator(false); updatePillFades(); });
+
+      if (AUTO_ROTATE) {
+        let hovering = false;
+        stage.addEventListener('pointerenter', () => hovering = true);
+        stage.addEventListener('pointerleave', () => hovering = false);
+        setInterval(() => { if (!hovering && !dragging && !dlg.open && panel.hidden && !mqReduce.matches) step(1); }, 6000);
+      }
+    })();
 </script>
 </body>
 </html>
