@@ -1,6 +1,6 @@
 package com.sarinah.peoplecounter.service;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.adaptor.InjourneyGetModulAdaptor;
 import com.sarinah.peoplecounter.adaptor.SarinahGetModulAdaptor;
 import lombok.RequiredArgsConstructor;

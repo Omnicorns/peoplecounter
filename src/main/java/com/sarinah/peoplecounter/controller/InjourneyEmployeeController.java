@@ -1,6 +1,6 @@
 package com.sarinah.peoplecounter.controller;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.sarinah.peoplecounter.service.PostEmployeeLoginInjourneyService;
 import com.sarinah.peoplecounter.service.PostGetEmployeeInjourneyService;
 import com.sarinah.peoplecounter.service.PostScanBarcodeService;

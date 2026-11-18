@@ -1,7 +1,8 @@
 package com.sarinah.peoplecounter.configuration;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.sarinah.peoplecounter.entity.ProductScanLog;
 import com.sarinah.peoplecounter.entity.ScanSource;
 import com.sarinah.peoplecounter.repository.ProductScanLogRepository;
@@ -119,7 +120,9 @@ public class LoggingFilterConfig {
 
     static class ApiLoggingFilter extends OncePerRequestFilter {
         private static final Logger log = LoggerFactory.getLogger(ApiLoggingFilter.class);
-        private static final ObjectMapper OM = new ObjectMapper();
+        /** Batas byte body request yang disimpan untuk log (Spring 7 mewajibkan batas). */
+        private static final int MAX_BODY_CACHE = 64 * 1024;
+        private static final ObjectMapper OM = JsonMapper.builder().build();
         private static final int MAX = 4096;
 
         private final ProductScanLogRepository productScanLogRepository;
@@ -142,7 +145,7 @@ public class LoggingFilterConfig {
                                         HttpServletResponse response,
                                         FilterChain chain) throws ServletException, IOException {
 
-            ContentCachingRequestWrapper  req = new ContentCachingRequestWrapper(request);
+            ContentCachingRequestWrapper  req = new ContentCachingRequestWrapper(request, MAX_BODY_CACHE);
             ContentCachingResponseWrapper res = new ContentCachingResponseWrapper(response);
 
             final String cid = getCid(req);
@@ -356,7 +359,7 @@ public class LoggingFilterConfig {
             try {
                 JsonNode n = OM.readTree(body);
                 JsonNode v = n.get("value");
-                if (v != null && !v.isNull()) return v.asText();
+                if (v != null && !v.isNull()) return v.asString();
             } catch (Exception ignored) {}
             var m = P_VALUE.matcher(body);
             return m.find() ? m.group(1) : null;
@@ -367,7 +370,7 @@ public class LoggingFilterConfig {
             try {
                 JsonNode n = OM.readTree(body);
                 JsonNode v = n.get(field);
-                if (v != null && !v.isNull()) return v.asText();
+                if (v != null && !v.isNull()) return v.asString();
             } catch (Exception ignored) {}
             Pattern p = "name".equals(field) ? P_NAME :
                     Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:\\s*\"([^\"]+)\"");
@@ -381,7 +384,7 @@ public class LoggingFilterConfig {
 
             try { // JSON
                 JsonNode n = OM.readTree(body);
-                if (n.hasNonNull("username")) return n.get("username").asText();
+                if (n.hasNonNull("username")) return n.get("username").asString();
             } catch (Exception ignore) { }
 
             // x-www-form-urlencoded
