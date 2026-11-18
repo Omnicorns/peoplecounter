@@ -1,10 +1,287 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal Aplikasi Internal Sarinah</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --bg:#F6F4EF; --panel:#FFFFFF; --line:#E3DFD6; --line2:#D2CCBF;
+          --text:#1C2433; --muted:#4A5468; --dim:#5F6878;
+          --primary:#0F5C63; --primary-hover:#0B474D; --gold:#B08A3E;
+          --head:'Source Serif 4', Georgia, 'Times New Roman', serif;
+        }
+        *{box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;min-height:100vh;overflow-x:hidden}
+        a{color:var(--primary)}
+        .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+        :focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+
+        /* header */
+        header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;border-bottom:1px solid var(--line)}
+        .brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text)}
+        .brand-logo{height:42px;padding:0 16px;border-radius:8px;border:1.5px solid var(--text);display:flex;align-items:center;font-family:var(--head);font-weight:700;letter-spacing:.14em;font-size:15px}
+        .brand-text{display:flex;flex-direction:column;line-height:1.25;padding-left:16px;border-left:1px solid var(--line2)}
+        .brand-text b{font-size:17px;font-weight:600}
+        .brand-text span{font-size:14px;color:var(--dim)}
+        .clock{font-size:15px;color:var(--dim);text-align:right}
+        .clock b{display:block;color:var(--text);font-weight:600;font-size:17px}
+
+        /* hero */
+        .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;padding:56px 0 8px}
+        .eyebrow{font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+        h1{margin:0;font-family:var(--head);font-weight:700;font-size:clamp(2.2rem,4.6vw,3.6rem);line-height:1.12;letter-spacing:-.01em;max-width:20ch}
+        .lead{margin:0;font-size:19px;line-height:1.6;color:var(--muted);max-width:38rem}
+        .search{position:relative;width:100%;max-width:540px;margin-top:10px}
+        .search label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+        .search input{width:100%;height:58px;border-radius:12px;border:1px solid var(--line2);background:var(--panel);color:var(--text);font:inherit;font-size:17px;padding:0 20px 0 54px;box-shadow:0 1px 2px rgba(28,36,51,.05)}
+        .search input::placeholder{color:var(--dim)}
+        .search input:focus{border-color:var(--primary)}
+        .search svg{position:absolute;left:19px;top:50%;transform:translateY(-50%)}
+
+        /* 3D stage */
+        .stage{position:relative;height:540px;perspective:1900px;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:grab;margin-top:4px}
+        .stage.dragging{cursor:grabbing}
+        .shadow-floor{position:absolute;bottom:38px;width:760px;max-width:95%;height:120px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(28,36,51,.14),rgba(28,36,51,0) 70%);pointer-events:none}
+        .ring{position:relative;width:var(--cw,270px);height:var(--ch,340px);transform-style:preserve-3d;will-change:transform}
+        .card{position:absolute;inset:0;border-radius:18px;background:var(--panel);border:1px solid var(--line);padding:28px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--text);transform-style:preserve-3d;box-shadow:0 18px 40px rgba(28,36,51,.10),0 2px 6px rgba(28,36,51,.06);transition:border-color .3s}
+        .card.front{border-color:var(--primary)}
+        .card .tile{width:68px;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:center;transform:translateZ(36px);font-family:var(--head);font-weight:700;font-size:28px;box-shadow:0 10px 20px rgba(28,36,51,.10)}
+        .card h2{margin:12px 0 0;font-family:var(--head);font-size:26px;line-height:1.15;transform:translateZ(20px)}
+        .card p{margin:0;font-size:16px;line-height:1.55;color:var(--muted);transform:translateZ(12px)}
+        .card .host{margin-top:auto;font-size:13px;color:var(--dim);word-break:break-all}
+        .card .go{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:16px;color:var(--primary);transform:translateZ(24px)}
+
+        .controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:-6px;flex-wrap:wrap}
+        .btn-round{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);background:var(--panel);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer}
+        .btn-round:hover{border-color:var(--primary);color:var(--primary)}
+        .open-front{display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 28px;border-radius:10px;background:var(--primary);color:#FFFFFF;font-weight:600;text-decoration:none;font-size:17px}
+        .open-front:hover{background:var(--primary-hover);color:#FFFFFF}
+        .dots{display:flex;gap:10px;justify-content:center;margin-top:20px}
+        .dots button{width:12px;height:12px;border-radius:999px;border:none;background:var(--line2);padding:0;cursor:pointer;transition:width .3s,background .3s}
+        .dots button[aria-current="true"]{width:30px;background:var(--primary)}
+        .hint{text-align:center;font-size:15px;color:var(--dim);margin:14px 0 0}
+
+        /* list */
+        .list{padding:72px 0 64px}
+        .list h3{margin:0 0 8px;font-family:var(--head);font-size:clamp(1.6rem,3vw,2.1rem)}
+        .list .sub{margin:0 0 24px;color:var(--muted)}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+        .row{display:flex;gap:16px;align-items:center;padding:20px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--text);transition:transform .25s,border-color .25s,box-shadow .25s;transform:perspective(800px) rotateX(0) rotateY(0)}
+        .row:hover,.row:focus-visible{border-color:var(--primary);transform:perspective(800px) rotateX(4deg) rotateY(-5deg) translateY(-3px);box-shadow:0 14px 28px rgba(28,36,51,.10)}
+        .row .mini{flex:none;width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:22px}
+        .row b{display:block;font-size:18px;font-weight:600}
+        .row span{display:block;font-size:14px;color:var(--dim);margin-top:2px}
+        .row .arrow{margin-left:auto;flex:none;color:var(--primary)}
+        .empty{color:var(--muted);display:none}
+
+        footer{border-top:1px solid var(--line);padding:28px 0 40px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:15px;color:var(--dim)}
+
+        @media (max-width:640px){
+          .stage{height:460px}
+          .card{padding:22px}
+          .card h2{font-size:23px}
+          .brand-text{display:none}
+        }
+        @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .row,.row:hover{transition:none} }
+    </style>
 </head>
 <body>
-$END$
+<div class="wrap">
+    <header>
+        <a class="brand" href="#">
+            <!-- Ganti dengan logo resmi: <img src="logo-sarinah.svg" alt="Sarinah" height="42"> -->
+            <span class="brand-logo" aria-hidden="true">SARINAH</span>
+            <span class="brand-text"><b>Portal Aplikasi Internal</b><span>Khusus karyawan</span></span>
+        </a>
+        <div class="clock"><b id="greet">Selamat datang</b><span id="date"></span></div>
+    </header>
+
+    <section class="hero">
+        <span class="eyebrow">Satu pintu aplikasi kerja</span>
+        <h1>Akses seluruh aplikasi kerja dari satu halaman.</h1>
+        <p class="lead">Pilih aplikasi yang Anda butuhkan, dan Anda akan langsung diarahkan ke halamannya.</p>
+        <div class="search">
+            <label for="q">Cari aplikasi</label>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F6878" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+            <input id="q" type="search" placeholder="Cari nama aplikasi, lalu tekan Enter" autocomplete="off">
+        </div>
+    </section>
+
+    <section aria-label="Pilihan aplikasi 3D">
+        <div class="stage" id="stage" tabindex="0" aria-roledescription="carousel" aria-label="Geser atau gunakan tombol panah kiri dan kanan untuk memilih aplikasi">
+            <div class="shadow-floor" aria-hidden="true"></div>
+            <div class="ring" id="ring"></div>
+        </div>
+        <div class="controls">
+            <button class="btn-round" id="prev" type="button" aria-label="Aplikasi sebelumnya"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+            <a class="open-front" id="openFront" href="#"><span id="openLabel">Buka aplikasi</span>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+            <button class="btn-round" id="next" type="button" aria-label="Aplikasi berikutnya"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        </div>
+        <div class="dots" id="dots" role="group" aria-label="Pilih aplikasi"></div>
+        <p class="hint">Klik kartu untuk langsung membuka aplikasi · Gunakan tombol panah untuk melihat aplikasi lain</p>
+    </section>
+
+    <section class="list" aria-labelledby="allApps">
+        <h3 id="allApps">Daftar aplikasi</h3>
+        <p class="sub">Semua aplikasi internal yang tersedia untuk Anda.</p>
+        <div class="grid" id="grid"></div>
+        <p class="empty" id="empty">Aplikasi tidak ditemukan. Silakan coba kata kunci lain.</p>
+    </section>
+
+    <footer>
+        <span>© Sarinah · Hanya untuk penggunaan internal</span>
+        <span>Kendala akses? Hubungi [KONTAK HELPDESK IT]</span>
+    </footer>
+</div>
+
+<script>
+    /* ============================================================
+       DAFTAR APLIKASI — edit di sini.
+       name : nama aplikasi        desc : deskripsi singkat
+       url  : tujuan redirect      mark : huruf/simbol di ikon
+       bg   : warna latar ikon     fg   : warna huruf ikon
+       ============================================================ */
+    const APPS = [
+      { name: "PROMIS", desc: "Portal utama Satu Data Sarinah. Masuk dengan akun kantor Anda.", url: "https://satudata.sarinah.com/web/login", mark: "PR", bg: "#DCEBEA", fg: "#0F5C63" },
+      { name: "Dashboard Sales",     desc: "Data dan laporan penjualan.",                                   url: "https://satudata.sarinah.com/sales",     mark: "S",  bg: "#F1E7D3", fg: "#7A5A1E" },
+      { name: "SIPRO",     desc: "VMS Sarinah",                                     url: "https://satudata.sarinah.com/sipro",     mark: "P",  bg: "#E3E7EF", fg: "#2C3A55" },
+      { name: "SIGMA",     desc: "Akses pengelolaan air, efluen, dan listrik
+Gedung Sarinah dalam satu portal.",                                     url: "https://satudata.sarinah.com/sigma/",    mark: "Σ",  bg: "#DCEBEA", fg: "#0F5C63" },
+      { name: "SURL",      desc: "Pemendek tautan (short URL).",                                  url: "https://surl.co.id/",                    mark: "↗",  bg: "#F1E7D3", fg: "#7A5A1E" }
+    ];
+    const OPEN_IN_NEW_TAB = false; // true = buka di tab baru
+    const AUTO_ROTATE = true;      // false = kartu tidak berputar sendiri
+
+    /* ---------- helpers ---------- */
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const hostOf = (u) => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ''); } catch { return u; } };
+    const target = OPEN_IN_NEW_TAB ? ' target="_blank" rel="noopener"' : '';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const arrowSvg = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>';
+
+    /* ---------- greeting ---------- */
+    (function clock(){
+      const now = new Date(), h = now.getHours();
+      $('#greet').textContent = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
+      $('#date').textContent = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+      setTimeout(clock, 60000);
+    })();
+
+    /* ---------- build ---------- */
+    const ring = $('#ring'), stage = $('#stage'), dots = $('#dots'), grid = $('#grid');
+    const N = APPS.length, STEP = 360 / N;
+    ring.innerHTML = APPS.map((a, i) => `
+      <a class="card" href="${esc(a.url)}"${target} data-i="${i}" aria-label="Buka ${esc(a.name)}">
+        <span class="tile" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+        <h2>${esc(a.name)}</h2>
+        <p>${esc(a.desc)}</p>
+        <span class="host">${esc(hostOf(a.url))}</span>
+        <span class="go">Buka aplikasi ${arrowSvg}</span>
+      </a>`).join('');
+    dots.innerHTML = APPS.map((a, i) => `<button type="button" data-i="${i}" aria-label="${esc(a.name)}"></button>`).join('');
+    grid.innerHTML = APPS.map((a, i) => `
+      <a class="row" href="${esc(a.url)}"${target} data-i="${i}">
+        <span class="mini" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+        <span><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></span>
+        <span class="arrow">${arrowSvg}</span>
+      </a>`).join('');
+    const cards = [...ring.querySelectorAll('.card')];
+
+    /* ---------- geometry ---------- */
+    let R = 400;
+    function layout(){
+      const w = innerWidth;
+      const cw = w < 640 ? 220 : 270, ch = w < 640 ? 300 : 340;
+      ring.style.setProperty('--cw', cw + 'px'); ring.style.setProperty('--ch', ch + 'px');
+      R = Math.max(cw / (2 * Math.tan(Math.PI / N)) + 50, w < 640 ? 210 : 400);
+      cards.forEach((c, i) => c.style.transform = `rotateY(${i * STEP}deg) translateZ(${R}px)`);
+    }
+    addEventListener('resize', layout); layout();
+
+    /* ---------- motion ---------- */
+    let angle = 0, targetA = 0, tiltX = -6, hover = false, drag = null, lastInteract = 0, frontIdx = -1;
+    const norm = (a) => ((a % 360) + 540) % 360 - 180;
+
+    function frame(){
+      if (AUTO_ROTATE && !reduced && !hover && !drag && performance.now() - lastInteract > 5000) targetA += 0.03;
+      angle += (targetA - angle) * (reduced ? 1 : 0.08);
+      ring.style.transform = `translateZ(${-R}px) rotateX(${tiltX}deg) rotateY(${-angle}deg)`;
+      let best = 0, bestD = 999;
+      cards.forEach((c, i) => {
+        const d = norm(i * STEP - angle), ad = Math.abs(d);
+        c.style.opacity = (0.15 + 0.85 * Math.max(0, Math.cos(d * Math.PI / 180))).toFixed(3);
+        c.style.pointerEvents = ad < 70 ? 'auto' : 'none';
+        c.tabIndex = ad < STEP / 2 ? 0 : -1;
+        if (ad < bestD) { bestD = ad; best = i; }
+      });
+      if (best !== frontIdx) setFront(best);
+      requestAnimationFrame(frame);
+    }
+    function setFront(i){
+      frontIdx = i;
+      cards.forEach((c, k) => c.classList.toggle('front', k === i));
+      [...dots.children].forEach((d, k) => d.setAttribute('aria-current', k === i ? 'true' : 'false'));
+      const a = APPS[i], btn = $('#openFront');
+      btn.href = a.url; $('#openLabel').textContent = 'Buka ' + a.name;
+      if (OPEN_IN_NEW_TAB) { btn.target = '_blank'; btn.rel = 'noopener'; }
+    }
+    function goTo(i){ targetA = targetA + norm(i * STEP - targetA); lastInteract = performance.now(); }
+    function step(dir){ goTo(((frontIdx + dir) % N + N) % N); }
+    requestAnimationFrame(frame);
+
+    /* ---------- interaction ---------- */
+    stage.addEventListener('pointerenter', () => hover = true);
+    stage.addEventListener('pointerleave', () => { hover = false; tiltX = -6; });
+    stage.addEventListener('pointermove', (e) => {
+      if (drag) return;
+      const r = stage.getBoundingClientRect();
+      tiltX = -6 - ((e.clientY - r.top) / r.height - .5) * 6;
+    });
+    let moved = false;
+    stage.addEventListener('pointerdown', (e) => { if (e.button === 0) { drag = { x: e.clientX, start: targetA }; moved = false; } });
+    addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (Math.abs(dx) > 6) { moved = true; stage.classList.add('dragging'); }
+      if (moved) targetA = drag.start - dx * 0.3;
+    });
+    addEventListener('pointerup', () => {
+      if (!drag) return;
+      if (moved) targetA = Math.round(targetA / STEP) * STEP;
+      drag = null; stage.classList.remove('dragging'); lastInteract = performance.now();
+      setTimeout(() => moved = false, 0);
+    });
+    ring.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
+    });
+    cards.forEach((c, i) => c.addEventListener('focus', () => goTo(i)));
+    $('#prev').onclick = () => step(-1);
+    $('#next').onclick = () => step(1);
+    dots.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goTo(+b.dataset.i); });
+
+    /* ---------- search ---------- */
+    const q = $('#q'), rows = [...grid.children];
+    const match = (a, s) => (a.name + ' ' + a.desc + ' ' + a.url).toLowerCase().includes(s);
+    q.addEventListener('input', () => {
+      const s = q.value.trim().toLowerCase();
+      const hits = APPS.map((a, i) => (!s || match(a, s)) ? i : -1).filter(i => i >= 0);
+      rows.forEach((r, i) => r.style.display = hits.includes(i) ? '' : 'none');
+      $('#empty').style.display = hits.length ? 'none' : 'block';
+      if (s && hits.length) goTo(hits[0]);
+    });
+    q.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const s = q.value.trim().toLowerCase(), hit = s && APPS.find(a => match(a, s));
+      if (hit) { if (OPEN_IN_NEW_TAB) open(hit.url, '_blank', 'noopener'); else location.href = hit.url; }
+    });
+</script>
 </body>
 </html>
