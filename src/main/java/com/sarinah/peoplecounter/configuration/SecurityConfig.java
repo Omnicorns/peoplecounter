@@ -87,6 +87,7 @@ public class SecurityConfig {
             "/file.pdf",
             "/logo.jpeg",
             "/Danantara_Indonesia.png",
+            "/sipro.jpeg",
             "/injourney.png",
             "/logo2.png",
             "/template.png",
