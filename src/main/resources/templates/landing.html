@@ -173,12 +173,13 @@
 
         /* pill navigation */
         .pillbar{display:flex;justify-content:center;padding-top:6px;padding-bottom:14px}
-        .pills-wrap{position:relative;max-width:100%;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);box-shadow:var(--shadow-1)}
-        .pills-wrap::before,.pills-wrap::after{content:"";position:absolute;top:1px;bottom:1px;width:36px;pointer-events:none;z-index:3;opacity:0;transition:opacity var(--t-fast) var(--ease)}
-        .pills-wrap::before{left:1px;border-radius:999px 0 0 999px;background:linear-gradient(90deg,#FFFFFF,rgba(255,255,255,0))}
-        .pills-wrap::after{right:1px;border-radius:0 999px 999px 0;background:linear-gradient(270deg,#FFFFFF,rgba(255,255,255,0))}
-        .pills-wrap.fade-l::before,.pills-wrap.fade-r::after{opacity:1}
+        /* min-width:0 → bar tidak melebar melewati layar; sisa pill digulir di dalam bar */
+        .pills-wrap{position:relative;min-width:0;max-width:100%;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);box-shadow:var(--shadow-1);overflow:hidden}
         .pills{position:relative;display:flex;gap:2px;padding:5px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+        /* tepi yang masih bisa digulir memudar halus (mask, bukan tempelan putih) */
+        .pills-wrap.fade-r .pills{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
+        .pills-wrap.fade-l .pills{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px);mask-image:linear-gradient(90deg,transparent,#000 56px)}
+        .pills-wrap.fade-l.fade-r .pills{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent)}
         .pills::-webkit-scrollbar{display:none}
         .pill-ind{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:999px;background:var(--navy);box-shadow:0 6px 14px -4px rgba(20,33,61,.45);transition:transform var(--t-slow) var(--ease),width var(--t-slow) var(--ease);z-index:0}
         .pill{position:relative;z-index:1;flex:none;font:inherit;font-size:14px;font-weight:600;min-height:38px;padding:0 15px;border-radius:999px;border:0;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:color var(--t-mid) var(--ease),background var(--t-fast) var(--ease)}
@@ -492,8 +493,12 @@
          walau halaman di-refresh), lalu dipakai ulang lewat object URL (blob:)
          sehingga kartu, hasil pencarian, dan dialog tidak meminta ulang ke server.
          Ganti logo di server? Naikkan versi di LOGO_CACHE (mis. 'v2') agar cache lama dibuang. */
-      const LOGO_CACHE = 'portal-logo-v1';
+      const LOGO_CACHE = 'portal-logo-v2';
       const logoURL = new Map();   // path asli → blob: URL (atau path asli jika cache gagal)
+      const blobOrig = new Map();  // blob: URL → path asli (untuk pulih bila blob gagal ditampilkan)
+      let logoCache = null;
+      const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml' };
+      const mimeOf = (p) => MIME[(p.split('?')[0].split('.').pop() || '').toLowerCase()] || 'image/png';
       const logoAttr = (p) => logoURL.has(p) ? `src="${esc(logoURL.get(p))}"` : `data-logo="${esc(p)}"`;
       function applyLogo(p, url){
         logoURL.set(p, url);
@@ -514,16 +519,26 @@
             // hapus cache versi lama
             (await caches.keys()).forEach(k => { if (k.startsWith('portal-logo-') && k !== LOGO_CACHE) caches.delete(k); });
           }
-        } catch { cache = null; }   // mis. halaman bukan https → tetap jalan tanpa Cache Storage
+        } catch { cache = null; }   // mis. halaman bukan https / mode privat → tetap jalan tanpa Cache Storage
+        logoCache = cache;
+        // isi bukan gambar (halaman HTML error/login, file kosong) → jangan dipakai & jangan disimpan
+        const isImage = (res, blob) => res.ok && !res.redirected && blob.size > 0 && !/html|json/i.test(blob.type);
         await Promise.all(paths.map(async (p) => {
           try {
             let res = cache ? await cache.match(p) : null;
-            if (!res) {
-              res = await fetch(p, { cache: 'force-cache' });
-              if (!res.ok) throw new Error(res.status);
-              if (cache) cache.put(p, res.clone()).catch(() => {});
+            let blob = res ? await res.blob() : null;
+            if (!res || !isImage(res, blob)) {                      // tidak ada / isi cache rusak → unduh ulang
+              if (res && cache) cache.delete(p).catch(() => {});
+              res = await fetch(p, { cache: 'no-cache', credentials: 'same-origin' });
+              blob = await res.clone().blob();
+              if (!isImage(res, blob)) throw new Error('bukan gambar');
+              if (cache) cache.put(p, res).catch(() => {});
             }
-            applyLogo(p, URL.createObjectURL(await res.blob()));
+            // Safari iOS: pastikan tipe blob jelas image/*, kalau tidak gambar bisa tampil kosong
+            if (!/^image\//.test(blob.type)) blob = new Blob([blob], { type: mimeOf(p) });
+            const url = URL.createObjectURL(blob);
+            blobOrig.set(url, p);
+            applyLogo(p, url);
           } catch {
             applyLogo(p, p);        // gagal → pakai path asli; jika tetap gagal, jatuh ke huruf `mark`
           }
@@ -545,6 +560,14 @@
       document.addEventListener('error', (e) => {
         const img = e.target;
         if (!(img instanceof HTMLImageElement)) return;
+        // gambar dari cache gagal ditampilkan → buang dari cache, muat langsung dari server
+        const orig = blobOrig.get(img.src);
+        if (orig) {
+          logoURL.set(orig, orig);
+          if (logoCache) logoCache.delete(orig).catch(() => {});
+          img.src = orig;
+          return;
+        }
         // logo header: coba gambar cadangan (data-fallback) sekali
         if (img.dataset.fallback) { const f = img.dataset.fallback; img.removeAttribute('data-fallback'); img.src = logoURL.get(f) || f; return; }
         if (!img.dataset.mark) return;
