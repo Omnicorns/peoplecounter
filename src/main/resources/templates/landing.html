@@ -59,6 +59,7 @@
         .brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text);min-width:0}
         /* Ganti .brand-logo dengan <img> logo resmi bila tersedia (tinggi 36px) */
         .brand-logo{flex:none;height:36px;padding:0 14px;border-radius:9px;border:1.5px solid var(--navy);display:flex;align-items:center;font-weight:800;letter-spacing:.2em;font-size:13px;color:var(--navy);background:var(--surface)}
+        .brand-img{flex:none;display:block;height:38px;width:auto;max-width:170px;object-fit:contain}
         .brand-sep{flex:none;width:1px;height:30px;background:var(--line-2)}
         .brand-text{display:flex;flex-direction:column;line-height:1.25;min-width:0}
         .brand-text b{font-size:15px;font-weight:700;white-space:nowrap}
@@ -135,6 +136,15 @@
         .card-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
         .tile{flex:none;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(20,33,61,.05),0 6px 14px rgba(20,33,61,.08)}
         .card.is-soon .tile{filter:grayscale(.7);opacity:.8}
+        /* logo gambar di dalam tile: putih bersih, proporsi asli, tidak terpotong */
+        .tile.has-logo,.ico.has-logo{background:#FFFFFF !important;padding:6px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line),0 6px 14px rgba(20,33,61,.08)}
+        .tile.has-logo img,.ico.has-logo img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:6px}
+        .ico.has-logo{padding:4px}
+        /* logo berbentuk melebar: kotak ikut melebar agar logo tidak mengecil */
+        .tile.has-logo.is-wide{width:auto;min-width:52px;max-width:128px;padding:6px 10px}
+        .tile.has-logo.is-wide img{width:auto;max-width:108px}
+        .ico.has-logo.is-wide{width:auto;min-width:38px;max-width:76px;padding:4px 6px}
+        .ico.has-logo.is-wide img{width:auto;max-width:64px}
         .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
         .status.menu{background:var(--teal-soft);color:var(--teal-ink)}
         .status.soon{background:var(--gold-soft);color:var(--gold-ink)}
@@ -232,6 +242,8 @@
           .header-inner{height:56px;gap:10px}
           .brand{gap:10px}
           .brand-logo{height:30px;padding:0 9px;font-size:11px;letter-spacing:.16em}
+          .brand-img{height:30px;max-width:120px}
+          .tile.has-logo{padding:5px}
           .brand-sep{height:22px}
           .brand-text b{font-size:13.5px}
           .greet{display:none}
@@ -425,10 +437,12 @@
          soon     : true = "Segera Hadir" (tidak bisa dibuka)
          menu     : submenu; jika ada, aplikasi membuka pilihan menu
          keywords : kata kunci tambahan untuk pencarian
+         logo     : (opsional) path gambar logo di folder static, mis. "/mbo.jpeg".
+                    Jika gagal dimuat, otomatis kembali ke huruf `mark`.
          ============================================================ */
       const C1 = { bg: "#E2F0EF", fg: "#0A5F5E" }, C2 = { bg: "#F4ECDD", fg: "#6E5323" }, C3 = { bg: "#E6EAF2", fg: "#14213D" };
       const APPS = [
-        { name: "SIAP", desc: "Sistem Informasi Aduan dan Pelayanan", url: "https://siap.sarinah.com/home.html", mark: "SI", ...C1,
+        { name: "SIAP", desc: "Sistem Informasi Aduan dan Pelayanan", url: "https://siap.sarinah.com/home.html", mark: "SI",logo: "/siap.jpeg", ...C1,
           keywords: ["aduan", "pelayanan", "layanan", "komplain"],
           menu: [
             { label: "General Affairs", url: "https://siap.sarinah.com/index.php" },   // isi URL masing-masing menu
@@ -436,18 +450,19 @@
             { label: "Tenant Relation", url: "https://siap.sarinah.com/tenant-relation/" },
             { label: "Masterdata",      url: "https://siap.sarinah.com/masterdata/" }
           ] },
-        { name: "Sarinah Portal",   desc: "ERP Sarinah",                                          url: "https://sarinahportal.co.id/",              mark: "SP", ...C2, keywords: ["erp"] },
-        { name: "SATRIA",           desc: "Sarinah Tracking Realisasi dan Informasi Anggaran",    url: "https://satudata.sarinah.com/satria",       mark: "ST", ...C3, keywords: ["anggaran", "budget", "realisasi"] },
-        { name: "Dashboard Sales",  desc: "Dashboard data dan laporan penjualan.",                url: "",                                          mark: "DS", ...C1, soon: true, keywords: ["penjualan", "sales", "laporan"] },
-        { name: "SOBAT",            desc: "Sistem Operasional Bantuan Teknologi",                 url: "https://sobat.sarinah.com/",                mark: "SB", ...C2, keywords: ["it", "bantuan", "teknologi"] },
-        { name: "MBO",              desc: "Management Business Operation",                        url: "https://mbo.sarinah.com/",                  mark: "MB", ...C3, keywords: ["operasional", "bisnis"] },
-        { name: "Mekari E-Sign",    desc: "Tanda tangan elektronik untuk dokumen.",               url: "https://app.esign.mekari.com/login/",  mark: "ES", ...C1, keywords: ["tanda tangan", "esign", "dokumen"] },
-        { name: "E-Office Sarinah", desc: "Administrasi dan persuratan kantor secara digital.",   url: "",                                          mark: "EO", ...C2, soon: true, keywords: ["surat", "persuratan", "administrasi"] },
-        { name: "PROMIS",           desc: "Web untuk cek promosi dan stok.",                      url: "https://satudata.sarinah.com/web/login",    mark: "PM", ...C3, keywords: ["promo", "promosi", "stok"] },
+        { name: "Sarinah Portal",   desc: "ERP Sarinah",                                          url: "https://sarinahportal.co.id/",              mark: "SP",logo: "/img.png", ...C2, keywords: ["erp"] },
+        { name: "SATRIA",           desc: "Sarinah Tracking Realisasi dan Informasi Anggaran",    url: "https://satudata.sarinah.com/satria",       mark: "ST",logo: "/satria.png", ...C3, keywords: ["anggaran", "budget", "realisasi"] },
+        { name: "Dashboard Sales",  desc: "Dashboard data dan laporan penjualan.",                url: "",                                          mark: "DS",logo: "/sales.png", ...C1, soon: true, keywords: ["penjualan", "sales", "laporan"] },
+        { name: "Aksara Sarinah",   desc: "LMS Sarinah",                url: "",                                          mark: "AS", ...C1, soon: true, keywords: ["lms", "learning", "belajar"] },
+        { name: "SOBAT",            desc: "Sistem Operasional Bantuan Teknologi",                 url: "https://sobat.sarinah.com/",                mark: "SB",logo: "/itop.png", ...C2, keywords: ["it", "bantuan", "teknologi"] },
+        { name: "MBO",              desc: "Aplikasi Pencatatan Persuratan Internal Sarinah",      url: "https://mbo.sarinah.com/",                  mark: "MB", logo: "/mbo.jpeg", ...C3, keywords: ["operasional", "bisnis"] },
+        { name: "Mekari E-Sign",    desc: "Tanda tangan elektronik untuk dokumen.",               url: "https://app.esign.mekari.com/login/",  mark: "ES",logo: "/mekari.png", ...C1, keywords: ["tanda tangan", "esign", "dokumen"] },
+        { name: "E-Office Sarinah", desc: "Administrasi dan persuratan kantor secara digital.",   url: "",                                          mark: "EO",logo: "/eoffice.png", ...C2, soon: true, keywords: ["surat", "persuratan", "administrasi"] },
+        { name: "PROMIS",           desc: "Web untuk cek promosi dan stok.",                      url: "https://satudata.sarinah.com/web/login",    mark: "PM", logo: "/promis.png", ...C3, keywords: ["promo", "promosi", "stok"] },
         { name: "SIPRO",            desc: "VMS dan E-Procurement Sarinah.",                       url: "https://satudata.sarinah.com/sipro",        mark: "PR", ...C1, keywords: ["vendor", "pengadaan", "procurement"] },
         { name: "SIGMA",            desc: "Pengelolaan air, efluen, dan listrik Gedung Sarinah.", url: "https://satudata.sarinah.com/sigma/",       mark: "Σ",  ...C2, keywords: ["utilitas", "energi", "gedung"] },
-        { name: "SURL",             desc: "Pemendek tautan (short URL).",                         url: "https://surl.co.id/",                       mark: "↗",  ...C3, keywords: ["link", "tautan", "shortlink"] },
-        { name: "WBS Sarinah",      desc: "Whistleblowing System", url: "https://wbs.sarinah.co.id/",      mark: "WB", ...C1, keywords: ["wbs", "whistleblowing", "whistle", "pelaporan", "pelanggaran"] }
+        { name: "SURL",             desc: "Pemendek tautan (short URL).",                         url: "https://surl.co.id/",                       mark: "↗", logo: "/logo2.png", ...C3, keywords: ["link", "tautan", "shortlink"] },
+        { name: "WBS Sarinah",      desc: "Whistleblowing System", url: "https://wbs.sarinah.co.id/",      mark: "WB",logo: "/wbs.png", ...C1, keywords: ["wbs", "whistleblowing", "whistle", "pelaporan", "pelanggaran"] }
 
       ];
       const OPEN_IN_NEW_TAB = false; // true = buka di tab baru
@@ -471,6 +486,26 @@
         grid:  '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></svg>',
         enter: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4"></path></svg>'
       };
+
+      /* isi ikon: logo gambar jika ada, kalau tidak huruf `mark` */
+      const tileClass = (a) => a.logo ? ' has-logo' : '';
+      const tileInner = (a) => a.logo
+        ? `<img src="${esc(a.logo)}" alt="" decoding="async" data-mark="${esc(a.mark)}">`
+        : esc(a.mark);
+      // logo melebar (rasio > 1.3) → beri kelas is-wide agar kotaknya ikut melebar
+      const fitLogo = (img) => {
+        if (!img.dataset.mark || !img.naturalWidth) return;
+        img.parentElement.classList.toggle('is-wide', img.naturalWidth / img.naturalHeight > 1.3);
+      };
+      document.addEventListener('load', (e) => { if (e.target instanceof HTMLImageElement) fitLogo(e.target); }, true);
+      // logo gagal dimuat → kembali ke huruf mark dengan warna aslinya
+      document.addEventListener('error', (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement) || !img.dataset.mark) return;
+        const box = img.parentElement;
+        box.classList.remove('has-logo');
+        box.textContent = img.dataset.mark;
+      }, true);
 
       function go(url){ if (OPEN_IN_NEW_TAB) window.open(url, '_blank', 'noopener'); else window.location.href = url; }
       function openApp(i){
@@ -508,7 +543,7 @@
           <article class="card${k === 'soon' ? ' is-soon' : ''}" data-i="${i}" role="group" aria-roledescription="slide" aria-label="${i + 1} dari ${N}: ${esc(a.name)}${k === 'soon' ? ', segera hadir' : ''}">
             <div class="float"><div class="card-body">
               <div class="card-top">
-                <span class="tile" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+                <span class="tile${tileClass(a)}" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${tileInner(a)}</span>
                 ${status}
               </div>
               <h2 class="card-name">${esc(a.name)}</h2>
@@ -519,6 +554,7 @@
           </article>`;
       }).join('');
       const cards = [...track.querySelectorAll('.card')];
+      track.querySelectorAll('img[data-mark]').forEach(img => { if (img.complete) fitLogo(img); });
       $('#cntAll').textContent = pad2(N);
 
       /* ---------------- build pills ---------------- */
@@ -705,7 +741,7 @@
       /* ---------------- submenu dialog ---------------- */
       function openMenu(a){
         const mk = $('#dlgMark');
-        mk.textContent = a.mark; mk.style.background = a.bg; mk.style.color = a.fg;
+        mk.className = 'tile' + tileClass(a); mk.innerHTML = tileInner(a); mk.style.background = a.bg; mk.style.color = a.fg;
         $('#dlgTitle').textContent = a.name;
         $('#dlgDesc').textContent = a.desc;
         $('#dlgList').innerHTML = a.menu.map(m => m.url
@@ -754,7 +790,7 @@
           const menuHit = tokens.length && a.menu ? a.menu.filter(m => tokens.some(t => m.label.toLowerCase().includes(t))) : [];
           const end = kd === 'soon' ? 'Segera Hadir' : kd === 'menu' ? 'Pilih menu' : ICON.enter;
           return `<li class="cmd-item${kd === 'soon' ? ' is-soon' : ''}" id="opt-${k}" role="option" aria-selected="${k === 0}" data-k="${k}"${kd === 'soon' ? ' aria-disabled="true"' : ''}>
-              <span class="ico" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${esc(a.mark)}</span>
+              <span class="ico${tileClass(a)}" style="background:${esc(a.bg)};color:${esc(a.fg)}" aria-hidden="true">${tileInner(a)}</span>
               <span class="txt"><span class="nm">${hl(a.name, tokens)}</span><span class="ds">${hl(a.desc, tokens)}</span>${menuHit.length ? `<span class="sub">Menu: ${menuHit.map(m => hl(m.label, tokens)).join(', ')}</span>` : ''}</span>
               <span class="end">${end}</span>
             </li>`;
