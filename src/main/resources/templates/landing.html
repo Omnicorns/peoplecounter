@@ -319,7 +319,7 @@
             <div class="header-inner reveal d0">
                 <a class="brand" href="#" aria-label="Sarinah — Portal Aplikasi Internal">
                     <!-- Logo resmi: ganti span di bawah dengan <img src="logo-sarinah.svg" alt="Sarinah" height="36"> -->
-                    <img class="brand-img" id="brandImg" src="/injourney.png" data-fallback="/sarinah.png" alt="Sarinah" height="38">
+                    <img class="brand-img" id="brandImg" data-logo="/injourney.png" data-fallback="/sarinah.png" alt="Sarinah" height="38">
                     <span class="brand-sep" aria-hidden="true"></span>
                     <span class="brand-text"><b>Portal Aplikasi Internal</b><span>Sarinah Digital Workspace</span></span>
                 </a>
@@ -487,10 +487,53 @@
         enter: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4"></path></svg>'
       };
 
+      /* ---------------- cache logo ----------------
+         Setiap logo diunduh SEKALI, disimpan di Cache Storage browser (bertahan
+         walau halaman di-refresh), lalu dipakai ulang lewat object URL (blob:)
+         sehingga kartu, hasil pencarian, dan dialog tidak meminta ulang ke server.
+         Ganti logo di server? Naikkan versi di LOGO_CACHE (mis. 'v2') agar cache lama dibuang. */
+      const LOGO_CACHE = 'portal-logo-v1';
+      const logoURL = new Map();   // path asli → blob: URL (atau path asli jika cache gagal)
+      const logoAttr = (p) => logoURL.has(p) ? `src="${esc(logoURL.get(p))}"` : `data-logo="${esc(p)}"`;
+      function applyLogo(p, url){
+        logoURL.set(p, url);
+        document.querySelectorAll('img[data-logo]').forEach(img => {
+          if (img.dataset.logo === p) { img.removeAttribute('data-logo'); img.src = url; }
+        });
+      }
+      async function warmLogos(){
+        const brand = document.getElementById('brandImg');
+        const paths = [...new Set([
+          ...APPS.map(a => a.logo),
+          brand && brand.dataset.logo, brand && brand.dataset.fallback   // logo header ikut dicache
+        ].filter(Boolean))];
+        let cache = null;
+        try {
+          if ('caches' in window) {
+            cache = await caches.open(LOGO_CACHE);
+            // hapus cache versi lama
+            (await caches.keys()).forEach(k => { if (k.startsWith('portal-logo-') && k !== LOGO_CACHE) caches.delete(k); });
+          }
+        } catch { cache = null; }   // mis. halaman bukan https → tetap jalan tanpa Cache Storage
+        await Promise.all(paths.map(async (p) => {
+          try {
+            let res = cache ? await cache.match(p) : null;
+            if (!res) {
+              res = await fetch(p, { cache: 'force-cache' });
+              if (!res.ok) throw new Error(res.status);
+              if (cache) cache.put(p, res.clone()).catch(() => {});
+            }
+            applyLogo(p, URL.createObjectURL(await res.blob()));
+          } catch {
+            applyLogo(p, p);        // gagal → pakai path asli; jika tetap gagal, jatuh ke huruf `mark`
+          }
+        }));
+      }
+
       /* isi ikon: logo gambar jika ada, kalau tidak huruf `mark` */
       const tileClass = (a) => a.logo ? ' has-logo' : '';
       const tileInner = (a) => a.logo
-        ? `<img src="${esc(a.logo)}" alt="" decoding="async" data-mark="${esc(a.mark)}">`
+        ? `<img ${logoAttr(a.logo)} alt="" decoding="async" data-mark="${esc(a.mark)}">`
         : esc(a.mark);
       // logo melebar (rasio > 1.3) → beri kelas is-wide agar kotaknya ikut melebar
       const fitLogo = (img) => {
@@ -501,7 +544,10 @@
       // logo gagal dimuat → kembali ke huruf mark dengan warna aslinya
       document.addEventListener('error', (e) => {
         const img = e.target;
-        if (!(img instanceof HTMLImageElement) || !img.dataset.mark) return;
+        if (!(img instanceof HTMLImageElement)) return;
+        // logo header: coba gambar cadangan (data-fallback) sekali
+        if (img.dataset.fallback) { const f = img.dataset.fallback; img.removeAttribute('data-fallback'); img.src = logoURL.get(f) || f; return; }
+        if (!img.dataset.mark) return;
         const box = img.parentElement;
         box.classList.remove('has-logo');
         box.textContent = img.dataset.mark;
@@ -554,6 +600,7 @@
           </article>`;
       }).join('');
       const cards = [...track.querySelectorAll('.card')];
+      warmLogos();
       track.querySelectorAll('img[data-mark]').forEach(img => { if (img.complete) fitLogo(img); });
       $('#cntAll').textContent = pad2(N);
 
