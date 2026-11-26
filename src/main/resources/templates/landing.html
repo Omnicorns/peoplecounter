@@ -91,7 +91,7 @@
         .cmd-list{list-style:none;margin:0;padding:4px 8px 8px;max-height:min(46vh,360px);overflow-y:auto;overscroll-behavior:contain}
         .cmd-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;cursor:pointer;transition:background var(--t-fast) var(--ease)}
         .cmd-item[aria-selected="true"]{background:var(--teal-soft)}
-        .cmd-item .ico{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+        .cmd-item .ico{flex:none;width:60px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
         .cmd-item .txt{flex:1;min-width:0}
         .cmd-item .nm{display:block;font-weight:700;font-size:15px}
         .cmd-item .ds{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -134,17 +134,16 @@
         .card.is-soon .card-body{background:var(--ivory-2)}
         .card.is-soon.is-active .card-body{border-color:var(--line-2);box-shadow:var(--shadow-card)}
         .card-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-        .tile{flex:none;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(20,33,61,.05),0 6px 14px rgba(20,33,61,.08)}
+        .tile{flex:none;width:76px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(20,33,61,.05),0 6px 14px rgba(20,33,61,.08)}
         .card.is-soon .tile{filter:grayscale(.7);opacity:.8}
         /* logo gambar di dalam tile: putih bersih, proporsi asli, tidak terpotong */
         .tile.has-logo,.ico.has-logo{background:#FFFFFF !important;padding:6px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line),0 6px 14px rgba(20,33,61,.08)}
         .tile.has-logo img,.ico.has-logo img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:6px}
         .ico.has-logo{padding:4px}
-        /* logo berbentuk melebar: kotak ikut melebar agar logo tidak mengecil */
-        .tile.has-logo.is-wide{width:auto;min-width:52px;max-width:128px;padding:6px 10px}
-        .tile.has-logo.is-wide img{width:auto;max-width:108px}
-        .ico.has-logo.is-wide{width:auto;min-width:38px;max-width:76px;padding:4px 6px}
-        .ico.has-logo.is-wide img{width:auto;max-width:64px}
+        /* semua kotak logo berukuran SAMA (persegi panjang) agar sejajar & simetris;
+           logo lebar maupun persegi dipusatkan dengan object-fit: contain */
+        .tile.has-logo{padding:6px 8px}
+        .ico.has-logo{padding:4px 6px}
         .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
         .status.menu{background:var(--teal-soft);color:var(--teal-ink)}
         .status.soon{background:var(--gold-soft);color:var(--gold-ink)}
@@ -204,7 +203,7 @@
         @keyframes dlgIn{from{opacity:0;transform:perspective(900px) rotateX(10deg) translateY(14px) scale(.98)}to{opacity:1;transform:none}}
         .dlg{padding:26px;display:flex;flex-direction:column;gap:18px}
         .dlg-head{display:flex;align-items:flex-start;gap:14px}
-        .dlg-head .tile{width:50px;height:50px}
+        .dlg-head .tile{width:72px;height:50px}
         .dlg-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
         .dlg-head p{margin:3px 0 0;color:var(--muted);font-size:14.5px}
         .dlg-close{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface);color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color var(--t-fast) var(--ease)}
@@ -268,7 +267,7 @@
           .carousel{min-height:0;max-height:420px}
           .stage{min-height:270px}
           .card-body{padding:18px;gap:8px;border-radius:18px}
-          .tile{width:46px;height:46px;font-size:16px;border-radius:12px}
+          .tile{width:66px;height:46px;font-size:16px;border-radius:12px}
           .card-name{font-size:19px;margin-top:2px}
           .card-desc{font-size:14px}
           .btn-open{min-height:44px;font-size:14.5px}
@@ -550,12 +549,6 @@
       const tileInner = (a) => a.logo
         ? `<img ${logoAttr(a.logo)} alt="" decoding="async" data-mark="${esc(a.mark)}">`
         : esc(a.mark);
-      // logo melebar (rasio > 1.3) → beri kelas is-wide agar kotaknya ikut melebar
-      const fitLogo = (img) => {
-        if (!img.dataset.mark || !img.naturalWidth) return;
-        img.parentElement.classList.toggle('is-wide', img.naturalWidth / img.naturalHeight > 1.3);
-      };
-      document.addEventListener('load', (e) => { if (e.target instanceof HTMLImageElement) fitLogo(e.target); }, true);
       // logo gagal dimuat → kembali ke huruf mark dengan warna aslinya
       document.addEventListener('error', (e) => {
         const img = e.target;
@@ -624,7 +617,6 @@
       }).join('');
       const cards = [...track.querySelectorAll('.card')];
       warmLogos();
-      track.querySelectorAll('img[data-mark]').forEach(img => { if (img.complete) fitLogo(img); });
       $('#cntAll').textContent = pad2(N);
 
       /* ---------------- build pills ---------------- */
