@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -67,6 +67,8 @@
         .greet{text-align:right;line-height:1.3;white-space:nowrap}
         .greet b{display:block;font-size:15px;font-weight:700}
         .greet span{font-size:13px;color:var(--dim)}
+        .greet b i{font-style:normal}
+        .sso-logout{display:inline-block;margin-left:10px;font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:underline}
 
         /* =========================================================
            HERO + COMMAND SEARCH
@@ -324,8 +326,9 @@
                     <span class="brand-text"><b>Portal Aplikasi Internal</b><span>Sarinah Digital Workspace</span></span>
                 </a>
                 <div class="greet" aria-live="off">
-                    <b id="greet">Selamat datang</b>
+                    <b><i id="greet">Selamat datang</i><th:block th:if="${ssoName != null}">, <i th:text="${ssoName}">Nama</i></th:block></b>
                     <span id="date"></span>
+                    <a th:if="${ssoName != null}" class="sso-logout" th:href="@{/sso/logout}">Keluar</a>
                 </div>
             </div>
         </div>
