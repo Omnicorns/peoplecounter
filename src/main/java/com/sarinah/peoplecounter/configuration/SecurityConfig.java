@@ -1,5 +1,10 @@
 package com.sarinah.peoplecounter.configuration;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -152,22 +157,35 @@ public class SecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   ObjectProvider<ClientRegistrationRepository> ssoRegistrations) throws Exception {
+        ClientRegistrationRepository sso = ssoRegistrations.getIfAvailable();
+        org.slf4j.LoggerFactory.getLogger(SecurityConfig.class).info(
+                sso == null ? "SSO Keycloak TIDAK aktif: portal (/) terbuka tanpa login"
+                            : "SSO Keycloak AKTIF: portal (/) wajib login lewat Keycloak");
 
         ApiKeyAuthFilter apiKeyFilter = new ApiKeyAuthFilter(
                 apiKey,
                 PUBLIC_ENDPOINTS,
-                STATIC_ROOT_ENDPOINTS
+                STATIC_ROOT_ENDPOINTS,
+                // alur login/logout SSO tidak memakai API key
+                new String[]{"/oauth2/**", "/login/oauth2/**", "/sso/logout"}
         );
 
-        return http
+        http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin())
                 )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
+                    // SSO aktif: halaman portal wajib login Keycloak (harus sebelum daftar PUBLIC_ENDPOINTS)
+                    if (sso != null) {
+                        auth.requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll();
+                        auth.requestMatchers("/").authenticated();
+                    }
+                    auth
 
                         // Static resources bawaan Spring Boot
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
@@ -182,16 +200,46 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Selain itu wajib API key / authenticated
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated();
+                })
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) ->
-                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                        .authenticationEntryPoint((req, res, e) -> {
+                            // Portal dibuka di browser tanpa login -> arahkan ke halaman login Keycloak
+                            if (sso != null && "/".equals(req.getServletPath())) {
+                                res.sendRedirect(req.getContextPath() + "/oauth2/authorization/" + SsoConfig.REGISTRATION_ID);
+                                return;
+                            }
+                            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
                         .accessDeniedHandler((req, res, e) ->
                                 res.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
                 )
-                .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+                .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class);
+
+        if (sso != null) {
+            OidcClientInitiatedLogoutSuccessHandler keycloakLogout = new OidcClientInitiatedLogoutSuccessHandler(sso);
+            keycloakLogout.setPostLogoutRedirectUri("{baseUrl}/");
+            http.oauth2Login(oauth -> oauth
+                            .clientRegistrationRepository(sso)
+                            .userInfoEndpoint(u -> u.oidcUserService(SsoConfig.oidcUserService()))
+                            .defaultSuccessUrl("/", false)
+                            .failureHandler((req, res, ex) -> {
+                                String code = ex instanceof OAuth2AuthenticationException oae
+                                        ? oae.getError().getErrorCode() : ex.getClass().getSimpleName();
+                                org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
+                                        .warn("Login SSO gagal: [{}] {}", code, ex.getMessage(), ex);
+                                res.setContentType("text/plain;charset=UTF-8");
+                                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                res.getWriter().write("Login SSO gagal (" + code + "). Coba lagi atau hubungi Team IT.");
+                            }))
+                    // Keluar dari portal sekaligus mengakhiri sesi Keycloak
+                    .logout(logout -> logout
+                            .logoutRequestMatcher(PathPatternRequestMatcher.withDefaults().matcher("/sso/logout"))
+                            .logoutSuccessHandler(keycloakLogout)
+                            .invalidateHttpSession(true)
+                            .deleteCookies("JSESSIONID"));
+        }
+        return http.build();
     }
 
     /**
