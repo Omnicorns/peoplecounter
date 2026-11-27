@@ -29,6 +29,7 @@
             <a href="#" data-tab="lokasi">Lokasi &amp; Lantai</a>
             <a href="#" data-tab="brand">Brand &amp; Produk</a>
             <a href="#" data-tab="tabel">Tabel &amp; Unduhan</a>
+            <a href="#" data-tab="scantime">Durasi Pelayanan</a>
         </nav>
 
         <div class="sisi-kaki">
@@ -255,6 +256,65 @@
             </section>
         </div>
 
+        <!-- ---------- TAB: DURASI PELAYANAN ---------- -->
+        <div class="tab tersembunyi" data-panel="scantime">
+
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Durasi Pelayanan Kasir</h2>
+                        <p class="ket">Dari kolom <code>scan_time_min_timee_order</code> di
+                            <code>pos_order</code>. Rata-rata dihitung tanpa transaksi yang
+                            melewati batas wajar &mdash; kasir yang membuka transaksi lalu
+                            meninggalkannya tidak ikut menggeser angkanya.
+                            Terakhir diambil <span id="scanWaktu">&mdash;</span></p>
+                    </div>
+                    <button class="btn" type="button" id="scanMuatUlang">Ambil ulang</button>
+                </div>
+
+                <form class="filter" onsubmit="return false">
+                    <div class="f">
+                        <label>Tahun</label>
+                        <select id="stTahun"></select>
+                    </div>
+                    <div class="f">
+                        <label>Bulan</label>
+                        <select id="stBulan"></select>
+                    </div>
+                    <div class="f">
+                        <label>Lokasi</label>
+                        <select id="stLokasi"></select>
+                    </div>
+                </form>
+
+                <p id="scanPesan" class="tersembunyi"></p>
+            </section>
+
+            <section class="kpi-baris" id="kpiScan"></section>
+
+            <section class="panel">
+                <h2>Durasi per Jam</h2>
+                <p class="ket">Jam mana pelayanan paling lambat. Berguna untuk menentukan
+                    jumlah kasir per shift.</p>
+                <div id="chart-scan-jam" class="bar-chart"></div>
+            </section>
+
+            <div class="grid-2">
+                <section class="panel">
+                    <h2>Kasir Paling Lambat</h2>
+                    <p class="ket">20 teratas, minimal 20 struk &mdash; di bawah itu
+                        rata-ratanya terlalu mudah terguncang satu transaksi.</p>
+                    <div id="chart-scan-kasir" class="bar-chart"></div>
+                </section>
+                <section class="panel">
+                    <h2>Ringkas per Lokasi</h2>
+                    <p class="ket">Kolom pencilan menunjukkan berapa transaksi yang dibuang
+                        dari perhitungan rata-rata.</p>
+                    <div class="tabel-bungkus"><table id="tabelScanLokasi"></table></div>
+                </section>
+            </div>
+        </div>
+
 <!--        <footer>-->
 <!--            <p>Angka di sini adalah nilai pembayaran dari <code>vw_POSPayment</code>,-->
 <!--               sama dengan pivot payment yang selama ini dipakai.-->
@@ -303,5 +363,6 @@
 
 <script th:src="@{/js/chart.js}"></script>
 <script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/scantime.js}"></script>
 </body>
 </html>

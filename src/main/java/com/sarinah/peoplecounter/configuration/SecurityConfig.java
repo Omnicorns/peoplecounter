@@ -72,6 +72,7 @@ public class SecurityConfig {
             "/api/admin/users/**",
             "/sales",
             "/api/dashboard",
+            "/api/scantime",
             "/css/**",
             "/js/**",
 
